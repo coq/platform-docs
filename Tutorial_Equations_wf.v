@@ -72,8 +72,6 @@ Import ListNotations.
 
 
 
-
-
 (** * 1. Defining and reasoning using well-founded recursion
 
     ** 1.1 Introduction to well-founded recursion
