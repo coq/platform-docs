@@ -10,7 +10,7 @@ Arguments to_fill {_}.
   [Equations] is a plugin for %\cite{Coq}% that offers a powerful support
   for writing functions by dependent pattern matching.
   In this tutorial, we focus on the facilities provided by Equations to
-  define function defined using well-founded recursion and reason about them.
+  define function using well-founded recursion and reason about them.
 
   In section 1, we explain the basic of defining and reasoning by
   well-founded recursion using Equations.
@@ -59,6 +59,10 @@ Arguments to_fill {_}.
     Coq's obligation mechanism, but no previous knowledge about it is needed.
   - To simplify proofs involving arithmetics, we use the automatisation
     tactic [lia] and [auto with arith], but they can be used as black boxes
+
+  Installation:
+  - Equations is available by default in the Coq Platform
+  - Otherwise, it is available via opam under the name coq-equations
 
 *)
 
@@ -152,8 +156,8 @@ nubBy eq (x :: xs) => x :: nubBy eq (filter (fun y => negb (eq x y)) xs).
     and rel the well-founded relation for which it decrease after the return type.
     Equations will then automatically try to prove that the recursive call
     are made on decreasing arguments according to the relation.
-    If it can not do it on its own it will generate a proof obligation
-    for the user to fill.
+    If it can not do it on its own it will generate a proof obligation,
+    intuitively a goal for the user to fill.
     This enables to separate the proofs from the definition of the function
     while dealing automatically with trivial cases.
 
@@ -232,7 +236,7 @@ ack (S m) (S n) := ack m (ack (S m) n).
 
 Check ack_elim.
 
-(** ISSUES EXAMPLES : DOESN'T WORK
+(** ISSUES : TO SLOW TO WORK
 *)
 
 Definition ack1y {n} : ack 1 n = 2 + n.
@@ -360,7 +364,7 @@ Qed.
 
 (** ** 2.1 Subterm relations for indexed inductive types *)
 
-(** ISSUES *)
+(** ISSUES: FIND AN EXAMPLE*)
 Inductive vec A : nat -> Type :=
   | vnil  : vec A 0
   | vcons : A -> forall (n : nat), vec A n -> vec A (S n).
@@ -439,7 +443,7 @@ Section Inspect.
     obligation as we don't remember information about the call to [f n] being
     equal to [Some p] in the recursive call [f_sequence p].
 
-    To go around this issue and remember the orgin of the pattern,
+    To go around this issue and remember the origin of the pattern,
     we can wrap our match with the [inspect] function, which simply packs a
     value with a proof of an equality to itself.
     In other words, given an element [(a : A)], [inspect (a)] returns the
@@ -547,7 +551,7 @@ Show Obligation Tactic.
 Show Obligation Tactic.
 
 (** We can see our change was useful as [gcd] can now be defined by
-    well-founded recursion without us having to solve any oblgations.
+    well-founded recursion without us having to solve any obligations.
 *)
 
 Equations gcd (x y : nat) : nat by wf (x + y) lt :=
