@@ -67,8 +67,7 @@ Arguments to_fill {_}.
 *)
 
 From Equations Require Import Equations.
-From Coq Require Import List Program.Syntax Arith Lia.
-Require Import List.
+From Coq Require Import List Arith Lia.
 Import ListNotations.
 
 
