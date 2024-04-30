@@ -131,8 +131,26 @@ Equations app' {A} (l l' : list A) : list A :=
 app' []     l' := l';
 app' (a::l) l' := a :: (app' l l').
 
+(** For the users that would prefer it, there is also an alternative syntax
+    closer to the [Fixpoint] one.
+    With this syntax, we have to start each clause with "[|]" and separate the
+    different patterns in a clause by "[,]", but we no longer have to repeat
+    the name of the functions nor to put parenthesis or finish a line by "[;]".
 
-(** [Equations] enables us to pattern match on several different
+    With this syntax, we can rewrite [length] and [app] as:
+  *)
+
+Equations length'' {A} (l : list A) : nat :=
+  | []     := 0
+  | (a::l) := S (length'' l).
+
+Equations app'' {A} (l l' : list A) : list A :=
+  | []    , l' := l'
+  | (a::l), l' := a :: (app'' l l').
+
+(** In this tutorial, we will keep to the first syntax but both are acceptable.
+
+    [Equations] enables us to pattern match on several different
     variables at the same time, for instance, to define a function [nth_option]
     getting the nth-element of a list and returning [None] otherwise.
 *)
@@ -487,16 +505,10 @@ filter (cons a l) p with p a => {
   filter (cons a l) p false := filter l p }.
 
 
-(** This syntax is a bit heavy, to avoid repeating the same patterns in
-    multiple clauses and focus on the patterns we can use a more compact
-    syntax.
-    Similarly to the [Fixpoint] syntax, by starting each clause with "[|]" and
-    separating the list of patterns by "[,]", we do not need to repeat the
-    name of the functions, put parenthesis or finish a line by "[;]".
-    Moreover, in a [with] clause, we only need to specify the patterns
-    introduced by the [with] clause.
-
-    This enables to rewrite the [with] clause of the function filter
+(** This syntax is a bit heavy. To avoid repeating the full clause
+    [filter (cons a l) p] and to focus on the [with] pattern, we can use the
+    [Fixpoint] like syntax in the with clause discussed in section 1.1.
+    This enables to rewrite the [with] clause of the function [filter]
     much more concisely:
 *)
 
@@ -506,17 +518,7 @@ filter' (a :: l) p with p a => {
   | true  => a :: filter' l p
   | false => filter' l p }.
 
-(** If you wish, it is also possible to use this syntax for the main body
-    of you functions as below:
-*)
-
-Equations filter'' {A} (l : list A) (p : A -> bool) : list A :=
-  | [], p => []
-  | a :: l, p with p a => {
-    | true  => a :: filter'' l p
-    | false => filter'' l p }.
-
-(** To show that [filter] is well-behaved we can define a predicate [In] and
+(** To show that [filter] is well-behaved, we can define a predicate [In] and
     check that if an element is in the list and verifies the predicate,
     then it is in the filtered list.
 *)
