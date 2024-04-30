@@ -100,7 +100,7 @@ Infix "++" := app (right associativity, at level 60).
     terms:
     - It is compatible with implicit arguments that as usual do not need to
       be written provided it can be inferred, for instance, above, we wrote
-      [app nil l'] rather than [map (nil A) l'] as [A] was declared as an
+      [app nil l'] rather than [app (nil A) l'] as [A] was declared as an
       implicit argument of [nil].
     - We can use the underscores "_" for terms that we do not use, terms
       that Coq can infer on its own, but also to describe what to do in all
