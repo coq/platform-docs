@@ -1,3 +1,5 @@
+This is a template to start tutorials or how-to
+
 ```
 (** * TITLE
 

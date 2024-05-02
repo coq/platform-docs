@@ -1,9 +1,9 @@
 # Structure of Coq's tutorial documentation
 
 **This an informal draft**, established through informal discussions with the community, of what the documentation could look in terms of content.
-**It is not fixed and will evolve with the project** according to the need of the users.
+**It is not fixed and will evolve with the project** through discussions and according to the need of the users.
 
----
+
 # Overall plan
 
 - Preliminary
@@ -33,7 +33,7 @@
   - General purpose librairies, real numbers, ...
 
 
----
+
 # Detailed plan
 
 ## Preliminary
