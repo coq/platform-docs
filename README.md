@@ -31,22 +31,64 @@ Such of a documentation is complementary to others kind of documentation like th
 This project will necessarily have to be a collaborative undertaking considering the richness and diversity of our ecosystem.
 There is a lot of work to be done, and we welcome contributions from the different communities.
 As a base for work, we have established an [informal list](https://github.com/Zimmi48/platform-docs/blob/main/draft_structure_doc.md) of tutorials and how-to it could be interesting to have.
-This list **is not fixed** and will necessarily evolve through discussions with the community and experience, but should already give an idea of the potential of this project.
-
-
-
-
+This list is not fixed and will necessarily evolve through discussions with the community and experience, but it should already give an idea of the potential of this project.
 
 
 
 
 # How to contribute to the documentation
 
+There is a lot of work to be done before having a comprehensive documentation for Coq and its Platform, and we welcome contributions.
+
+There are different possible way to contribute depending on your time and technical skills:
+- As users do not hesitate to gives us feedbacks on the project on the <span style="color:red"><u>zulip chan</u></span>
+- There is need for regular reviewers to test tutorials, both general ones and expert ones
+- There is a lot of tutorials and how-to to write, both about Coq and plugins in its platform
+- There is technical work to be done on the (interactive) web interface's side
+
+If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated <span style="color:red"><u>zulip chan</u></span> to
+get feedbacks through the writing and to reach other interested people.
+You can also create a discussions on more specific zulip chan, like on the one dedicated to the package Equations if you are working on a tutorial for Equations.
+Once you have a plan and some content, you can create a draft pull request to make your code accessible and get feedback on it while you (and others) progress on it.
+
+In the sections below, we give some tips on what a good tutorial and how-to should be.
+
+For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
+It is not hard to learn  bit limited, and we plan to develop
 
 
+> [!WARNING]
+> Before starting to work on a tutorial or a how-to and invest time into it, check if someone hasn't already starter working on it and created a draft pull request about it.
+
+> [!WARNING]
+> A lot of stuffs have already be written about Coq, it can make sense to reuse some of the content. If you wish to do so, be careful that you are indeed allowed by the copyrights.
+
+#### Template to start your file
+Start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
+It requires to fill very basic information:
+  - a title
+  - a summary of the tutorial and its content
+  - a table of content
+  - a list of prerequisites (needed / not needed / installation)
+
+  The list of prerequisites includes what is necessary, but also what is
+  not needed and brief installation instructions.
+
+  Understanding what is not needed to know to a complete a tutorial is as
+  important as knowing what is.
+  For instance, the tutorial about Equations and well-founded recursion
+  recall what is well-founded.
+
+  The installation instructions are meant to be pretty short.
+  They are basically about telling the user if the feature discussed is by
+  default in Coq, its in the platform, and the name of the opam package.
+  For instance, the installation instruction for the Equations package are:
+  > Installation:
+  > - Equations is available by default in the Coq Platform
+  > - Otherwise, it is available via opam under the name `coq-equations`
 
 
-### Tutorials
+### Writing Tutorials
 
 Tutorials are meant to introduce and explain the different aspects of a functionality step by step with examples.
 The goal is to provide user with a action-oriented documentation that user can use to learn about a feature they don't know, and a (non-exhaustive and opinionated) material that they can come back to when they are stuck trying to use a feature.
@@ -103,35 +145,5 @@ You can do so by asking them to prove basic properties like `map_app` above, or 
 > Being able to complete the exercices should not be necessary to be able
 > to complete and understand the rest of the tutorial.
 
-## Writing guidelines
+### Writing how-to
 
-### Formatting
-- For the moment we only support coqdoc's syntax a custom documentation
-  syntax for Coq.
-  You can find information about it [here](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc)
-- The numbers of characters per line must be between 80 to 100
-- No trailing white spaces are allowed
-
-### Template to start your file
-Start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
-It requires to fill very basic information:
-  - a title
-  - a summary of the tutorial and its content
-  - a table of content
-  - a list of prerequisites (needed / not needed / installation)
-
-  The list of prerequisites includes what is necessary, but also what is
-  not needed and brief installation instructions.
-
-  Understanding what is not needed to know to a complete a tutorial is as
-  important as knowing what is.
-  For instance, the tutorial about Equations and well-founded recursion
-  recall what is well-founded.
-
-  The installation instructions are meant to be pretty short.
-  They are basically about telling the user if the feature discussed is by
-  default in Coq, its in the platform, and the name of the opam package.
-  For instance, the installation instruction for the Equations package are:
-  > Installation:
-  > - Equations is available by default in the Coq Platform
-  > - Otherwise, it is available via opam under the name `coq-equations`
