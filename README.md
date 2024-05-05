@@ -28,8 +28,8 @@ Such of a documentation is complementary to others kind of documentation like th
 - It will enable us to showcase all that is possible in Coq's ecosystem
 - It should be easy to maintain as once fully written a tutorials or how-to should have any reason to change, except if the associated feature changes
 
-This project will necessarily have to be a collaborative undertaking considering the richness and diversity of our ecosystem.
-There is a lot of work to be done, and we welcome contributions from the different communities.
+This project will necessarily have to be a collaborative undertaking considering how much work there is to do, and the richness and diversity of our ecosystem.
+Yet, as the tutorials can mostly be designed independently, by combining the different expertise of the different communities, there is good hope to quickly get to a good documentation, and we welcome contributions.
 As a base for work, we have established an [informal list](https://github.com/Zimmi48/platform-docs/blob/main/draft_structure_doc.md) of tutorials and how-to it could be interesting to have.
 This list is not fixed and will necessarily evolve through discussions with the community and experience, but it should already give an idea of the potential of this project.
 
@@ -41,31 +41,37 @@ This list is not fixed and will necessarily evolve through discussions with the 
 There is a lot of work to be done before having a comprehensive documentation for Coq and its Platform, and we welcome contributions.
 
 There are different possible way to contribute depending on your time and technical skills:
-- As users do not hesitate to gives us feedbacks on the project on the <span style="color:red"><u>zulip chan</u></span>
+- As users do not hesitate to gives us feedbacks on the project on the dedicated <span style="color:red"><u>zulip chan</u></span>
 - There is need for regular reviewers to test tutorials, both general ones and expert ones
 - There is a lot of tutorials and how-to to write, both about Coq and plugins in its platform
 - There is technical work to be done on the (interactive) web interface's side
 
-If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated <span style="color:red"><u>zulip chan</u></span> to
-get feedbacks through the writing and to reach other interested people.
-You can also create a discussions on more specific zulip chan, like on the one dedicated to the package Equations if you are working on a tutorial for Equations.
-Once you have a plan and some content, you can create a draft pull request to make your code accessible and get feedback on it while you (and others) progress on it.
+#### Writing Tutorials and How-to
+If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated <span style="color:red"><u>zulip chan</u></span> to get feedback on your idea, through the writing and to reach others that may be interested people.
+If there is one, you can also create a discussions on a more specific zulip chan, for instance, if you are working on tutorials for the package Equation, you can create a discussions on the associated chan.
 
-In the sections below, we give some tips on what a good tutorial and how-to should be.
+Once you have a plan and some content, you can create a draft pull request to make your code accessible and get feedbacks on it while you (and others) progress on it.
 
-For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
-It is not hard to learn  bit limited, and we plan to develop
-
+In the following, we give specific guidelines for writing good tutorials and how-to.
 
 > [!WARNING]
-> Before starting to work on a tutorial or a how-to and invest time into it, check if someone hasn't already starter working on it and created a draft pull request about it.
+> Before starting to work on a tutorial or a how-to and invest time into it, check if it is not already existing, or if someone hasn't already started working on it, either by creating a discussion on the zulip chan or a draft pull request about it.
 
 > [!WARNING]
 > A lot of stuffs have already be written about Coq, it can make sense to reuse some of the content. If you wish to do so, be careful that you are indeed allowed by the copyrights.
 
-#### Template to start your file
-Start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
-It requires to fill very basic information:
+
+
+## General Contribution guidelines
+
+### Format
+For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
+It is not hard to learn but a bit limited.
+We plan to be compatible with a more standard and polyvalent format in the futur.
+
+### Template to start your file
+To contribute, please start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
+It requires to fill very basic information that should be common to all files:
   - a title
   - a summary of the tutorial and its content
   - a table of content
@@ -88,13 +94,13 @@ It requires to fill very basic information:
   > - Otherwise, it is available via opam under the name `coq-equations`
 
 
-### Writing Tutorials
+## Specific Contribution Guidelines
 
-Tutorials are meant to introduce and explain the different aspects of a functionality step by step with examples.
+### Writing Tutorials
+Tutorials are meant to introduce and explain the different aspects of a functionality, pedagogically, step by step with (simplified) examples.
 The goal is to provide user with a action-oriented documentation that user can use to learn about a feature they don't know, and a (non-exhaustive and opinionated) material that they can come back to when they are stuck trying to use a feature.
 
-We give some elements to write a good tutorial
-You can write a tutorial by
+As examples, we have been working on new tutorials for the package Equations. The first is one is complete and can be checkout here #1.
 
 #### Horizontality
 
@@ -144,6 +150,4 @@ You can do so by asking them to prove basic properties like `map_app` above, or 
 > [!CAUTION]
 > Being able to complete the exercices should not be necessary to be able
 > to complete and understand the rest of the tutorial.
-
-### Writing how-to
 
