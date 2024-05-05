@@ -7,7 +7,7 @@ Arguments to_fill {_}.
 
 (** * Tutorial Equations : Basic Definitions and Reasoning with Equations
 
-  *** Summary:
+  *** Summary
   [Equations] is a plugin for Coq that offers a powerful support
   for writing functions by dependent pattern matching, possibly using
   well-founded recursion and obligations.
@@ -26,7 +26,7 @@ Arguments to_fill {_}.
   pattern matching.
 
 
-  *** Table of content:
+  *** Table of content
 
   - 1. Basic definitions and reasoning
     - 1.1 Defining functions by dependent pattern matching
@@ -34,9 +34,9 @@ Arguments to_fill {_}.
   - 2. [With] clauses
   - 3. [Where] clauses
 
-  *** Prerequisites:
+  *** Prerequisites
 
-  Needed :
+  Needed:
   - We assume known basic knowledge of Coq, of and defining functions by recursion
 
   Installation:
@@ -70,7 +70,7 @@ Arguments nil {_}.
 Arguments cons {_} _ _.
 
 (** To write a function [f : list A -> B] on lists or another a basic
-      inductive type, it suffices to write :
+      inductive type, it suffices to write:
     - Equation at the beginning of you function rather than Fixpoint
     - For each constructor [cst x1 ... xn] like [cons a l], specify how [f]
       computes on it by writing [f (cst x1 ... xn) := t] where [t] may
@@ -78,7 +78,7 @@ Arguments cons {_} _ _.
     - Separate the different cases by semi-colon "[;]"
     - As usual finish you definition by a dot "[.]"
 
-  For instance, we can define the function [tail], [length] and [map] by :
+  For instance, we can define the function [tail], [length] and [app] by:
 *)
 
 Equations tail {A} (l : list A) : list A :=
@@ -97,16 +97,16 @@ Infix "++" := app (right associativity, at level 60).
 
 
 (** [Equations] is compatible with usual facilities provided by Coq to write
-    terms :
+    terms:
     - It is compatible with implicit arguments that as usual do not need to
       be written provided it can be inferred, for instance, above, we wrote
-      [map f nil] rather than [map f (nil A)] as [A] was declared as an
+      [app nil l'] rather than [app (nil A) l'] as [A] was declared as an
       implicit argument of [nil].
     - We can use the underscores "_" for terms that we do not use, terms
       that Coq can infer on its own, but also to describe what to do in all
       remaining cases of our pattern matching.
       As [list] only two has constructors to it is not really useful here,
-      but we can still see it works by defining a constant function :
+      but we can still see it works by defining a constant function:
 *)
 
 Equations cst_b {A B} (b : B) (l : list A) : B :=
@@ -116,7 +116,7 @@ cst_b b (_) := b.
       side of :=) or in the bodies of the function (on the right-hand side
       of :=). This provides an easy and very visual way to define functions.
       For instance, with the usual notations for lists, we can redefine
-      [length] and [map] as :
+      [length] and [app] as:
 *)
 
 Notation "[]" := nil.
@@ -131,8 +131,26 @@ Equations app' {A} (l l' : list A) : list A :=
 app' []     l' := l';
 app' (a::l) l' := a :: (app' l l').
 
+(** For the users that would prefer it, there is also an alternative syntax
+    closer to the [Fixpoint] one.
+    With this syntax, we have to start each clause with "[|]" and separate the
+    different patterns in a clause by "[,]", but we no longer have to repeat
+    the name of the functions nor to put parenthesis or finish a line by "[;]".
 
-(** [Equations] enables us to pattern match on several different
+    With this syntax, we can rewrite [length] and [app] as:
+  *)
+
+Equations length'' {A} (l : list A) : nat :=
+  | []     := 0
+  | (a::l) := S (length'' l).
+
+Equations app'' {A} (l l' : list A) : list A :=
+  | []    , l' := l'
+  | (a::l), l' := a :: (app'' l l').
+
+(** In this tutorial, we will keep to the first syntax but both are acceptable.
+
+    [Equations] enables us to pattern match on several different
     variables at the same time, for instance, to define a function [nth_option]
     getting the nth-element of a list and returning [None] otherwise.
 *)
@@ -165,7 +183,7 @@ Proof.
   autorewrite with nth_option'.
 Abort.
 
-(** As exercices, you can try to define :
+(** As exercices, you can try to define:
     - A function [map f l] that applies [f] pointwise, on [ [a, ... ,a] ] it
       returns [ [f a1, ... , f an] ]
     - A function [head_option] that returns the head of a list and [None] otherwise
@@ -174,7 +192,8 @@ Abort.
 *)
 
 Equations map {A B} (f : A -> B) (l : list A) : list B :=
-map f _ := to_fill.
+map f nil := nil ;
+map f (a::l) := (f a)::(map f l).
 
 Equations head_option {A} (l : list A) : option A :=
 head_option _ := to_fill.
@@ -182,6 +201,14 @@ head_option _ := to_fill.
 Equations fold_right {A B} (f : A -> B -> B) (b : B) (l : list A) : B :=
 fold_right f b _ := to_fill.
 
+(* You can uncomment the following tests to try your functions *)
+(*
+Succeed Example testing : map (Nat.add 1) (1::2::3::4::[]) = (2::3::4::5::[])
+  := eq_refl.
+Succeed Example testing : @head_option nat [] = None := eq_refl.
+Succeed Example testing : head_option (1::2::3::[]) = Some 1 := eq_refl.
+Succeed Example testing : fold_right Nat.mul 1 (1::2::3::4::[]) = 24 := eq_refl.
+*)
 
 
 (** ** 1.2 Reasoning with Equations  *)
@@ -292,7 +319,7 @@ Abort.
 
     As an example, let's prove [app_nil], [app_assoc], and [nth_eq] for
     which we can already see the advantages over trying to reproduce the
-    pattern matching by hand :
+    pattern matching by hand:
 *)
 
 Lemma app_nil {A} (l : list A) : l ++ [] = l.
@@ -319,7 +346,7 @@ Proof.
   - apply H.
 Abort.
 
-(** By default, the tactic [autorewrite with f] only simplify a term by the
+(** By default, the tactic [autorewrite with f] only simplifies a term by the
     equations defining [f], like [[] ++ l = l] for [app].
     Yet, in practice, it often happens that there are more equations
     that we have proven that we would like to automatically simplify by
@@ -328,7 +355,7 @@ Abort.
     by [app_nil : l + [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
     It is possible to extend [autorewrite] to make it automatic by adding
     lemma to the database associated to [f].
-    This can be done by the syntax :
+    This can be done by the syntax:
 
       [ #[local] Hint Rewrite @name_lemma : name_function. ]
 
@@ -337,7 +364,7 @@ Abort.
     to become non terminating if one adds the right lemma.
 
     To see how it can be useful, let's define a tail-recursive version of
-    list reversal and prove it equal the usual one :
+    list reversal and prove it equal the usual one:
 *)
 
 Equations rev {A} (l : list A) : list A :=
@@ -387,8 +414,8 @@ Abort.
 
     Linking [simpl] with [funelim] like [funelim sth ; simp f1 ... fn] then
     enables us to simplify all the goals and at the same to automatically
-    prove uninterresting ones.
-    As examples, let's reprove [nth_eq] and [rev_rev_acc] :
+    prove uninteresting ones.
+    As examples, let's prove again [nth_eq] and [rev_rev_acc]:
 *)
 
 Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
@@ -416,7 +443,10 @@ Lemma nth_overflow {A} (n : nat) (l : list A) : length l <= n -> nth_option n l 
 Proof.
 Admitted.
 
-(* You will need to use the lemma [Arith_prebase.lt_S_n] *)
+(* You will need to use the lemma [Arith_prebase.lt_S_n]
+  HINT : [funelim] must be applied to the parameters you are doing the induction on.
+         Here, it is [n] and [l], and not [n] and [l++l'].
+*)
 Lemma app_nth1 {A} (n : nat) (l l' : list A) :
       n < length l -> nth_option n (l++l') = nth_option n l.
 Proof.
@@ -440,8 +470,8 @@ Admitted.
 
 (** ** 1.2 With clauses
 
-    The structure of real programs is richer than a simple case tree on the
-    original arguments in general.
+    The structure of real programs is generally richer than a simple case tree on the
+    original arguments.
     In the course of a computation, we might want to compute or scrutinize
     intermediate results (e.g. coming from function calls) to produce an answer.
     In terms of dependent pattern matching, this literally means adding a new
@@ -451,7 +481,7 @@ Admitted.
 
     [With] clause are available in [Equations] with the following syntax
     where [b] is the term we wish to inspect, and [p1 ... pk] the patterns we
-    match [b] to :
+    match [b] to:
 
     [[
       f (cxt x1 ... xn) with b => {
@@ -465,7 +495,7 @@ Admitted.
     predicate [p].
     In the case [cons a l], the [with] clause enables us to compute
     the intermediate value [p a] and to check whether it is [true] or [false],
-    and hence if [a] verify the predicate [p] and should be kept or not :
+    and hence if [a] verify the predicate [p] and should be kept or not:
 *)
 
 Equations filter {A} (l : list A) (p : A -> bool) : list A :=
@@ -475,17 +505,11 @@ filter (cons a l) p with p a => {
   filter (cons a l) p false := filter l p }.
 
 
-(** This syntax is a bit heavy, to avoid repeating the same patterns in
-    multiple clauses and focus on the patterns we can use a more compact
-    syntax.
-    Similarly to the [Fixpoint] syntax, by starting each clause with "[|]" and
-    separating the list of patterns by "[,]", we do not need to repeat the
-    name of the functions, put parenthesis or finish a line by "[;]".
-    Moreover, in a [with] clause, we only need to specify the patterns
-    introduced by the [with] clause.
-
-    This enables to rewrite the [with] clause of the function filter
-    much more concisely :
+(** This syntax is a bit heavy. To avoid repeating the full clause
+    [filter (cons a l) p] and to focus on the [with] pattern, we can use the
+    [Fixpoint] like syntax in the with clause discussed in section 1.1.
+    This enables to rewrite the [with] clause of the function [filter]
+    much more concisely:
 *)
 
 Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
@@ -494,17 +518,7 @@ filter' (a :: l) p with p a => {
   | true  => a :: filter' l p
   | false => filter' l p }.
 
-(** If you wish, it is also possible to use this syntax for the main body
-    of you functions as below:
-*)
-
-Equations filter'' {A} (l : list A) (p : A -> bool) : list A :=
-  | [], p => []
-  | a :: l, p with p a => {
-    | true  => a :: filter'' l p
-    | false => filter'' l p }.
-
-(** To show that [filter] is well-behaved we can define a predicate [In] and
+(** To show that [filter] is well-behaved, we can define a predicate [In] and
     check that if an element is in the list and verifies the predicate,
     then it is in the filtered list.
 *)
@@ -514,10 +528,10 @@ In x [] => False ;
 In x (a::l) => (x = a) \/ In x l.
 
 (** For function defined using [with] clauses, [funelim] does the usual
-    disjunction of cases for us, and additionally destruct the pattern
+    disjunction of cases for us, and additionally destructs the pattern
     associated to the |with] clause and remembers it.
     In the case of [filter], it means additionally destructing [p a] and
-    remembering  whether [p a = true] or [p a = false].
+    remembering whether [p a = true] or [p a = false].
 
     For regular patterns, simplifying [filter] behaves as usual.
     For the [with] clause, simplifying [filter] makes a subclause
@@ -539,7 +553,7 @@ Proof.
 Qed.
 
 (** [With] clauses can also be useful to inspect a recursive call.
-    For instance, with clause enables us to define a particularly concise
+    For instance, [with] clause enables us to write a particularly concise
     definition of the [unzip] function:
 *)
 
@@ -551,7 +565,7 @@ unzip ((a,b)::l) with unzip l => {
 
 (** They can also be useful to discard impossible branches.
     For instance, rather than returning an option type, we can define a
-    [head] function by requiring that its input is different than the
+    [head] function by requiring for the input to be different than the
     empty list.
     In the [nil] case, we can then destruct [pf eq_refl : False] which
     as no constructors to define our function.
@@ -561,20 +575,13 @@ Equations head {A} (l : list A) (pf : l <> nil) : A :=
 head [] pf with (pf eq_refl) := { };
 head (a::l) _ := a.
 
-(** As exercices, you can try to :
-    - Define a function [find_dictionary] that given a key and an
-      equality test, return the first element associated to the key and
-      [None] otherwise
+(** As exercices, you can try to:
     - Prove that both head functions are equal up to [Some]
-    - Prove that a filtered list is small than the original one
+    - Prove that a filtered list has a smaller length than the original one
+    - Define a function [find_dictionary] that given a key and an
+      equality test, returns the first element associated to the key and
+      [None] otherwise
 *)
-
-Equations find_dictionary {A B} (eq : A -> A -> bool) (key : A)
-          (l : list (A * B)) : option B :=
-find_dictionary eq key [] := to_fill;
-find_dictionary eq key _ with to_fill => {
-  | _ := to_fill
-}.
 
 Definition head_head {A} (l : list A) (pf : l <> nil)
            : Some (head l pf) = head_option l.
@@ -587,6 +594,20 @@ Definition filter_length {A} (l : list A) (p : A -> bool)
 Proof.
 Admitted.
 
+Equations find_dictionary {A B} (eq : A -> A -> bool) (key : A)
+          (l : list (A * B)) : option B :=
+find_dictionary eq key [] := to_fill;
+find_dictionary eq key _ with to_fill => {
+  | _ := to_fill
+}.
+
+(* You can uncomment the following tests to try your function *)
+(* Definition example_dictionnary :=
+  (3,true::true::[]) :: (0,[]) :: (2,true::false::[]) :: (1,true::[]) :: [].
+Succeed Example testing :
+  find_dictionary Nat.eqb 2 example_dictionnary = Some (true::false::[]) := eq_refl.
+Succeed Example testing :
+  find_dictionary Nat.eqb 4 example_dictionnary = None := eq_refl. *)
 
 
 
@@ -645,7 +666,7 @@ Abort.
     - We can automatically deal with [app_nil] and [app_assoc] by adding
       them to simplification done by [autorewrite] as done in 1.1.2
     - We can combine that with a proof search using [simp]
-    This enables to rewrite the proof to :
+    This enables to rewrite the proof to:
 *)
 
 Lemma rev_acc_rev {A} (l : list A) : rev_acc' l = rev l.
