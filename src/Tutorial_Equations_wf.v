@@ -5,7 +5,7 @@ Arguments to_fill {_}.
 
 (** * Well-founded Recursion using Equations
 
-  *** Summary:
+  *** Summary
 
   [Equations] is a plugin for %\cite{Coq}% that offers a powerful support
   for writing functions by dependent pattern matching.
@@ -34,7 +34,7 @@ Arguments to_fill {_}.
     In section 2.3, we explain how to adapt locally the tactic trying to
     solve obligations to deal with such goals.
 
-  *** Table of content:
+  *** Table of content
 
   - 1. Defining and reasoning using well-founded recursion
     - 1.1 Introduction to well-founded recursion
@@ -45,7 +45,7 @@ Arguments to_fill {_}.
     - 2.2 The inspect method
     - 2.3 Personalising the tactic proving obligations
 
-  *** Prerequisites:
+  *** Prerequisites
 
   Needed:
   - We assume known basic knowledge of Coq, of and defining functions by recursion
@@ -84,7 +84,10 @@ Import ListNotations.
     trivial size argument and some mathematical reasoning, that Coq syntactic
     guard fails to see as such on its own.
 
-    For instance, consider the function [last] that returns the last
+
+    *** The syntactic guard condition is limited
+
+    As a first example, consider the function [last] that returns the last
     element of a list if there is one and None otherwise.
     To return the last element, we must distinguish if a list has
     zero, one, or more than 2 elements leading to nested matching
@@ -94,9 +97,9 @@ Import ListNotations.
     and only recall [l] as a smaller subterm.
 *)
 
-Fail Equations last {A} (l : list A) {struct l} : option (list A)   :=
+Fail Equations last {A} (l : list A) : option A   :=
 last [] := None;
-last (a::nil) := Some [a];
+last (a::nil) := Some a;
 last (a::(a'::l)) := last (a'::l).
 
 (** For an other example consider the definition of the Ackerman function.
@@ -114,36 +117,109 @@ ack 0 n := S n;
 ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
-(** It can also happen that the algorithm applies a function to
+(** The guard condition being purely syntactic, it turns out that by playing
+    with the syntax, it is possible to get small variant of the functions
+    above accepted by Coq using [Fixpoint] definitions.
+    Yet, playing with syntax is not a viable option as soon as functions and
+    datastructures complexify.
+    We would like to be able this kind of definition as though.
+
+    Moreover, there are functions that can not be accepted even by twisting
+    the syntax as the recursive call are not performed on the recursive arguments.
+
+    For instance, it can happen that the algorithm applies a function to
     one of the recursive argument preventing the syntactic guard condition
     from checking that it is still indeed smaller.
-    For instance, consider bellows the function [nubBy] that given an equality
+    Consider, bellow, the function [nubBy] that given an equality
     test recursively filters out the duplicates of a list.
-    We can prove that [filter] do not increase the size of a list,
-    and hence that the recursive call on [filter (fun y => negb (eq x y)) xs]
-    is indeed performed on a smaller instance, and so that nubBy is terminating.
-    Yet, without surprise, it can not be checked automatically using Coq's
+    The recursive call is not performed on the recursive argument [l] but
+    on the list [filter (fun y => negb (eq x y)) l].
+    We can prove that [filter] do not increase the size of a list, and hence
+    that the recursive call is indeed performed on a smaller instance, and
+    that nubBy is terminating.
+    But, without surprise, it can not be checked automatically using Coq's
     syntactic guard as it involves mathematical reasoning on [filter].
 *)
 
 Fail Equations nubBy {A} (eq : A -> A -> bool) (l : list A) : list A :=
 nubBy eq []        => [];
-nubBy eq (x :: xs) => x :: nubBy eq (filter (fun y => negb (eq x y)) xs).
+nubBy eq (a :: l) => a :: nubBy eq (filter (fun y => negb (eq x y)) l).
 
-
-(** TEXT ON WELL-FOUNDED REC
-
-    This functions can still be accepted using well-founded recursion,
-    that is by directly providing a size measure that is known to be
-    decreasing and terminating like <lex, and using it as the decreasing
-    argument of our function.
-
-    This is a very useful technical but it often tedious to apply.
-    Consequently, Equations provide a built-in mechanism to help us
-    write functions by well-founded recursion.
+(** Furthermore, opposite to functions like [ack] or [nubBy], some recursive
+    functions are simply not naturally defined by structural recursion.
+    A prime example is the Euclidean algorithm computing the gcd of
+    [x] and [y] assuming that [x > y].
+    It performs recursion on [x mod y] which is not a function of
+    any recursively smaller arguments, as [gcd] do not match any inputs.
+    It is well-founded and terminating for [lt], as we have tested
+    that [y > 0] and that in this case we can prove that [x mod y < y].
+    Consequently, there is no hope for a syntactic guard to accept [gcd] as
+    its definition fully relies on theoretic reason to ensure termination.
 *)
 
+Fail Equations gcd (x y : nat) : nat :=
+gcd x y with Nat.eq_dec y 0 => {
+  | left _ => x
+  | right _ => gcd y (x mod y)
+}.
 
+(** *** Well-founded recursion
+
+    It would be limitating if all this kind of functions could not be defined.
+    Fortunately, they can be using well-founded recursion.
+
+    Given a well-founded relation [R : A -> A -> Type], defining a function
+    [f] by well-founded on [a : A] basically consists in defining [f] assuming that
+    [f] is defined for all [a'] smaller than [a], that is such that [R a a'].
+    When particularise to natural numbers and [<], this concept is sometimes
+    known as "strong recursion / induction": when defining [f n] one asummes
+    that [f] is defined for all smaller natural numbers [n' < n].
+
+    There are several methods to define functions by well-founded recursion using Coq.
+    They all have there pros and cons, but as a general rules defining functions
+    and reasonning using well-founded recursion can be tedious.
+
+    For instance, the [Fix] construction of the standard library, that is a
+    type theoretic translation of the concept of well-founded recursion:
+
+    [[
+      Fix : ∀ [A : Type] [R : A -> A -> Prop], well_founded R ->
+            ∀ P : A -> Type, (∀ x : A, (∀ y : A, R y x -> P y) -> P x) ->
+            ∀ x : A, P x
+    ]]
+
+    Defining a function [gcd] directly with [Fix] as below has several disadvantages.
+    The function is much less transparent than a usual definition by [Fixpoint]
+    as:
+    - there is an explicit fixpoint combinator [Fix] in the definition
+    - it forced us curryfication and the order of the arguments has changed
+    - there is no explicit proof appearing in the definition of the function
+      as we must proof that recusive call are indeed smaller, here through
+      the lemma [gcd_oblig]
+
+    It also makes it harder to reason about as the recursion scheme is no
+    longer trivial.
+    Moreover, as we had to use curryfication in our definition, we may need
+    the axiom of function extentionality to reason about [gcd_Fix].
+
+*)
+
+Lemma gcd_oblig: forall (a b: nat) (NE: b <> 0), lt (a mod b) b.
+Proof.
+Admitted.
+
+Definition gcd_Fix (x y : nat) : nat :=
+  Fix lt_wf (fun _ => nat ->  nat)
+      (fun (b: nat) (gcd_Fix: forall b', b' < b -> nat -> nat) (a: nat) =>
+          match Nat.eq_dec b 0 with
+          | left EQ => a
+          | right NE => gcd_Fix (a mod b) (gcd_oblig a b NE) b
+          end)
+      y x.
+
+(** Consequently, Equations provide a built-in mechanism to help us
+    write functions by well-founded recursion.
+*)
 
 
 (** ** 1.2 Basic definitions and reasoning
