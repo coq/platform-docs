@@ -1,6 +1,5 @@
 # platform-docs
 
-
 This project aims to create online compilation of short and interactive tutorials and how-to guides for Coq and the Coq Platform.
 
 Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or 
@@ -19,6 +18,36 @@ like "How to define functions by well-founded recursion and reason about them".
 > different kind of documentations.
 > In particular the [difference between tutorials and how-to](https://diataxis.fr/tutorials-how-to/)
 > which are often mistaken.
+
+### Why it is important
+- Having an easy to access documentation, accessible through a nice centralized
+  online interface is of utmost importance to engage new users, and keep current
+  users. 
+  We can not expect users to have to dig on their own through the reference
+  manual, books, or github repositories to learn how to use a particular feature
+  that appeals to them.
+  Most particularly as these sources may not contain the basic answers they are
+  looking for due to their nature. 
+- Not having such a documentation prevents people from actually discovering and
+  learning by themselves new amazing features, as well as the richness of our
+  ecosystem.
+  Many amazing features are still currently under-documented, and the existing
+  documentation is often scattered out. 
+  A symptom of that is the trouble that students are currently facing to find
+  answers or discover new functionalities by themselves.
+- Writing documentation forces us to do stuff right, and consequently to 
+  understand better features, and their basic applications.
+  We hope that by writing the documentation, we will clarify the use of many
+  features, and potentially discover bugs.
+  Actually, writing tutorials [for Equations](https://github.com/Zimmi48/platform-docs/pull/1#issuecomment-2098810034)
+  as already revealed that one of the main features had an unwanted behavior and a bug.
+- Most math users are currently unaware of the extent of what has been
+  formalised and is available in Coq.
+  There are many libraries, and it is not easy to know which library to use, or
+  to know on which axioms they rely or their compatibilities. 
+  This is obviously not just a documentation issue, but having a clearer
+  documentation of what we have and where would help.
+
 
 ### Advantages
 Such of a documentation is complementary to others kind of documentation like the reference manual, and has several advantages:
