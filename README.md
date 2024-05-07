@@ -1,5 +1,6 @@
 # platform-docs
 
+## A Compilation of Short Interactive Tutorials and How-To Guides for Coq
 This project aims to create online compilation of short and interactive tutorials and how-to guides for Coq and the Coq Platform.
 
 Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or 
@@ -77,7 +78,7 @@ but it should already give an idea of the potential of this project.
 
 
 
-# How to contribute to the documentation
+## How to contribute to the documentation
 
 There is a lot of work to be done before having a comprehensive documentation for Coq and its Platform, and we welcome contributions.
 
@@ -86,6 +87,10 @@ There are different possible way to contribute depending on your time and techni
 - There is need for regular reviewers to test tutorials, both general ones and expert ones
 - There is a lot of tutorials and how-to to write, both about Coq and plugins in its platform
 - There is technical work to be done on the (interactive) web interface's side
+
+We detail below the different ways to contribute. 
+In all case, if you wish to contribute, please check the 
+[Contribution Guidelines](https://github.com/Zimmi48/platform-docs/blob/main/README.md).
 
 ### Writing Tutorials and How-to
 If you would like to write a tutorial 

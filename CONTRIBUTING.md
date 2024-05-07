@@ -1,4 +1,7 @@
-# General Contribution guidelines
+
+# Contribution Guidelines
+
+## General Contribution guidelines
 
 ### Format
 For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
@@ -32,7 +35,6 @@ It requires to fill very basic information:
 
 
 
-# Content Specific Guidelines
 ## Writing Tutorials
 Tutorials are meant to introduce and explain the different aspects of a functionality, pedagogically, step by step with (simplified) examples.
 The goal is to provide user with a action-oriented documentation that user can use to learn about a feature they don't know,
