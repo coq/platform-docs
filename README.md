@@ -89,7 +89,7 @@ There are different possible way to contribute depending on your time and techni
 - There is technical work to be done on the (interactive) web interface's side
 
 We detail below the different ways to contribute. 
-In all case, if you wish to contribute, please check the 
+In all cases, if you wish to contribute, please check the 
 [Contribution Guidelines](https://github.com/Zimmi48/platform-docs/blob/main/README.md).
 
 ### Writing Tutorials and How-to
