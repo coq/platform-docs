@@ -92,6 +92,6 @@ You can do so by asking them to prove basic properties like `map_app` above, or 
 ```
 
 > [!CAUTION]
-> Being able to complete the exercices should not be necessary to be able
+> Being able to complete the exercises should not be necessary to be able
 > to complete and understand the rest of the tutorial.
 
