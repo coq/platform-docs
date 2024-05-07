@@ -23,15 +23,14 @@ Arguments to_fill {_}.
 
   In section 2, we discuss different techniques that can be useful when
   attempting to define functions by well-founded recursion:
-  - In section 2.1, we explain TODO.
   - When matching on terms, it can happen that we loose information relevant
     to termination.
-    In Section 2.2, we show an example of that and discuss the inspect
+    In Section 2.1, we show an example of that and discuss the inspect
     method as a possible solution to this problem.
   - When defining functions by well-founded recursion, it often happens
     that we are left with easy theory specific obligations to solve,
     for instance basic arithmetic on lists.
-    In section 2.3, we explain how to adapt locally the tactic trying to
+    In section 2.2, we explain how to adapt locally the tactic trying to
     solve obligations to deal with such goals.
 
   *** Table of content
@@ -41,9 +40,8 @@ Arguments to_fill {_}.
     - 1.2 Basic definitions and reasoning
     - 1.3 Well-founded recursion and Obligations
   - 2. Different methods to work with well-founded recursion
-    - 2.1 Subterm relations for indexed inductive types
-    - 2.2 The inspect method
-    - 2.3 Personalising the tactic proving obligations
+    - 2.1 The inspect method
+    - 2.2 Personalising the tactic proving obligations
 
   *** Prerequisites
 
@@ -525,46 +523,9 @@ Proof.
   - rewrite e. rewrite Nat.mul_0_r. cbn. reflexivity.
 Admitted.
 
-(** ** 2. Different methods to work with well-founded recursion *)
+(** ** 2. Different methods to work with well-founded recursion
 
-(** ** 2.1 Subterm relations for indexed inductive types *)
-
-(** ISSUES: FIND AN EXAMPLE*)
-Inductive vec A : nat -> Type :=
-  | vnil  : vec A 0
-  | vcons : A -> forall (n : nat), vec A n -> vec A (S n).
-
-Arguments vnil {_}.
-Arguments vcons {_} _ {_} _.
-
-Derive Signature NoConfusion NoConfusionHom for vec.
-Derive Subterm for vec.
-
-Equations vmap {A B n} (f : A -> B) (v : vec A n) : vec B n :=
-vmap f vnil := vnil ;
-vmap f (vcons a v) := vcons (f a) (vmap f v).
-
-Check well_founded_vec_subterm : forall A, WellFounded (vec_subterm A).
-
-
-(* ISSUE WORK WITHOUT *)
-Equations? unzip {A B n} (v : vec (A * B) n) : vec A n * vec B n :=
-(* by wf (signature_pack v) (@t_subterm (A * B)) := *)
-unzip vnil := (vnil, vnil) ;
-unzip (vcons (pair x y) v) with unzip v := {
-| pair xs ys := (vcons x xs, vcons y ys) }.
-
-(** We can use the packed relation to do well-founded recursion on the vector.
-    Note that we do a recursive call on a subterm of type [vector A n] which
-    must be shown smaller than a [vector A (S n)]. They are actually compared
-    at the packed type [{ n : nat & vector A n}]. The default obligation
-    tactic defined in [Equations.Init] includes a proof-search
-    for [subterm] proofs which can resolve the recursive call obligation
-    automatically in this case. *)
-
-
-
-(** ** 2.2 The inspect method
+    ** 2.1 The inspect method
 
     When defining a functions, it can happen that we loose information
     relevant for termination when matching a value, and that we then get
@@ -643,7 +604,7 @@ Section Inspect.
 End Inspect.
 
 
-(** ** 2.3 Personalising the tactic proving obligations
+(** ** 2.2 Personalising the tactic proving obligations
 
     When working, it is common to be dealing with a particular class of
     functions that shares a common theory, e.g, they involves basic
