@@ -93,7 +93,6 @@ In all cases, if you wish to contribute, please check the
 [Contribution Guidelines](https://github.com/Zimmi48/platform-docs/blob/main/README.md).
 
 ### Writing Tutorials and How-tos
-If you would like to write a tutorial 
 If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated <span style="color:red"><u>Zulip stream</u></span>
 to get feedback on your idea, through the writing and to reach others that may be interested.
 If there is a stream dedicated to the topic or package that you are covering in your tutorial, you can also create a discussion there.
