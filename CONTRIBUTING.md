@@ -71,7 +71,8 @@ Tutorials are meant to introduce and explain the different aspects of a function
 The goal is to provide user with an action-oriented documentation that user can use to learn about a feature they don't know,
 and a (non-exhaustive and opinionated) material that they can come back to when they are stuck trying to use a feature.
 As examples, we have been working on new tutorials for the package Equations. 
-The first one is complete and can be checked out [here](https://github.com/Zimmi48/platform-docs/pull/1).
+The first one is complete and can be checked out [here](https://github.com/Zimmi48/platform-docs/blob/main/src/Tutorial_Equations_basics.v).
+
 
 ### Horizontality
 
