@@ -7,14 +7,14 @@ There is a lot of work to be done before having a comprehensive documentation fo
 
 There are different possible ways to contribute depending on your time and technical skills:
 
-- As user, do not hesitate to gives us feedback on the project on the dedicated Zulip stream
+- As user, do not hesitate to gives us feedback on the project on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 - There is need for regular reviewers to test tutorials, both general ones and expert ones
 - There is a lot of tutorials and how-tos to write, both about Coq and plugins in its Platform
 - There is technical work to be done on the (interactive) web interface side
 
 
 ### Writing Tutorials and How-tos
-If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated <span style="color:red"><u>Zulip stream</u></span>
+If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 to get feedback on your idea, through the writing and to reach others that may be interested.
 If there is a stream dedicated to the topic or package that you are covering in your tutorial, you can also create a discussion there.
 For instance, if you are working on tutorials for the package
@@ -25,7 +25,7 @@ and get feedback on it while you (and others) progress on it.
 
 > [!WARNING]
 > Before starting to work on a tutorial or a how-to and invest time into it, check if it is not already existing,
-> or if someone hasn't already started working on it, either by creating a discussion on the Zulip stream or a draft pull request about it.
+> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
 > [!WARNING]
 > Lots of stuff have already be written about Coq, it can make sense to reuse some of the content. 
