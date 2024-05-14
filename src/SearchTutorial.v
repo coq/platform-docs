@@ -73,10 +73,12 @@ Search (~ _).
 Search "*".
 
 (** Now our previous searches were too vague to be very useful. One usually
-    combines search items in order to be more precise. *)
+    combines search items in order to be more precise.
+    For instance, let's search for lemmas about distributivity of multiplication over addition.
+*)
 
-(** Search all lemmas where the type [nat] and the operators (_ * _) and
-   (_ + _) occur. *)
+(** To do so, we can first search all lemmas where the type [nat] and the
+    operators (_ * _) and (_ + _) occur. *)
 Search nat (_ + _) (_ * _). (* still too much *)
 
 (** Since our current scope is [nat], the first search item is useless.
@@ -115,7 +117,7 @@ Search (?op ?a ?b = ?op ?b ?a) -"orb".
     [bool_scope] is not currently opened): *)
 Search (?op ?a ?b = ?op ?b ?a) -(_ || _)%bool.
 
-(** ** Filtering on hypotheses (parameters) or conclusions (return type) *)
+(** *** 1.3 Filtering on hypotheses (parameters) or conclusions (return type) *)
 
 (** It often happens that we [Search] in the middle of a proof for a lemma we
     suspect will apply to the current goal. In that case, we can use
@@ -218,8 +220,7 @@ Search [Nat.add | Nat.mul] ["comm" | "assoc"] [is:Lemma | is:Theorem].
 (** *** 2.3 Searching inside or outside a specific module *)
 
 (** Finally it is possible to further restrict the [Search] results inside or
-    outside a specific [Module] (see the [module tutorial](TODO.todo) for
-    more information about modules. *)
+    outside a specific [Module]. *)
 
 Search concl:"+" concl:"*" headconcl:(_ < _) inside Nat.
 
