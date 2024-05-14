@@ -48,7 +48,7 @@ Arguments to_fill {_}.
   Needed:
   - We assume known basic knowledge of Coq, of and defining functions by recursion
   - We assume basic knowledge of the plugin Equations, e.g, as presented
-    in the tutorial Equations : Basics
+    in the tutorial Equations: Basics
 
   Not needed:
   - This tutorial discuss well-founded recursion but no prior knowledge
@@ -101,11 +101,11 @@ last (a::nil) := Some a;
 last (a::(a'::l)) := last (a'::l).
 
 (** For an other example consider the definition of the Ackerman function.
-    This function is clearly terminating using the lexicographic order :
+    This function is clearly terminating using the lexicographic order:
     [(n,m) <lex (k,l) iff n < m or n = m and k < l].
     Yet, Coq syntactic guard can not see it as terminating as [n] is not
     universally quantified in this definition.
-    Consequently, for checking termination Coq is only aware of the smaller
+    Consequently, for checking termination, Coq is only aware of the smaller
     recursive call [ack m (S n)] and [ack (S m) n] and not of the one of
     actually used [ack m (ack (S m) n)].
 *)
@@ -117,10 +117,10 @@ ack (S m) (S n) := ack m (ack (S m) n).
 
 (** The guard condition being purely syntactic, it turns out that by playing
     with the syntax, it is possible to get small variant of the functions
-    above accepted by Coq using [Fixpoint] definitions.
+    above accepted by Coq.
     Yet, playing with syntax is not a viable option as soon as functions and
     datastructures complexify.
-    We would like to be able this kind of definition as though.
+    We would like to be able to define this kind of definition as though.
 
     Moreover, there are functions that can not be accepted even by twisting
     the syntax as the recursive call are not performed on the recursive arguments.
@@ -167,18 +167,18 @@ gcd x y with Nat.eq_dec y 0 => {
     Fortunately, they can be using well-founded recursion.
 
     Given a well-founded relation [R : A -> A -> Type], defining a function
-    [f] by well-founded on [a : A] basically consists in defining [f] assuming that
+    [f] by well-founded recursion on [a : A] basically consists in defining [f] assuming that
     [f] is defined for all [a'] smaller than [a], that is such that [R a a'].
     When particularise to natural numbers and [<], this concept is sometimes
     known as "strong recursion / induction": when defining [f n] one asummes
     that [f] is defined for all smaller natural numbers [n' < n].
 
     There are several methods to define functions by well-founded recursion using Coq.
-    They all have there pros and cons, but as a general rules defining functions
+    They all have their pros and cons, but as a general rules defining functions
     and reasonning using well-founded recursion can be tedious.
 
-    For instance, the [Fix] construction of the standard library, that is a
-    type theoretic translation of the concept of well-founded recursion:
+    For instance, consider the [Fix] construction of the standard library,
+    which is a direct type theoretic definition of the concept of well-founded recursion:
 
     [[
       Fix : ∀ [A : Type] [R : A -> A -> Prop], well_founded R ->
@@ -186,20 +186,7 @@ gcd x y with Nat.eq_dec y 0 => {
             ∀ x : A, P x
     ]]
 
-    Defining a function [gcd] directly with [Fix] as below has several disadvantages.
-    The function is much less transparent than a usual definition by [Fixpoint]
-    as:
-    - there is an explicit fixpoint combinator [Fix] in the definition
-    - it forced us curryfication and the order of the arguments has changed
-    - there is no explicit proof appearing in the definition of the function
-      as we must proof that recusive call are indeed smaller, here through
-      the lemma [gcd_oblig]
-
-    It also makes it harder to reason about as the recursion scheme is no
-    longer trivial.
-    Moreover, as we had to use curryfication in our definition, we may need
-    the axiom of function extentionality to reason about [gcd_Fix].
-
+    We can use it to define [gcd] as:
 *)
 
 Lemma gcd_oblig: forall (a b: nat) (NE: b <> 0), lt (a mod b) b.
@@ -215,33 +202,61 @@ Definition gcd_Fix (x y : nat) : nat :=
           end)
       y x.
 
-(** Consequently, Equations provide a built-in mechanism to help us
-    write functions by well-founded recursion.
+
+(** However, doing so has several disadvantages.
+    The function is much less transparent than a usual definition by [Fixpoint]
+    as:
+    - there is an explicit fixpoint combinator [Fix] in the definition
+    - it forced us to use curryfication and the order of the arguments has changed
+    - there is are explicit proof appearing in the definition of the function,
+      here through [gcd_oblig], as we must provide a proof that recusive call
+      are indeed smaller.
+    It can also make it harder to reason about as the recursion scheme is no
+    longer trivial.
+    Moreover, as we had to use curryfication in our definition, we may need
+    the axiom of function extentionality to reason about [gcd_Fix].
+
+    Consequently, Equations provide a built-in mechanism to help us
+    write functions and reason by well-founded recursion.
 *)
 
 
 (** ** 1.2 Basic definitions and reasoning
 
-    To define a function by well-founded recursion with Equations, one must
-    add the command [by wf x R] where [x] is the term decreasing,
-    and [R] the well-founded relation for which it decrease after the return type.
-    Equations will then automatically try to prove that the recursive call
-    are made on decreasing arguments according to the relation.
-    If it can not do it on its own it will generate a proof obligation,
-    intuitively a goal for the user to fill.
-    This enables to separate the proofs from the definition of the function
-    while dealing automatically with trivial cases.
+    To define a function by well-founded recursion with Equations, one must add
+    after the type of the function, the command [by wf x R] where [x] is the term
+    decreasing, and [R] the well-founded relation for which [x] decreases.
+
+    For instance, the function [last] terminates as the size of the list decrease
+    in each recursive call according to the usual well-founded strict order [<]
+    on [nat], which is named [lt] in Coq.
+    We hence, need to write:
+
+    [[
+    Equations last {A} (l : list A) : option A by wf (length l) lt   :=
+    ]]
+
+    Equations will then automatically:
+    - 1. Check for a proof that [R] is a well-founded in a type classes
+         specific to [Equations] logically named [WellFounded]
+    - 2. Try to prove that the recursive call are made on decreasing arguments,
+         and if it can not do it on its own, it will generate a proof obligation
+         i.e. intuitively a goal for the user to fill.
+
+    This enables to separate the proofs that the recursive call are smaller
+    from the definition of the function, making it easier to read while dealing
+    automatically with trivial cases.
 
     In this section, we focus on simple examples where no obligations are
-    left for the user to refer to section 1.3 for such examples.
+    left for the user to solve, and we refer to section 1.3 for more involved
+    examples with non trivial obligations.
 
-    Let's first consider the definition of [last].
-    The function [last] terminates as the size of the list decrease in each
-    recursive call according to the usual well-founded strict order [<] on [nat],
-    which is named [lt] in Coq.
-    Therefore, to define [last] by well-founded recursion, we must
-    add [wf (length l) lt] after typing.
-    Once added, we can check that last is now accepted.
+    Let's first consider the definition of [last] that we can define by
+    well-founded recursion by adding [by wf (length l) lt].
+    [Equations] will then creates one obligation per recursive call and
+    try to solve them.
+    In the case of [last], it creates the obligation [length (a'::l) < length (a::a'::l)]
+    which as we can check can be solved automatically.
 *)
 
 Equations last {A} (l : list A) : option A by wf (length l) lt   :=
@@ -249,8 +264,11 @@ last [] := None;
 last (a::nil) := Some a;
 last (a::(a'::l)) := last (a'::l).
 
-(** Thanks to functional elimination through [funelim], we can reason about
-    function defined by well-founded recursion without having to repeat
+(** Defining [last] by well-founded recursion is hence effortless and the
+    the definition is as legible as we would hope.
+
+    Moreover, thanks to functional elimination through [funelim], we can reason
+    about function defined by well-founded recursion without having to repeat
     the well-founded induction principle.
     For each recursive call, the tactic [funelim] will create a goal
     goal and an induction hypothesis where all the dependent terms have been
@@ -290,13 +308,13 @@ Proof.
   - apply H. assumption.
 Qed.
 
-(** Let's now consider the Ackerman function.
-    The ackerman function is decreasing according to the usual lexicographic
-    order on [nat * nat], [(<,<)] which is accessible as both [<] are.
-    To build the lexicographic order, we use a function predefine in
-    Equations' library [Equations.Prop.Subterm.lexprod].
-    As we can see, once again no obligations are generated as Coq can prove
-    on its own that [(m, (ack (S m) n)) <lex (S m, S n)] and
+(** Let's now consider the Ackerman function which is decreasing according to
+    the usual lexicographic order on [nat * nat], [(<,<)] which is accessible
+    as both [<] are.
+    You can define the lexicographic order and automatically derive a proof
+    it is well-founded using the function [Equations.Prop.Subterm.lexprod].
+    As we can see, with this order, once again no obligations are generated as
+    Coq can prove on its own that [(m, (ack (S m) n)) <lex (S m, S n)] and
     [(S m, n) < n].
 *)
 
@@ -305,13 +323,13 @@ ack 0 n := S n;
 ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
-Check ack_elim.
 
 (** ISSUES : TO SLOW TO WORK
 *)
 
 Definition ack1y {n} : ack 1 n = 2 + n.
 Proof.
+  Succeed timeout 3 (funelim (ack 1 n)).
   induction n; simp ack; auto.
   rewrite IHn. reflexivity.
   (* Restart. *)
@@ -321,14 +339,16 @@ Proof.
   - simp ack. rewrite H. reflexivity. *)
 Qed.
 
+(* Print ack_equation_1. *)
+
 (* ISSUES BUGS + SLOW *)
 Definition ack_incr {m n} : ack m n < ack m (n+1).
 Proof.
-  (* COMPLETELY BUGS *)
-  (* funelim (ack m n). *)
+  (* apply ack_elim.
+  - intro n'; simp ack. rewrite ack_equation_1 at 1. simp ack.
   apply ack_elim; intros.
   (* ISSUES *)
-  - cbn. simp ack.
+  - cbn. simp ack. *)
 Admitted.
 
 
@@ -391,8 +411,8 @@ Fail Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
     call is performed on a smaller instance.
     It is not surprising as our argument rests on the property that
     for any test [f : A -> bool], [length (filter f l) ≤ length l].
-    Property that is not trivial, and that Coq can not know to look for,
-    nor where to look for without any indications.
+    Property that is not trivial, and that Coq can not prove on its own,
+    nor look for on its own without any indications.
     Consequently, there is an obligation left to solve, and [nubBy] is not
     definied as long as we have not solve it.
 
@@ -445,13 +465,9 @@ Proof.
   - auto with arith.
 Defined.
 
-(** This is a powerful feature as compared to the [Fix] definition of section 1.1,
-    we do not have to prove before the definition as lemma that each recursive
-    call are performed on deacreasing  arguments.
-    More, the lemmas are not part of the definition of the function, making
-    the code easier to read.
-    Instead, we can just write our definition directly as we would like to,
-    before taking care of the non trivial goals.
+(** This is a powerful feature as compared to the [Fix] definition of section 1.1:
+    the code is perfectly legible, in particular the body of the function and
+    the proof are clearly separated.
 
     Though, note that [Equations?] triggers a warning when used on a definition
     that leaves no obligations unsolved.
@@ -460,18 +476,17 @@ Defined.
     Hence, when there is no obligation proof mode is open for nothing, and
     as to be closed by hand using [Qed] or [Defined] as it can be seen bellow.
     As it is easy to forget, a warning is raised.
-
-    In practice, if you wish to automatically test if obligations are
-    left to solve and unshelved them if so, you can start all your definitions
-    with [Equations?] and remove the [?] if the warning is set.
 *)
 
 Equations? foo (n : nat) : nat :=
 foo _ => 0.
 Qed.
 
+(** In practice, if you wish to automatically test if obligations are
+    left to solve and unshelved them if so, you can just start all your definitions
+    with [Equations?] and remove the [?] if the warning is triggered.
 
-(** Reasoning on functions defined by well-founded recursion with
+    Reasoning on functions defined by well-founded recursion with
     obligations is no different than when there is none.
     Using function elimination ([funelim]) we can prove our properties
     without having to redo the well-founded recursion.
@@ -515,7 +530,7 @@ gcd x y with Nat.eq_dec y 0 => {
   | right _ => gcd y (x mod y)
 }. Proof. now apply  Nat.mod_upper_bound. Qed.
 
-(* Propperties gcd ? *)
+(* Properties gcd ? *)
 
 Lemma mul_gcd (k x y : nat) : x > y -> gcd (k * x) (k * y) = k * (gcd x y).
 Proof.
@@ -528,7 +543,7 @@ Admitted.
     ** 2.1 The inspect method
 
     When defining a functions, it can happen that we loose information
-    relevant for termination when matching a value, and that we then get
+    relevant to termination when matching a value, and that we then get
     stuck trying to prove termination.
 
     In this section, we discuss such an example, and explain a solution to
@@ -609,25 +624,25 @@ End Inspect.
     When working, it is common to be dealing with a particular class of
     functions that shares a common theory, e.g, they involves basic
     arithmetic.
-    Yet, by default the tactic trying to prove obligations is not
+    Yet, without surprise, by default the tactic trying to prove obligations is not
     aware of the particular theory at hand, and it will fail to solve
     most of the obligations generated.
-    This is normal, it would be very inefficient if Coq were trying to solve
-    a goal using all lemma ever defined., or even all lemma featuring
+    This is normal, as it would be very inefficient if Coq were trying to solve
+    a goal using all lemma ever defined, or even all lemma featuring
     [+] in its definition.
     Therefore, it can be interesting to define a local custom strategy for
     solving obligations specific to our theory at hand.
 
-    In this section, we explain how to do so to for the [gcd] function,
+    In this section, we explain how to do so to for a [gcd] function,
     and show how function elimination then enables to prove a few properties
     efficiently.
 
-    TO EXPANSE
-    To define [gcd x y], we first check if [x] or [y] is [0], and if not
-    we check if they are equal.
-
+    We can define a [gcd] function that does not require the assumption that
+    [x > y] as below, by first checking if [x] or [y] is [0], and otherwise
+    compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
+    which is the greater.
     It is terminating as the sum [x + y] is decreasing for the usual
-    well-founded order on nat, accounted for by [wf (x + y) lt].
+    well-founded order on [nat], accounted for by [wf (x + y) lt].
 *)
 
 Equations? gcd (x y : nat) : nat by wf (x + y) lt :=
@@ -651,7 +666,7 @@ Abort.
 Show Obligation Tactic.
 
 (** The obligations generated are not complicated to prove but tedious,
-    and they can  actually be solved automatically via the arithmetic
+    and they can actually be solved automatically via the arithmetic
     solver [lia].
     Therefore, we would like to locally change the tactic solving the
     obligations to take into account arithmetic, and try lia.
@@ -691,7 +706,7 @@ gcd x y with gt_eq_gt_dec x y := {
 
 (** For further examples of how functional elimination works on well-founded
     recursion and is useful on complex definitions, we will now show a
-    few properties of [gcd]
+    few properties of [gcd].
 *)
 
 Lemma gcd_same x : gcd x x = x.
