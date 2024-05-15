@@ -28,7 +28,7 @@ and get feedback on it while you (and others) progress on it.
 > or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
 > [!WARNING]
-> Lots of stuff have already be written about Coq, it can make sense to reuse some of the content. 
+> Lots of stuff have already be written about Coq, it can make sense to reuse some of the content.
 > If you wish to do so, be careful that you are indeed allowed by the copyright owners or the content licenses.
 
 
@@ -37,10 +37,18 @@ and get feedback on it while you (and others) progress on it.
 ### Format
 For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
 It is not hard to learn but a bit limited.
-We plan to be compatible with a more standard and polyvalent format in the futur.
+We plan to be compatible with a more standard and polyvalent format in the future.
+
+For writing sections, please use the following conventions:
+```
+* Title
+** Section
+*** Subsection
+**** SubSubsection
+```
 
 ### Template to start your file
-To contribute, please start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
+To contribute, please start your file with the following [template](template.md).
 It requires to fill very basic information:
   - a title
   - a summary of the tutorial and its content
@@ -70,8 +78,8 @@ It requires to fill very basic information:
 Tutorials are meant to introduce and explain the different aspects of a functionality, pedagogically, step by step with (simplified) examples.
 The goal is to provide user with an action-oriented documentation that user can use to learn about a feature they don't know,
 and a (non-exhaustive and opinionated) material that they can come back to when they are stuck trying to use a feature.
-As examples, we have been working on new tutorials for the package Equations. 
-The first one is complete and can be checked out [here](https://github.com/Zimmi48/platform-docs/blob/main/src/Tutorial_Equations_basics.v).
+As examples, we have been working on new tutorials for the package Equations.
+The first one is complete and can be checked out [here](src/Tutorial_Equations_basics.v).
 
 
 ### Horizontality
@@ -82,23 +90,23 @@ Moreover, they do not have the purpose to be exhaustive like a reference
 manual, and do not have to discuss every single aspects of a feature.
 
 On the contrary, the various independent aspects of a feature should be split into several tutorials.
-As a general rule, if a tutorial is becoming too long or complicated to navigate, 
+As a general rule, if a tutorial is becoming too long or complicated to navigate,
 or if its structure is branching out, you may want to consider splitting it out.
 Moreover, tutorials can also be split in order to provide a more gradual introduction to a complicated feature.
 
-Doing so enables users to only have to read the basics to be able to start working, 
+Doing so enables users to only have to read the basics to be able to start working,
 and leaves them the possibility to learn new aspects modularly, according to their needs.
 It also makes the documentation easier to maintain and to navigate, and makes it easier to add new tutorials.
 
-When possible tutorials should try to be as self contained as possible, 
+When possible tutorials should try to be as self contained as possible,
 and should not hesitate to recall quickly a concept rather than referring to another tutorial.
-Doing so only takes a bit more time when writing a tutorial but saves a lot of times to a lot of users 
+Doing so only takes a bit more time when writing a tutorial but saves a lot of times to a lot of users
 that will not have to chase information in different other tutorials, tutorials which could in turn refer to other tutorials.
 It also eases maintenance as one does not need to worry about potential modifications to other tutorials.
 
-### Adding Exercices
-As tutorials are meant for studying, do not hesitate to add some exercices for the users to try, e.g. functions or properties to prove or finish.
-In general, we recommand to provide at least definitions prefilled with typing informations like:
+### Adding Exercises
+As tutorials are meant for studying, do not hesitate to add some exercises for the users to try, e.g. functions or properties to prove or finish.
+In general, we recommend to provide at least definitions prefilled with typing information like:
 
 ```
 Fixpoint map {A B} (f : A -> B) (l : list A) : list B := to_fill.

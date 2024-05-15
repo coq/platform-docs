@@ -105,7 +105,7 @@ Infix "++" := app (right associativity, at level 60).
     - We can use the underscores "_" for terms that we do not use, terms
       that Coq can infer on its own, but also to describe what to do in all
       remaining cases of our pattern matching.
-      As [list] only two has constructors to it is not really useful here,
+      As [list] only has two constructors to it is not very useful here,
       but we can still see it works by defining a constant function:
 *)
 
@@ -311,7 +311,7 @@ Abort.
     Consequently, [Equations] comes with a tactic [funelim] that automatically
     does an induction following the pattern matching used to define a
     function, there is no need to do it by hand.
-    Moreover, it does so directly with the good induction hypothesis, there
+    Moreover, it does so directly with the right induction hypothesis, there
     is no need to generalise the induction hypothesis as done by
     reverting [n] in the proof of [nth_eq] above.
     To use it, it suffices to write [funelim (name_function a1 ... an)]

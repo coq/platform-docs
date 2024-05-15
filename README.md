@@ -3,7 +3,7 @@
 
 This project aims to create an online compilation of short and interactive tutorials and how-to guides for Coq and the Coq Platform.
 
-Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or 
+Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or
 how-to guides demonstrating how to use the functionality, with practical examples.
 They should further be available online through an interactive interface, most likely using JSCoq.
 
@@ -14,7 +14,7 @@ In contrast, how-to guides are use-case-oriented and guides users through real l
 like "How to define functions by well-founded recursion and reason about them".
 
 > [!TIP]
-> To gain useful insights about what documentation should be, we recommand
+> To gain useful insights about what documentation should be, we recommend
 > checking out the website [diataxis](https://diataxis.fr/) that discusses the
 > different kind of documentations.
 > In particular the [difference between tutorials and how-to](https://diataxis.fr/tutorials-how-to/)
@@ -23,20 +23,20 @@ like "How to define functions by well-founded recursion and reason about them".
 ### Why it is important
 - Having an easy to access documentation, accessible through a nice centralized
   online interface is of utmost importance to engage new users, and keep current
-  users. 
+  users.
   We can not expect users to have to dig on their own through the reference
   manual, books, or github repositories to learn how to use a particular feature
   that appeals to them.
   Most particularly as these sources may not contain the basic answers they are
-  looking for due to their nature. 
+  looking for due to their nature.
 - Not having such a documentation prevents people from actually discovering and
   learning by themselves new amazing features, as well as the richness of our
   ecosystem.
   Many amazing features are still currently under-documented, and the existing
-  documentation is often scattered out. 
+  documentation is often scattered out.
   A symptom of that is the trouble that students are currently facing to find
   answers or discover new functionalities by themselves.
-- Writing documentation forces us to do stuff right, and consequently to 
+- Writing documentation forces us to do stuff right, and consequently to
   understand better features, and their basic applications.
   We hope that by writing the documentation, we will clarify the use of many
   features, and potentially discover bugs.
@@ -45,7 +45,7 @@ like "How to define functions by well-founded recursion and reason about them".
 - Most math users are currently unaware of the extent of what has been
   formalised and is available in Coq.
   There are many libraries, and it is not easy to know which library to use, or
-  to know on which axioms they rely or their compatibilities. 
+  to know on which axioms they rely or their compatibilities.
   This is obviously not just a documentation issue, but having a clearer
   documentation of what we have and where would help.
 
@@ -73,7 +73,7 @@ there is good hope to quickly get to a good documentation, and we welcome contri
 
 As a base for work, we have established an [informal list](https://github.com/Zimmi48/platform-docs/blob/main/draft_structure_doc.md)
 of tutorials and how-tos it could be interesting to have.
-This list is not fixed and will necessarily evolve through discussions with the community and experience, 
+This list is not fixed and will necessarily evolve through discussions with the community and experience,
 but it should already give an idea of the potential of this project.
 
 The project can already been discussed on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs).
