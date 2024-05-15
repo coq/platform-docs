@@ -71,7 +71,7 @@ and the richness and diversity of our ecosystem.
 Yet, as the tutorials can mostly be designed independently, by combining the different expertise of the different communities,
 there is good hope to quickly get to a good documentation, and we welcome contributions.
 
-As a base for work, we have established an [informal list](https://github.com/Zimmi48/platform-docs/blob/main/draft_structure_doc.md)
+As a base for work, we have established an [informal list](draft_structure_doc.md)
 of tutorials and how-tos it could be interesting to have.
 This list is not fixed and will necessarily evolve through discussions with the community and experience,
 but it should already give an idea of the potential of this project.
@@ -91,7 +91,7 @@ There are different possible ways to contribute depending on your time and techn
 - There is a lot of tutorials and how-tos to write, both about Coq and plugins in its Platform
 - There is technical work to be done on the (interactive) web interface side
 
-For more information on how to contribute, please check the [Contribution Guidelines](https://github.com/Zimmi48/platform-docs/blob/main/README.md).
+For more information on how to contribute, please check the [Contribution Guidelines](CONTRIBUTING.md).
 
 
 

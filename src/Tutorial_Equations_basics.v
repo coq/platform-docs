@@ -31,8 +31,8 @@ Arguments to_fill {_}.
   - 1. Basic definitions and reasoning
     - 1.1 Defining functions by dependent pattern matching
     - 1.2 Reasoning with [Equations]
-  - 2. [With] clauses
-  - 3. [Where] clauses
+  - 2. With clauses
+  - 3. Where clauses
 
   *** Prerequisites
 
@@ -468,7 +468,7 @@ Admitted.
 
 
 
-(** ** 1.2 With clauses
+(** * 2. With clauses
 
     The structure of real programs is generally richer than a simple case tree on the
     original arguments.
@@ -611,7 +611,7 @@ Succeed Example testing :
 
 
 
-(** ** 1.3 Where Clauses
+(** * 3. Where Clauses
 
     As discussed, it often happens that we need to compute intermediate terms
     which is the purpose of the [with] clause.
