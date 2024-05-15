@@ -10,14 +10,14 @@
 
     - 1. Searching for lemmas
       - 1.1 Basic [Search] by name and type
-        - 1.1.1 Exercise:
+        - 1.1.1 Exercise: find parity results on [nat].
       - 1.2 A necessary digression about notations
       - 1.3 Search patterns with notations
-        - 1.3.1 Exercise:
+        - 1.3.1 Exercise: sum and products on [nat] and [Type]
       - 1.4 Searching using metavariables
-        - 1.4.1 Exercise:
+        - 1.4.1 Exercise: find lemmas with metavariables
       - 1.5 Filtering on hypotheses (parameters) or conclusions (return type)
-        - 1.5.1 Exercise:
+        - 1.5.1 Exercise: finding divisibility results
     - 2. Advanced [Search] options
       - 2.1 Disambiguating strings in Search queries
       - 2.2 Filtering results by logical kind and disjunctions of criteria.
@@ -33,7 +33,7 @@
     - For the 2.3 part, some basic experience of Coq modules should be enough.
 
     Installation:
-    This [Search] tutorial should work for Coq V8.14 or later.
+    This [Search] tutorial should work for Coq V8.16 or later.
 *)
 
 (** In this tutorial, we are going to search for lemmas, mostly about natural
@@ -85,9 +85,9 @@ Search Nat.odd Nat.add.
     contain "mul": *)
 Search Nat.odd Nat.add -"mul".
 
-(** **** 1.1.1 Exercise:
+(** **** 1.1.1 Exercise: find parity results on [nat]. *)
 
-    We're interested in lemmas about parity in [nat].
+(** We're interested in lemmas about parity in [nat].
     There are two complementary definitions of being even and being odd:
     - [Nat.Odd] and [Nat.Even] (in [Prop]) are the usual existentially
       quantified definitions.
@@ -218,9 +218,9 @@ Search nat (_ + _) (_ * _). (* still too much *)
     their names. *)
 Search (_ + _) (_ * _) "distr".
 
-(** **** 1.3.1 Exercise:
+(** **** 1.3.1 Exercise: sum and products on [nat] and [Type] *)
 
-    Write [Search] commands with notations to find out if:
+(** Write [Search] commands with notations to find out if:
     1. there are operations whose return type is a product type containing [nat];
     2. there are lemmas involving [nat] and a sum type (it's not important to
        understand what is a sum type at this point);
@@ -264,9 +264,9 @@ Search (?op ?a ?b = ?op ?b ?a) -"orb".
     [bool_scope] is not currently opened): *)
 Search (?op ?a ?b = ?op ?b ?a) -(_ || _)%bool.
 
-(** **** 1.4.1 Exercise:
+(** **** 1.4.1 Exercise: find lemmas with metavariables *)
 
-    Write [Search] commands with notations and metavariables to find out:
+(** Write [Search] commands with notations and metavariables to find out:
     1. a lemma stating that adding a natural number on the right cannot be
        decreasing;
     2. left distributivity lemmas (without using "distr") between any two
@@ -321,9 +321,9 @@ Search headhyp:"<->".
 (** Finally the [head] keyword is just a shorthand for [headconcl] or [headhyp]: *)
 Search head:"<->".
 
-(** **** 1.5.1 Exercise:
+(** **** 1.5.1 Exercise: finding divisibility results *)
 
-    Write [Search] commands with filters on hypotheses and/or conclusions in
+(** Write [Search] commands with filters on hypotheses and/or conclusions in
     order to:
     1. find (again) a lemma saying that divisors of an natural number are less
        than or equal to this number;
