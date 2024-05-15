@@ -70,9 +70,9 @@ Import ListNotations.
 
 
 
-(** * 1. Defining and reasoning using well-founded recursion
+(** ** 1. Defining and reasoning using well-founded recursion
 
-    ** 1.1 Introduction to well-founded recursion
+    *** 1.1 Introduction to well-founded recursion
 
     For Coq to be consistent, all functions must be terminating.
     To ensure they are, Coq check that they verify a complex syntactic
@@ -221,7 +221,7 @@ Definition gcd_Fix (x y : nat) : nat :=
 *)
 
 
-(** ** 1.2 Basic definitions and reasoning
+(** *** 1.2 Basic definitions and reasoning
 
     To define a function by well-founded recursion with Equations, one must add
     after the type of the function, the command [by wf x R] where [x] is the term
@@ -377,7 +377,7 @@ Proof.
 Admitted.
 
 
-(** ** 1.3 Well-founded recursion and Obligations
+(** *** 1.3 Well-founded recursion and Obligations
 
     For a more involved example where Coq can not prove on its own that the
     recursive call are performed on smaller arguments, let's consider the
@@ -540,7 +540,7 @@ Admitted.
 
 (** ** 2. Different methods to work with well-founded recursion
 
-    ** 2.1 The inspect method
+    *** 2.1 The inspect method
 
     When defining a functions, it can happen that we loose information
     relevant to termination when matching a value, and that we then get
@@ -619,7 +619,7 @@ Section Inspect.
 End Inspect.
 
 
-(** ** 2.2 Personalising the tactic proving obligations
+(** *** 2.2 Personalising the tactic proving obligations
 
     When working, it is common to be dealing with a particular class of
     functions that shares a common theory, e.g, they involves basic

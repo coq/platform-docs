@@ -47,14 +47,14 @@ Arguments to_fill {_}.
 
 
 
-(** * 1. Basic definitions and reasoning
+(** ** 1. Basic definitions and reasoning
 
   Let's start by importing the package:
 *)
 
 From Equations Require Import Equations.
 
-(** ** 1.1 Defining functions by dependent pattern matching
+(** *** 1.1 Defining functions by dependent pattern matching
 
     In its simplest form, [Equations] provides a practical interface to
     define functions on inductive types by pattern matching and recursion
@@ -211,7 +211,7 @@ Succeed Example testing : fold_right Nat.mul 1 (1::2::3::4::[]) = 24 := eq_refl.
 *)
 
 
-(** ** 1.2 Reasoning with Equations  *)
+(** *** 1.2 Reasoning with Equations  *)
 
 (** Now that we have seen how to define basic functions, we need to
     understand how to reason about them.
@@ -468,7 +468,7 @@ Admitted.
 
 
 
-(** * 2. With clauses
+(** ** 2. With clauses
 
     The structure of real programs is generally richer than a simple case tree on the
     original arguments.
@@ -611,7 +611,7 @@ Succeed Example testing :
 
 
 
-(** * 3. Where Clauses
+(** ** 3. Where Clauses
 
     As discussed, it often happens that we need to compute intermediate terms
     which is the purpose of the [with] clause.
