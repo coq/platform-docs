@@ -7,15 +7,21 @@
 	global context satisfying a number of criteria.
     
     *** Table of content
-	
-	- 1. Searching for lemmas
-	  - 1.1 Basic [Search] by name and type
-	  - 1.2 Searching using metavariables
-	  - 1.3 Filtering on hypotheses (parameters) or conclusions (return type)
-        - 2. Advanced [Search] options
-	  - 2.1 Disambiguating strings in [Search] queries
-	  - 2.2 Filtering results by logical kind and disjunctions of criteria
-	  - 2.3 Searching inside or outside a specific module
+
+    - 1. Searching for lemmas
+      - 1.1 Basic [Search] by name and type
+        - 1.1.1 Exercise:
+      - 1.2 A necessary digression about notations
+      - 1.3 Search patterns with notations
+        - 1.3.1 Exercise:
+      - 1.4 Searching using metavariables
+        - 1.4.1 Exercise:
+      - 1.5 Filtering on hypotheses (parameters) or conclusions (return type)
+        - 1.5.1 Exercise:
+    - 2. Advanced [Search] options
+      - 2.1 Disambiguating strings in Search queries
+      - 2.2 Filtering results by logical kind and disjunctions of criteria.
+      - 2.3 Searching inside or outside a specific module
 
     *** Prerequisites
 
@@ -47,7 +53,6 @@ From Coq Require Import PeanoNat.
 (** In its most basic form, one searches for lemmas or definitions containing
    - a given constant, eg [Nat.add], or [nat]
    - a given string to be part of the identifier
-   - a given notation
 *)
 
 (** Search all lemmas or operations where the type [nat] occurs: *)
@@ -59,25 +64,152 @@ Search Nat.add.
 (** Search all lemmas or operations whose name contains "add": *)
 Search "add".
 
-(** Search all lemmas or operations where, in the current scope, (_ * _) appears: *)
+(** Giving multiple criteria acts as conjunctions: here we search for all
+    constants whose name contains "add" _and_ type contains [Nat.mul]. *)
+Search "add" Nat.mul.
+
+(** We can give as many criteria as we want. Below we search for constants
+    which satisfy:
+    - has "mul" in the name and
+    - has [Nat.add] in the type and
+    - has [Nat.odd] in the type *)
+Search Nat.add "mul" Nat.odd.
+
+(** We can also _filter out_ results satisfying a criterion with by prepending
+    it with a minus [-] symbol.
+    Say we're looking for a lemma stating that the sum of an even number and an
+    odd number is odd: *)
+Search Nat.odd Nat.add.
+
+(** This is already good, but we're not interested in lemmas whose name
+    contain "mul": *)
+Search Nat.odd Nat.add -"mul".
+
+(** **** 1.1.1 Exercise:
+
+    We're interested in lemmas about parity in [nat].
+    There are two complementary definitions of being even and being odd:
+    - [Nat.Odd] and [Nat.Even] (in [Prop]) are the usual existentially
+      quantified definitions.
+    - [Nat.odd] and [Nat.even] (in [bool]) are functions which compute. *)
+Print Nat.Odd.
+Print Nat.Even.
+Print Nat.odd.
+Print Nat.even.
+Compute Nat.even 42.
+Compute Nat.odd 42.
+
+(** Find all lemmas, with a precise enough search, which
+    1. state an equivalence between being [Even] and being [even]
+    2. state that the successor (function [S]) of an [even] number is [odd].
+    3. state that the product of an [Even] number by any other number is [Even].
+    4. state that a number is [Even] or (predicate [or]) [Odd]
+    5. state that it is [true] that a number is [even] or (boolean operation
+       [orb]) [odd]
+*)
+
+(* Beginning of solution *)
+(* 1. *) Search Nat.Even Nat.even -Nat.add.
+(* 2. *) Search Nat.even Nat.odd S.
+(* 3. *) Search Nat.mul Nat.Even -Nat.add -Nat.Odd.
+(* 4. *) Search or Nat.Even Nat.Odd -Nat.add -Nat.mul.
+(* 5. *) Search orb Nat.even Nat.odd -Nat.add -Nat.mul.
+(* End of solution *)
+
+(** *** 1.2 A necessary digression about notations *)
+
+(** Previously, we have been using the names of the operations to [Search] for.
+    It may be confusing that such names do not even appear in the output. *)
+Search Nat.add Nat.mul Nat.div.
+
+(** Indeed, Coq uses notations to display such results, and these are exactly
+    what the user may expect. In fact, we often forget the names of operations
+    such as [Nat.add].
+    
+    If it is the case, one can use the [Locate] command. *)
+Locate "+".
+
+(** That's unexpected, we actually have 2 different meanings for "+"! How does
+    Coq choose between them? What is the current interpretation of "+"?. *)
+
+Check 2 + 3. (* this looks ok with natural numbers *)
+Fail Check nat + bool. (* this fails with types *)
+
+(** Actually, we could have guessed it with the output of [Locate]: the default
+    interpretation for "+", without curly braces on the sides is
+    [Init.Nat.add].
+
+    Another way to get this information is to use the [About] command: *)
+About "+".
+
+(** We have seen that Coq allows to use the same notation in different context.
+    In fact, there are many other uses of "+" in the standard library, it could
+    be the addition between rational numbers, real numbers, ...
+
+    The interpretation context for a notation is called a _notation scope_.
+    When a notation is ambiguous, because it belongs to more than one scope,
+    its default interpretation is the one in the last opened scope.
+
+    We can display open scopes with the [Print Visibility] command, note that
+    the more recently opened scopes (which have a higher priority) appear last.
+*)
+
+Print Visibility.
+
+(** Here, the last scope is [nat_scope], we see all the notations associated
+    to it: order relations ([<=], [<], ...) and operations ([+], [*], ...).
+  
+    If we want to use [+] with its interpretation in [type_scope], without
+    changing the opened scope order, we can do so with a scope delimiting key:
+*)
+Check (nat + bool)%type.
+About "+"%type.
+
+(** Scope delimiting keys are abbreviations of scope names, usually obtained by
+    removing the [_scope] suffix.
+
+    One can see the delimiting key associated to a scope name with the
+    [Print Scope] command.
+*)
+Print Scope nat_scope.
+Check (2 + 3)%nat. (* works regardless of the scopes order *)
+Print Scope type_scope.
+
+(** *** 1.3 Search patterns with notations *)
+
+(** Now that our digression is over, we can get back to [Search]. We can
+    [Search] for a constant whose type contains a given notation _in the
+    interpretation given by some scope_.
+
+    This searches lemmas about [Nat.mul], since [nat_scope] is the last opened
+    scope. *)
 Search (_ * _).
 
 (** Notice the wildcards [_] around the operator. We call [(_ * _)] a [Search]
-    pattern. We will see soon how to write more sophisticated such patterns.
-    Similarly, we can search about a unary prefix operator, such as [~]
+   pattern. We will see soon how to write more sophisticated such patterns. *)
+
+(** We obtain the same results with the [nat] delimiting key: *)
+Search (_ * _)%nat.
+
+(** If we want to know lemmas about product types, we can write a [type] key: *)
+Search (_ * _)%type.
+
+(** Similarly, we can search about a unary prefix operator, such as [~]
     (the negation), with: *)
 Search (~ _).
+
+(** In that case it was not necessary to write explicitly the [type] key, since
+   the [~] notation does not belong to scope [nat_scope]. *)
 
 (** As an alternative, we can also use a string (more on this later) to search
     for lemmas about multiplication: *)
 Search "*".
+Search "*"%nat.
+Search "*"%type.
 
-(** Now our previous searches were too vague to be very useful. One usually
-    combines search items in order to be more precise.
-    For instance, let's search for lemmas about distributivity of multiplication over addition.
-*)
-
-(** To do so, we can first search all lemmas where the type [nat] and the
+(** Now, let's search for lemmas about distributivity of multiplication over
+    addition.
+    To do so, we can first search all lemmas where the type [nat] and the
     operators (_ * _) and (_ + _) occur. *)
 Search nat (_ + _) (_ * _). (* still too much *)
 
@@ -86,7 +218,22 @@ Search nat (_ + _) (_ * _). (* still too much *)
     their names. *)
 Search (_ + _) (_ * _) "distr".
 
-(** *** 1.2 Searching using metavariables *)
+(** **** 1.3.1 Exercise:
+
+    Write [Search] commands with notations to find out if:
+    1. there are operations whose return type is a product type containing [nat];
+    2. there are lemmas involving [nat] and a sum type (it's not important to
+       understand what is a sum type at this point);
+    3. there are inequalities (predicate [<=]) on [nat] stating that a sum is
+       less than or equal to a product. *)
+
+(* Beginning of solution *)
+(* 1. *) Search (_ * _)%type nat.
+(* 2. *) Search nat (_ + _)%type.
+(* 3. *) Search (_ + _ <= _ * _)%nat.
+(* End of solution *)
+
+(** *** 1.4 Searching using metavariables *)
 
 (** We have cheated a little bit. It often happens that we have no idea how
     a lemma is named. However, we know what distributivity (say, on the left)
@@ -117,7 +264,23 @@ Search (?op ?a ?b = ?op ?b ?a) -"orb".
     [bool_scope] is not currently opened): *)
 Search (?op ?a ?b = ?op ?b ?a) -(_ || _)%bool.
 
-(** *** 1.3 Filtering on hypotheses (parameters) or conclusions (return type) *)
+(** **** 1.4.1 Exercise:
+
+    Write [Search] commands with notations and metavariables to find out:
+    1. a lemma stating that adding a natural number on the right cannot be
+       decreasing;
+    2. left distributivity lemmas (without using "distr") between any two
+       operations;
+    3. a lemma saying that a divisor (relation [Nat.divide]) is less than or
+       equal to the number it divides (does it have conditions?)
+*)
+(* Beginning of solution *)
+(* 1. *) Search (?a <= ?a + _).
+(* 2. *) Search (?op1 ?a (?op2 ?b ?c) = ?op2 (?op1 ?a ?b) (?op1 ?a ?c)).
+(* 3. *) Search ((Nat.divide ?a ?b) -> ?a <= ?b).
+(* End of solution *)
+
+(** *** 1.5 Filtering on hypotheses (parameters) or conclusions (return type) *)
 
 (** It often happens that we [Search] in the middle of a proof for a lemma we
     suspect will apply to the current goal. In that case, we can use
@@ -157,6 +320,21 @@ Search headhyp:"<->".
 
 (** Finally the [head] keyword is just a shorthand for [headconcl] or [headhyp]: *)
 Search head:"<->".
+
+(** **** 1.5.1 Exercise:
+
+    Write [Search] commands with filters on hypotheses and/or conclusions in
+    order to:
+    1. find (again) a lemma saying that divisors of an natural number are less
+       than or equal to this number;
+    2. what can be said when a natural number divides a product;
+    3. all results whose goals are exactly divisibility statements.
+*)
+(* Beginning of solution *)
+Search concl:(_ <= _) hyp:Nat.divide.
+Search hyp:(Nat.divide _ (_ * _)).
+Search headconcl:Nat.divide.
+(* End of solution *)
 
 (** ** 2. Advanced [Search] options *)
 
