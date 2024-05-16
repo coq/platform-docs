@@ -1,7 +1,6 @@
 *.vo
 *.vok
 *.vos
-coqdoc.css
 *.glob
 *.swp
 *.aux
@@ -17,3 +16,7 @@ coqdoc.css
 *.synctex.gz
 *.toc
 *.vrb
+*.html
+*.css
+*~
+node_modules/
