@@ -10,7 +10,7 @@
 
     - 1. Searching for lemmas
       - 1.1 Basic [Search] by name and type
-        - 1.1.1 Exercise: find parity results on [nat].
+        - 1.1.1 Exercise: find parity results on [nat]
       - 1.2 A necessary digression about notations
       - 1.3 Search patterns with notations
         - 1.3.1 Exercise: sum and products on [nat] and [Type]
@@ -20,7 +20,7 @@
         - 1.5.1 Exercise: finding divisibility results
     - 2. Advanced [Search] options
       - 2.1 Disambiguating strings in Search queries
-      - 2.2 Filtering results by logical kind and disjunctions of criteria.
+      - 2.2 Filtering results by logical kind and disjunctions of criteria
       - 2.3 Searching inside or outside a specific module
 
     *** Prerequisites
@@ -64,8 +64,12 @@ Search Nat.add.
 (** Search all lemmas or operations whose name contains "add": *)
 Search "add".
 
-(** Giving multiple criteria acts as conjunctions: here we search for all
-    constants whose name contains "add" _and_ type contains [Nat.mul]. *)
+(** In practice, we often want to search for lemmas satisfying multiple
+    criteria, e.g. search for all lemmas whose name contain "add" _and_ whose
+    type contains [Nat.mul].
+
+    To do so, it suffices to give these criteria to [Search], it acts as a
+    conjunction: *)
 Search "add" Nat.mul.
 
 (** We can give as many criteria as we want. Below we search for constants
@@ -82,15 +86,16 @@ Search Nat.add "mul" Nat.odd.
 Search Nat.odd Nat.add.
 
 (** This is already good, but we're not interested in lemmas whose name
-    contain "mul": *)
+    contain "mul", so we can filter them out to get clearer results by adding
+    [-"mul"]: *)
 Search Nat.odd Nat.add -"mul".
 
-(** **** 1.1.1 Exercise: find parity results on [nat]. *)
+(** **** 1.1.1 Exercise: find parity results on [nat] *)
 
 (** We're interested in lemmas about parity in [nat].
     There are two complementary definitions of being even and being odd:
     - [Nat.Odd] and [Nat.Even] (in [Prop]) are the usual existentially
-      quantified definitions.
+      quantified definitions;
     - [Nat.odd] and [Nat.even] (in [bool]) are functions which compute. *)
 Print Nat.Odd.
 Print Nat.Even.
@@ -100,12 +105,12 @@ Compute Nat.even 42.
 Compute Nat.odd 42.
 
 (** Find all lemmas, with a precise enough search, which
-    1. state an equivalence between being [Even] and being [even]
-    2. state that the successor (function [S]) of an [even] number is [odd].
-    3. state that the product of an [Even] number by any other number is [Even].
-    4. state that a number is [Even] or (predicate [or]) [Odd]
+    1. state an equivalence between being [Even] and being [even];
+    2. state that the successor (function [S]) of an [even] number is [odd];
+    3. state that the product of an [Even] number by any other number is [Even];
+    4. state that a number is [Even] or (predicate [or]) [Odd] and
     5. state that it is [true] that a number is [even] or (boolean operation
-       [orb]) [odd]
+       [orb]) [odd].
 *)
 
 (* Beginning of solution *)
@@ -270,7 +275,7 @@ Search (?op ?a ?b = ?op ?b ?a) -(_ || _)%bool.
     1. a lemma stating that adding a natural number on the right cannot be
        decreasing;
     2. left distributivity lemmas (without using "distr") between any two
-       operations;
+       operations and
     3. a lemma saying that a divisor (relation [Nat.divide]) is less than or
        equal to the number it divides (does it have conditions?)
 *)
@@ -327,7 +332,7 @@ Search head:"<->".
     order to:
     1. find (again) a lemma saying that divisors of an natural number are less
        than or equal to this number;
-    2. what can be said when a natural number divides a product;
+    2. what can be said when a natural number divides a product and
     3. all results whose goals are exactly divisibility statements.
 *)
 (* Beginning of solution *)
