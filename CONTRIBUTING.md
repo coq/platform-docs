@@ -12,8 +12,24 @@ There are different possible ways to contribute depending on your time and techn
 - There is a lot of tutorials and how-tos to write, both about Coq and plugins in its Platform
 - There is technical work to be done on the (interactive) web interface side
 
+## Building the documentation
 
-### Writing Tutorials and How-tos
+We generate interactive documents using jsCoq from the `.v` files in the `src` directory.
+To build and test the documentation locally, you need to have npm and the Coq Platform installed.
+Then run:
+
+```bash
+cd src
+make node_modules
+make
+make serve
+```
+
+The last step will start a local server that you can access at `http://localhost:8080`.
+
+To extend the list of packages that are available in jsCoq, you should add them both in `src/package.json` and in `src/jscoq-agent.js`.
+
+## Writing Tutorials and How-tos
 If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 to get feedback on your idea, through the writing and to reach others that may be interested.
 If there is a stream dedicated to the topic or package that you are covering in your tutorial, you can also create a discussion there.
