@@ -33,6 +33,11 @@
 
     Installation:
     This [Search] tutorial should work for Coq V8.16 or later.
+
+    *** Warning
+
+    When viewed in a web browser with jsCoq, some [Search] queries are slow
+    (about 10 seconds).
 *)
 
 (** In this tutorial, we are going to search for lemmas, mostly about natural
