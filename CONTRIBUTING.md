@@ -13,6 +13,10 @@ There are different possible ways to contribute depending on your time and techn
 - There is technical work to be done on the (interactive) web interface side
 
 
+> [!WARNING]
+> Before starting to work on something and invest time into it, check if it is not already existing,
+> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
+
 ### Writing Tutorials and How-tos
 If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 to get feedback on your idea, through the writing and to reach others that may be interested.
@@ -22,10 +26,6 @@ Equation, you can create a discussion in the associated stream.
 
 Once you have a plan and some content, you can create a draft pull request to make your code accessible
 and get feedback on it while you (and others) progress on it.
-
-> [!WARNING]
-> Before starting to work on a tutorial or a how-to and invest time into it, check if it is not already existing,
-> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
 > [!WARNING]
 > Lots of stuff have already be written about Coq, it can make sense to reuse some of the content.
@@ -124,8 +124,8 @@ that do not change everyday.
 > [!IMPORTANT]
 > Consequently, it is really important to mention in tutorials issues that
 > often come up with a feature, and to provide as reasonable solution as possible.
-
-The tutorials can later be modified once the fix are effective.
+> The tutorials can always be modified once the fix are effective, but meanwhile
+> users have solutions.
 
 
 ### Adding Exercises
