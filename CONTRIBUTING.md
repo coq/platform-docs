@@ -104,8 +104,33 @@ Doing so only takes a bit more time when writing a tutorial but saves a lot of t
 that will not have to chase information in different other tutorials, tutorials which could in turn refer to other tutorials.
 It also eases maintenance as one does not need to worry about potential modifications to other tutorials.
 
+### Discuss Recurring Issues
+
+When writing a tutorial, it often happens to be confronted to something that
+does not work as easily as expected due to limitations of a feature or genuine bugs.
+In this case, often people decide not to mention the problem as they plan /
+it is planned to fix the problem.
+The issue is that most times, it turns out that it is actually not that easy to fix
+nor that fast, and meanwhile users are left with a solution.
+Worse, not only they are not told how to go around the problem,
+but they are not even warned that a problem may rise up.
+This can be particularly limiting for non expert users, that may not be able
+to identify the problem and manage to go around it on their own.
+
+This issue is particularly relevant in our case, as the documentation is aimed
+at the general public and is indexed on the Coq platform versions,
+that do not change everyday.
+
+> [!IMPORTANT]
+> Consequently, it is really important to mention in tutorials issues that
+> often come up with a feature, and to provide as reasonable solution as possible.
+
+The tutorials can later be modified once the fix are effective.
+
+
 ### Adding Exercises
-As tutorials are meant for studying, do not hesitate to add some exercises for the users to try, e.g. functions or properties to prove or finish.
+As tutorials are meant for studying, do not hesitate to add some exercises
+for the users to try, e.g. functions or properties to prove or finish.
 In general, we recommend to provide at least definitions prefilled with typing information like:
 
 ```
@@ -115,13 +140,11 @@ Lemma map_app {A B} (f : A -> B) (l l' : list A) : map f (l ++ l') = map f l + m
 Proof. Admitted.
 ```
 
-To do so, you can add the following code at the beginning of the tutorial.
-It creates an axiom `to_fill` and hides it so that it is does not appear in the body of the tutorial.
+To do so, you can add the following code at the beginning of the tutorial,
+that creates an axiom that can fill any goal.
 ```
-(* begin hide *)
 Axiom to_fill : forall A, A.
 Arguments to_fill {_}.
-(* end hide *)
 ```
 
 You can also provides tests for the users to be able to check if their definition works.
