@@ -13,7 +13,7 @@ There are different possible ways to contribute depending on your time and techn
 - There is technical work to be done on the (interactive) web interface side
 
 
-> [!WARNING]
+> [!TIP]
 > Before starting to work on something and invest time into it, check if it is not already existing,
 > or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
@@ -82,7 +82,7 @@ As examples, we have been working on new tutorials for the package Equations.
 The first one is complete and can be checked out [here](src/Tutorial_Equations_basics.v).
 
 
-### Horizontality
+### Writing Horizontal Tutorials
 
 Tutorials do not necessarily need to be long, nor should aim to present
 all the aspects of a feature in one unique tutorial.
@@ -104,7 +104,7 @@ Doing so only takes a bit more time when writing a tutorial but saves a lot of t
 that will not have to chase information in different other tutorials, tutorials which could in turn refer to other tutorials.
 It also eases maintenance as one does not need to worry about potential modifications to other tutorials.
 
-### Discuss Recurring Issues
+### Discussing Recurring Issues
 
 When writing a tutorial, it often happens to be confronted to something that
 does not work as easily as expected due to limitations of a feature or genuine bugs.
@@ -118,10 +118,10 @@ This can be particularly limiting for non expert users, that may not be able
 to identify the problem and manage to go around it on their own.
 
 This issue is particularly relevant in our case, as the documentation is aimed
-at the general public and is indexed on the Coq platform versions,
+at the general public, and is indexed on the versions of Coq platform
 that do not change everyday.
 
-> [!IMPORTANT]
+> [!NOTE]
 > Consequently, it is really important to mention in tutorials issues that
 > often come up with a feature, and to provide as reasonable solution as possible.
 > The tutorials can always be modified once the fix are effective, but meanwhile
