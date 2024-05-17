@@ -17,10 +17,10 @@
   - Writing programs in Coq
   - Extraction
   - Programming by dependent pattern matching with Equations
-  - Tools for verifying softwares
-  - Verified Softwares in Coq
+  - Tools for verifying software
+  - Verified software in Coq
 - Coq functionalities
-  - Stuffs that make your life easier
+  - Stuff that make your life easier
   - Packaging mathematical structures
   - Computing in Coq
   - Others
@@ -81,13 +81,13 @@
   - Coinductive Types
 - Programming by dependent pattern matching with Equations
 - Extraction
-- Tools for verifying softwares
-- Verified Softwares in Coq
+- Tools for verifying software
+- Verified software in Coq
 
 
 ## Coq's functionalities
 
-### Stuffs that make your life easier
+### Stuff that make your life easier
 - Searching for lemmas
 - Implicit Arguments
 - Notations
