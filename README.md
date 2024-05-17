@@ -76,12 +76,12 @@ of tutorials and how-tos it could be interesting to have.
 This list is not fixed and will necessarily evolve through discussions with the community and experience,
 but it should already give an idea of the potential of this project.
 
-> [!IMPORTANT]
-> The project can already been discussed on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs). Among others, you can find there
-> - Information about [new tutorials and how-tos](https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs/topic/New.20Tutorials.20and.20How-to.20to.20check.20out)
-> - A [wishlist](https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs/topic/Wishlist.20Tutorials) to tell us what you need
-
 We will also soon submit a Coq Enhancement Proposal.
+
+> [!NOTE]
+> For more information about project and to participate in disccusions, please checkout on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs).
+> Among others, you can find there information about [new tutorials and how-tos](https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs/topic/New.20Tutorials.20and.20How-to.20to.20check.20out), and a [wishlist](https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs/topic/Wishlist.20Tutorials) to tell us what you need
+
 
 
 
