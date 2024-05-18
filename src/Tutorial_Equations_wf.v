@@ -313,7 +313,7 @@ Qed.
     as both [<] are.
     You can define the lexicographic order and automatically derive a proof
     it is well-founded using the function [Equations.Prop.Subterm.lexprod].
-    As we can see, with this order, once again no obligations are generated as
+    As we can see, with this order, once again no obligations are left to prove as
     Coq can prove on its own that [(m, (ack (S m) n)) <lex (S m, S n)] and
     [(S m, n) < n].
 *)
@@ -324,32 +324,84 @@ ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
 
-(** ISSUES : TO SLOW TO WORK
+(** Theoretically, we should be able to reason about [ack] as usual using [funelim].
+    Unfortunately, in this case, [funelim] takes a very long runs if it terminates.
+    You can check it out by uncommenting the timed-out [funelim] below:
 *)
 
-Definition ack1y {n} : ack 1 n = 2 + n.
+Definition ack_min {m n} : n < ack m n.
 Proof.
-  Succeed timeout 3 (funelim (ack 1 n)).
-  induction n; simp ack; auto.
-  rewrite IHn. reflexivity.
-  (* Restart. *)
-  (* WHY SO SLOW ??? *)
-  (* funelim (ack 1 n).
+  (* timeout 5 (funelim (ack m n)). *)
+Abort.
+
+(** The reason is that [funelim] does much more than just applying [ack_elim].
+    In particualar, it does diverse generalisation and simplification that pose
+    problem here.
+    This a known issue and it is currently being investigated and fixed.
+
+    There are two main solutions to go around the issue depending on your case:
+    - If your pattern is fully generic, i.e. of the form [ack m n], you can
+      apply [ack_elim] directly.
+      Though note, that in this case you may need to generalise the goal by hand,
+      in particular by equalities (e.g. using the remember tactic) if the function
+      call being eliminated is not made of distinct variables.
+    - If your pattern is partially specialised like [ack 1 n], it is better to
+      finish reproducing the pattern using [induction].
+      Indeed, [ack_elim] "reproduces" the full pattern, that is, it generalise [1]
+      and tries to prove [ack m n = 2 + n] by induction, creating cases like
+      [ack (S m) n] which clearly are not warranted here.
+
+    For instance, let's prove [ack1 : ack 1 n = 2 + n]:
+*)
+
+Definition ack1 {n} : ack 1 n = 2 + n.
+Proof.
+  (* If we apply [ack_elim], we get unwarranted cases *)
+  apply ack_elim.
+  Restart.
+  (* So we reproduce the pattern with induction *)
+  induction n. all: simp ack.
   - reflexivity.
-  - simp ack. rewrite H. reflexivity. *)
+  - rewrite IHn. reflexivity.
 Qed.
 
-(* Print ack_equation_1. *)
+(* For general patterns, applying [ack_elim] directly works *)
+Definition ack_min {m n} : n < ack m n.
+Proof.
+  apply ack_elim; intros.
+  - constructor.
+  - auto with arith.
+  - eapply Nat.le_lt_trans; eassumption.
+Qed.
 
-(* ISSUES BUGS + SLOW *)
+(** Let's now mention an issue due to [rewrite] that can sometimes come up.
+
+    If we try to prove [ack_incr] by induction, in the base case, we have to prove
+    that [S n0 < ack 0 (n0 + 1)] which should be simple as [ack 0 (n0 + 1)] is equal
+    to [S (n0 + 1)], and clearly [S n0 < S (n0 + 1)].
+    Yet, surprisingly [simp ack] fails to simplify [ack 0 (n0 + 1)] to [S (n0 + 1)].
+    The reason is that [simp ack] relies on [rewrite] to simplify the goal,
+    and in this particular case it behaves unexpectedly.
+    Rewriting by the first equation associated to ack [ack_equation_1 : forall (n : nat),
+    ack 0 n = S n], which is what should be done, fails saying there is a loop.
+    The reason is that rather than unifying [n] with [n0 + 1], for a reason
+    or another, [rewrite] ends up converting [S n] to [ack 0 n] and
+    unify [n] with [n0] which then creates a loop.
+
+    The simplest method to go around this issue is to given [n] by hand.
+    This way it can not be infered wrong, and rewrites work:
+*)
 Definition ack_incr {m n} : ack m n < ack m (n+1).
 Proof.
-  (* apply ack_elim.
-  - intro n'; simp ack. rewrite ack_equation_1 at 1. simp ack.
   apply ack_elim; intros.
-  (* ISSUES *)
-  - cbn. simp ack. *)
-Admitted.
+  - Fail progress simp ack. Fail rewrite ack_equation_1.
+    (* It failed because it infered [n] wrong *)
+    (* To prevent that, we give it by hand    *)
+    rewrite (ack_equation_1 (n0 + 1)).
+    rewrite Nat.add_comm. auto with arith.
+  - rewrite Nat.add_comm. simp ack. apply ack_min.
+  - rewrite Nat.add_comm. simp ack. apply ack_min.
+Qed.
 
 
 (** As exercices, you can try to:
