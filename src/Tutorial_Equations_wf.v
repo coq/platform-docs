@@ -163,19 +163,19 @@ gcd x y with Nat.eq_dec y 0 => {
 
 (** *** Well-founded recursion
 
-    It would be limitating if all this kind of functions could not be defined.
+    It would be limiting if all this kind of functions could not be defined.
     Fortunately, they can be using well-founded recursion.
 
     Given a well-founded relation [R : A -> A -> Type], defining a function
     [f] by well-founded recursion on [a : A] basically consists in defining [f] assuming that
     [f] is defined for all [a'] smaller than [a], that is such that [R a a'].
     When particularise to natural numbers and [<], this concept is sometimes
-    known as "strong recursion / induction": when defining [f n] one asummes
+    known as "strong recursion / induction": when defining [f n] one assumes
     that [f] is defined for all smaller natural numbers [n' < n].
 
     There are several methods to define functions by well-founded recursion using Coq.
     They all have their pros and cons, but as a general rules defining functions
-    and reasonning using well-founded recursion can be tedious.
+    and reasoning using well-founded recursion can be tedious.
 
     For instance, consider the [Fix] construction of the standard library,
     which is a direct type theoretic definition of the concept of well-founded recursion:
@@ -209,12 +209,12 @@ Definition gcd_Fix (x y : nat) : nat :=
     - there is an explicit fixpoint combinator [Fix] in the definition
     - it forced us to use curryfication and the order of the arguments has changed
     - there is are explicit proof appearing in the definition of the function,
-      here through [gcd_oblig], as we must provide a proof that recusive call
+      here through [gcd_oblig], as we must provide a proof that recursive calls
       are indeed smaller.
     It can also make it harder to reason about as the recursion scheme is no
     longer trivial.
     Moreover, as we had to use curryfication in our definition, we may need
-    the axiom of function extentionality to reason about [gcd_Fix].
+    the axiom of function extensionally to reason about [gcd_Fix].
 
     Consequently, Equations provide a built-in mechanism to help us
     write functions and reason by well-founded recursion.
@@ -335,7 +335,7 @@ Proof.
 Abort.
 
 (** The reason is that [funelim] does much more than just applying [ack_elim].
-    In particualar, it does diverse generalisation and simplification that pose
+    In particular, it does diverse generalisation and simplification that pose
     problem here.
     This a known issue and it is currently being investigated and fixed.
 
@@ -389,13 +389,13 @@ Qed.
     unify [n] with [n0] which then creates a loop.
 
     The simplest method to go around this issue is to given [n] by hand.
-    This way it can not be infered wrong, and rewrites work:
+    This way it can not be inferred wrong, and rewrites work:
 *)
 Definition ack_incr {m n} : ack m n < ack m (n+1).
 Proof.
   apply ack_elim; intros.
   - Fail progress simp ack. Fail rewrite ack_equation_1.
-    (* It failed because it infered [n] wrong *)
+    (* It failed because it inferred [n] wrong *)
     (* To prevent that, we give it by hand    *)
     rewrite (ack_equation_1 (n0 + 1)).
     rewrite Nat.add_comm. auto with arith.
@@ -404,7 +404,7 @@ Proof.
 Qed.
 
 
-(** As exercices, you can try to:
+(** As exercises, you can try to:
     - Prove that if [last l = None] than [l = nil]
     - Define a function [removelast] removing the last element of a list
     - Prove the two properties about it
@@ -466,7 +466,7 @@ Fail Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
     Property that is not trivial, and that Coq can not prove on its own,
     nor look for on its own without any indications.
     Consequently, there is an obligation left to solve, and [nubBy] is not
-    definied as long as we have not solve it.
+    defined as long as we have not solve it.
 
     You can check if there is any obligations left to prove and display them
     using the command [Obligations].
@@ -524,7 +524,7 @@ Defined.
     Though, note that [Equations?] triggers a warning when used on a definition
     that leaves no obligations unsolved.
     It is because for technical reasons, [Equations?] can not check if they
-    are at least obligation left to solve before openning the proof mode.
+    are at least obligation left to solve before opening the proof mode.
     Hence, when there is no obligation proof mode is open for nothing, and
     as to be closed by hand using [Qed] or [Defined] as it can be seen bellow.
     As it is easy to forget, a warning is raised.
@@ -572,23 +572,6 @@ Proof.
     -- assumption.
 Qed.
 
-
-(** As exercices you can try to define the [gcd] function.
-    You should need the lemma Nat.mod_upper_bound.
- *)
-Equations? gcd (x y : nat) : nat by wf y lt :=
-gcd x y with Nat.eq_dec y 0 => {
-  | left _ => x
-  | right _ => gcd y (x mod y)
-}. Proof. now apply  Nat.mod_upper_bound. Qed.
-
-(* Properties gcd ? *)
-
-Lemma mul_gcd (k x y : nat) : x > y -> gcd (k * x) (k * y) = k * (gcd x y).
-Proof.
-  intro H. funelim (gcd x y); simp gcd.
-  - rewrite e. rewrite Nat.mul_0_r. cbn. reflexivity.
-Admitted.
 
 (** ** 2. Different methods to work with well-founded recursion
 
@@ -757,7 +740,7 @@ gcd x y with gt_eq_gt_dec x y := {
 
 
 (** For further examples of how functional elimination works on well-founded
-    recursion and is useful on complex definitions, we will now show a
+    recursion and how useful it is on complex definitions, we will now show a
     few properties of [gcd].
 *)
 
