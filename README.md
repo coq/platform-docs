@@ -36,6 +36,7 @@ like "How to define functions by well-founded recursion and reason about them".
   documentation is often scattered out.
   A symptom of that is the trouble that students are currently facing to find
   answers or discover new functionalities by themselves.
+  Another one, is how often the same questions come up.
 - Writing documentation forces us to do stuff right, and consequently to
   understand better features, and their basic applications.
   We hope that by writing the documentation, we will clarify the use of many
