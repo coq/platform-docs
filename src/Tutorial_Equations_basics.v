@@ -1,10 +1,3 @@
-(* begin hide *)
-Axiom to_fill : forall A, A.
-Arguments to_fill {_}.
-(* end hide *)
-
-
-
 (** * Tutorial Equations : Basic Definitions and Reasoning with Equations
 
   *** Summary
@@ -53,6 +46,9 @@ Arguments to_fill {_}.
 *)
 
 From Equations Require Import Equations.
+
+Axiom to_fill : forall A, A.
+Arguments to_fill {_}.
 
 (** *** 1.1 Defining functions by dependent pattern matching
 

@@ -1,8 +1,3 @@
-(* begin hide *)
-Axiom to_fill : forall A, A.
-Arguments to_fill {_}.
-(* end hide *)
-
 (** * Well-founded Recursion using Equations
 
   *** Summary
@@ -68,6 +63,8 @@ From Equations Require Import Equations.
 From Coq Require Import List Arith Lia.
 Import ListNotations.
 
+Axiom to_fill : forall A, A.
+Arguments to_fill {_}.
 
 
 (** ** 1. Defining and reasoning using well-founded recursion
