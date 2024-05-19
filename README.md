@@ -1,4 +1,14 @@
 # Platform-docs
+
+[![Contributing][contributing-shield]][contributing-link]
+[![Zulip][zulip-shield]][zulip-link]
+
+[contributing-shield]: https://img.shields.io/badge/contributions-welcome-Green
+[contributing-link]: CONTRIBUTING.md
+
+[zulip-shield]: https://img.shields.io/badge/chat-on%20Zulip-blue
+[zulip-link]: https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs
+
 ## A Compilation of Short Interactive Tutorials and How-To Guides for Coq
 
 This project aims to create an online compilation of short and interactive tutorials and how-to guides for Coq and the Coq Platform.
