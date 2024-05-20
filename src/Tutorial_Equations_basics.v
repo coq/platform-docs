@@ -71,7 +71,7 @@ Arguments cons {_} _ _.
 
 (** To write a function [f : list A -> B] on lists or another a basic
       inductive type, it suffices to write:
-    - function_name at the beginning of you function rather than Fixpoint
+    - Equations at the beginning of you function rather than Fixpoint
     - For each constructor [cst x1 ... xn] like [cons a l], specify how [f]
       computes on it by writing [f (cst x1 ... xn) := t] where [t] may
       contain [f] recursively.
@@ -371,7 +371,7 @@ Abort.
     by [app_nil : l + [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
     It is possible to extend [autorewrite] to make it automatic by adding
     lemma to the database associated to [f].
-    This can be done by the syntax:
+    This can be done with the following syntax:
 
       [ #[local] Hint Rewrite @name_lemma : function_name. ]
 
@@ -424,7 +424,7 @@ Abort.
 (** In practice, it also often happens in such proofs by functional induction that
     after simplification we get a lot of uninteresting cases, that we would like to
     deal with in an automatic but controlled way.
-    To help us, [Equations] provides us with a tactic [simp f1 ... fn]
+    To help us, [Equations] provides a tactic [simp f1 ... fn]
     that first simplify the goal by [autorewrite with f1 ... fn] then
     tries to solve the goal by a proof search by a particular instance of
     [try typeclasses eauto].
