@@ -2,13 +2,17 @@
     
     *** Summary
 
-	  This tutorial is about what users should know about modules, even if they
-    do not write explicit modules and module types.
+	  This tutorial is about how to get the most out of library files, that is
+    external files containing definitions, lemmas, etc and simple modules.
+    These topics are often skipped from lectures or courses about Coq
+    because they are mostly technical and somewhat boring. However, any Coq
+    user needs to learn (usually the hard way) this content before writing their
+    own libraries.
     
-    In Coq, modules provide, among other things, namespace facilities as well
-    as some form of locality. Understanding what to expect when one [Import]s or
-    [Export]s modules is important, even when not relying on modules and module
-    types.
+    In Coq, library files are modules, and modules provide, among other things,
+    namespace facilities as well as some form of locality. Understanding what to
+    expect when one [Import]s or [Export]s modules is important, even when not
+    relying on modules and module types.
     
     *** Table of content
 
@@ -22,7 +26,11 @@
     *** Prerequisites
 
     Needed:
-    - TODO
+    - The user should already have some basic Coq experience: writing
+      definitions, lemmas, proofs...
+    - Some parts deal with more advanced Coq content (user-defined tactics,
+      notations, coercions...); having some basic knowledge about it is better
+      to appreciate what Coq can offer, but is not really needed.
 
     Installation:
     This tutorial should work for Coq V8.17 or later.
@@ -31,8 +39,8 @@
 (** ** 1. Library files *)
 
 (** Coq's basic compilation unit is the _library file_. Each compiled file can
-    be [Require]d (possibly transitively) in order to make its logical and
-    computational content available.
+    be [Require]d in order to make its logical and computational content
+    available in the current file.
 
     If not stated otherwise (with the [-no-init] command-line flag), Coq's
     initial state is populated by a dozen library files called the [Init]
@@ -48,21 +56,21 @@ Print Libraries.
     Let's require another small library file. *)
 From Coq.Bool Require Bool.
 
-(** The last command told [Coq] to import all logical and computational content
+(** The last command told [Coq] to load all logical and computational content
     in the file [Bool.vo] contained in the directory [Bool] of the root
     directory of Coq's standard library.
 
     Let us mention other possibilities, we could have written:
     [From Coq Require Bool.Bool.]
     or, since there is no confusion (there is only one file named [Bool.vo] in
-    Coq's standard library:
+    Coq's standard library):
     [From Coq Require Bool.]
     
     For completeness let us mention that, at the moment of writing (this may
     change soon), if one does not explicitly tell Coq [From] which library
     to require a file, Coq assumes it is from the standard library, so a last
-    possibility, *which we discourage* would be:
-    [Require Coq.]
+   possibility, **which we strongly discourage** would be:
+    [Require Bool.]
 *)
 
 (** Now let's see how our list of libraries has evolved: *)
@@ -88,8 +96,7 @@ Search andb true.
     [Coq.Bool.Bool]. Others have short names, these come from one of the
     [Coq.Init] files.
 
-    Using the [About] command gives us their locations.
-*)
+    Using the [About] command gives us their locations. *)
 About andb_prop.
 
 (** Now let's take a look at [Bool.andb_true_l] *)
@@ -102,14 +109,14 @@ About Bool.andb_true_l.
 
     This is a technical but important notion, so we should take some time to
     describe this identifer. There are several parts separated by dots.
-    - The first part is Coq: it is the _logical name_ of the library, other
+    - The first part is Coq: it is the _logical name_ of the library. Other
       mechanisms (for instance a [_CoqProject] file, or [-R] and [-Q] options
       for [coqc], location which are known by [coqc], such as
       the output of [coqc -where], ...) associate a logical name to a physical
       directory containing the library files.
-    - The second and third part correspond to the path of the file containing
-      the identifier in the given library, in our case, on a Unix family
-      system, it corresponds to [Bool/Bool.vo].
+    - The second and third part correspond to the path of the file (relative to
+      the root of the library) containing the identifier in the given library,
+      in our case, on a Unix family system, it corresponds to [Bool/Bool.vo].
 
     Now, at this point, there really is only one [Bool] library file, so Coq
     accepts (and prints) as unambiguously _partially qualified_ the identifier
@@ -129,6 +136,10 @@ Search "andb_true_l".
 
 (** The answer is no. However, Coq does not accept it as an identifier: *)
 Fail Check andb_true_l.
+
+(** The [Locate] command shows all constants associated to an unqualified
+    identifier and how to refer to it in the shortest way possible. *)
+Locate andb_true_l.
 
 (** If we want to use such a _short name_, we need to [Import] the [Bool]
     module (yes, we said module here and not library file, more about this
@@ -181,6 +192,7 @@ Print Assumptions Foo.baz.
 
 (** But we cannot yet access them with short names: *)
 Fail Check bar.
+Locate bar.
 
 (** The content of the module [Foo] can be used just like any other definitions
     and lemmas *)
@@ -198,7 +210,9 @@ Qed.
     __library files are modules.__
 
     This is the most important fact to take home from this tutorial, and the
-    main reason to study a part of Coq's modules. *)
+    main reason to study a part of Coq's module system.
+
+    We can even print the content of library files, viewed as modules: *)
 Print Module Coq.Bool.Bool.
 
 (** [Import] is actually a module command, so we can: *)
@@ -208,9 +222,9 @@ Import Foo.
 Check bar.
 
 (** To sum up without subtlety what we have learned so far:
-    - We _[Require] library files_ to access their content.
+    - We _[Require] library files_ to load their content.
     - We _[Import] modules_ to use short names for their content (among other
-      things)
+      things we will see shortly)
     - _Library files are modules._ *)
 
 (** ** 3. Name clashes and disambiguation *)
@@ -227,9 +241,8 @@ Module OtherFoo.
 End OtherFoo.
 
 Import OtherFoo.
-
 (** First, Coq emits no error or warning, so this is a legit operation.
-   What is [foo] now? *)
+    What is [foo] now? *)
 Print foo.
 About foo.
 
@@ -239,18 +252,29 @@ About foo.
 Print Foo.foo.
 About Foo.foo.
 
-(** What happens if we now [Import Foo] again? *)
+(** The [Locate] command shows the _stack_ of identifiers whose unqualified name
+    is the given argument: *)
+Locate foo.
+
+(** On top of it (first) is our [OtherFoo.foo] constant, it is available by its
+    short name. Next is [Foo.foo] and Coq gives us the shortest partially
+    qualified name to refer to it.
+
+    What happens if we now [Import Foo] again? *)
 Import Foo.
 Print foo.
 About foo.
+Locate foo.
 
 (** We have changed again to which constant refers the short name [foo]!
-    This may look innocuous but it has a very nasty consequence:
+    Our [Foo.foo] constant is on top of the stack of [foo] constants.
+    This changing short name resolution may look innocuous but it has a very
+    nasty consequence:
 
     _The order of the [Import] commands matters, changing it can break things._
 *)
 
-(** Notice that on can always use more qualified names, so that the resulting
+(** Notice that one can always use more qualified names, so that the resulting
     code is independent of the [Import] orders: *)
 Print Foo.foo.
 Print OtherFoo.foo.
@@ -272,6 +296,7 @@ Check Z.add_0_r.
     
     At this point, [add_0_r] does not refer to anything. *)
 Fail Check add_0_r.
+Locate add_0_r.
 
 (** We may choose to [Import Nat] if, for instance, our current development
     deals more with natural numbers than integers. *)
@@ -308,13 +333,7 @@ About Coq.Init.Nat.
     - it is possible to have two (non-file) modules with the same name as long
       as they are in different files;
     - it is possible to have two constants with the same name as long as they
-      are in different modules (including library files);
-    - it is (obviously) not possible to have two files with the same name in
-      the same directory;
-    - in the same way, it is not possible to have two non-file modules with the
-      same name in the same module (be it a file or not)
-    - it is not possible to have two constants with the same identifier in the
-      same module (be it a file or not). *)
+      are in different modules (including library files) *)
 
 (** ** 4. Other content types in Modules *)
 
@@ -328,8 +347,8 @@ About Coq.Init.Nat.
     - canonical structures
 
     It is not an issue if some (or all) these categories are obscure to you.
-    We are only interested in what persists outside the module and which case.
-    We will only experiment with some of these categories.
+    We are only interested in what persists outside the module and in which
+    case. We will only experiment with some of these categories.
 *)
 
 Module Bar.
@@ -387,9 +406,8 @@ Qed.
 
 (** ** 5. Selective import *)
 
-(** Now is a good time to present a recent (8.17) addition: selective
-    importation of modules.
-    Recall that importing a module has basically two effects:
+(** Now is a good time to present a recent (8.17) addition: selective import of
+    modules. Recall that importing a module has basically two effects:
     - make the short names of constants (lemmas, definitions, ...) and tactics
       available
     - enable the other content: notations, tactic notations, hints, coercions
@@ -433,7 +451,7 @@ Check almost_almost_b.
 Fail Check b.
 
 (** We call the [coercions] and [notations] seen before _import categories_.
-    The other import categories are what we mentioned before, namely:
+    The other import categories correspond to what we mentioned before, namely:
     [hints], [canonicals], [ltac.notations] and [ltac2.notations]. *)
 
 (** Now there is also a way to tell Coq: Import everything except these
@@ -452,15 +470,66 @@ Check almost_other_b.
 Compute 10 ??.
 Fail Check (true + 3).
 
-(** Notice that, in that case, at the time of writing, it is not possible
-    to choose which identifiers are imported to be available as short names:
-    they all are.
+(** Notice that, when we import everything except a category, it is not
+    possible, at the time of writing, to choose which identifiers are imported
+    to be available as short names: they all are. *)
 
-    There are last subtleties regarding selective imports of [Inductive]s
-    constructors. This is well covered in the reference manual: see the third
-    example from
-    #<a href="https://coq.inria.fr/refman/language/core/modules.html?highlight=import#coq:cmd.Import">the reference manual Import documentation.</a>#
-*)
+(** To end this section, we turn to abbreviations and inductive types. *)
+
+Module Unary.
+  Inductive UnaryPos := one | successor (n : UnaryPos).
+  Inductive UnaryZ := zero | plus (n : UnaryPos) | minus (n : UnaryPos).
+  Notation succ := successor.
+End Unary.
+
+(** We have not imported anything yet.
+    Our inductive types and their constructors are available with their
+    qualified names: *)
+Check Unary.UnaryPos.
+Check Unary.one.
+Check Unary.UnaryZ.
+Check Unary.minus.
+
+(** Si are our automatically generated induction principles (ending with
+    [_sind], [_ind], [_rec] or [_rect]): *)
+Check Unary.UnaryPos_rec.
+Check Unary.UnaryZ_ind.
+
+(** Our [succ] abbreviation is also available: *)
+Check Unary.succ.
+
+(** We can selectively [Import] all these constants and abbreviations.
+
+    For an inductive type and its constructors, it suffices to give the type
+    in the constants parenthesized list to be able to use its short name *)
+Import Unary(UnaryPos).
+Print UnaryPos.
+
+(** However, its constructors and induction principles are not imported: *)
+Check one. (* still shadowed by Z.one *)
+Fail Check UnaryPos_rec.
+
+(** It is possible to [Import] them manually: *)
+Import Unary(one, UnaryPos_rec).
+Check one.
+Check UnaryPos_rec.
+
+(** But there is a shortcut: using [UnaryPos(..)] imports at once the type, as
+    well as its constructors and induction principles: *)
+Import Unary(UnaryPos(..)).
+Check successor.
+Check UnaryPos_ind.
+
+(** The following command enables all short names associated to the inductive
+    type [UnaryZ]: *)
+Import Unary(UnaryZ(..)).
+Check UnaryZ.
+Check plus.
+Check UnaryZ_ind.
+
+(** The [succ] abbreviation itself can also be selected: *)
+Import Unary(succ).
+Check succ.
 
 (** Exporting a module *)
 
@@ -481,7 +550,7 @@ End A.
     At this point, we are in a situation similar to being in yet another file
     C.v which has [Require]d the file A.v (but not yet [Import]ed it). *)
 
-(** We can access the content with qualified names. *)
+(** We can access the content of [A] with qualified names. *)
 Print A.this_is_a.
 Print Module A.B.
 Fail Print Module B.
@@ -500,7 +569,7 @@ Fail Print this_is_b.
 Print B.this_is_b.
 
 (** This behaviour is actually very sane. Some programmers may have [Import]ed
-    modules in a library files for convenience, this should not affect every
+    modules in library files for convenience, this should not affect every
     users of their library.
 
     Still, there is a way (and sometimes good reason) to mark some inner modules
@@ -574,7 +643,13 @@ Fail Compute (True + 2).
     qualified names and for other categories (hints, coercions, etc), to
     disable them outside the module.
 
-    The [#[export]] attribute as less uses within modules. *)
+    This should be used without restraint on anything which should not be part
+    of the user's interface, e.g. convenience ad-hoc tactics or unstable
+    implementation details. *)
+
+(** The [#[export]] attribute as less uses within modules.
+    Its only use is to allow some settings to be available when a module is
+    imported. *)
 
 Module SetNotExported.
   Set Printing Parentheses.
@@ -593,3 +668,20 @@ End SetExported.
 Check (3 + 2 + 5).
 Import SetExported.
 Check (3 + 2 + 5).
+
+(** Now, for the [#[global]] evil setting. *)
+
+(** Let us restore the state of the [Printing Parentheses] option: *)
+Unset Printing Parentheses.
+Check (3 + 2 + 5).
+
+Module SetGlobalExported.
+  #[global] Set Printing Parentheses.
+  Check (3 + 2 + 5).
+End SetGlobalExported.
+
+Check (3 + 2 + 5).
+(** We didn't even imported the module, and the setting is already there!
+    As the reference manual says:
+    We strongly discourage using the global locality attribute because the
+    transitive nature of file loading gives the user little control. *)
