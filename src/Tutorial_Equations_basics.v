@@ -471,8 +471,11 @@ Qed.
       [ #[local] Hint Rewrite @lemma_name : function_name. ]
 
     This is a very powerful personnalisable rewrite mechanism.
-    However, note that this mechanism is expressive enough to be
-    non-terminating if the wrong lemmas are added to the database.
+    Actually, this mechanism is expressive enough to be non-terminating if the
+    wrong lemmas are added to the database.
+    Indeed, while it is confluent and terminating using only the defining
+    equations, adding lemma like [add_comm : forall a b, a + b = b + a] will
+    surely create a loop.
 
     To see how it can be useful, let us define a tail-recursive version of
     list reversal and prove it equal the usual one:
