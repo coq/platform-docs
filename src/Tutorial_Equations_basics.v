@@ -305,6 +305,10 @@ Proof.
   - rewrite IHl1. reflexivity.
 Qed.
 
+(** Note, you can also use [autorewrite] to simplify hypotheses using
+    [autorewrite with f1 ... fn in H]
+*)
+
 (** *** 1.2.2 Proving properties by functional elimination
 
     In the examples above [app_nil] and [app_assoc], we mimicked the pattern
@@ -313,7 +317,7 @@ Qed.
     For instance, consider the barely more elaborate example proving
     that both definition of [nth_option] are equal.
     We have to be careful to first revert [n] in order to generalise the
-    induction hypothesis and get something strong enough when inducting on [l],
+    induction hypotheses and get something strong enough when inducting on [l],
     and we then need to destruct n.
 *)
 
@@ -543,9 +547,11 @@ Admitted.
 Lemma app_nth1 {A} (n : nat) (l l' : list A) :
       n < length l -> nth_option n (l++l') = nth_option n l.
 Proof.
+  (* intro H; funelim (nth_option n l); simp nth_option app.
+  3: { apply H. apply PeanoNat.lt_S_n. } *)
 Admitted.
 
-(* You will need the lemma [PeanoNat.Nat.sub_succ] and [le_S_n].
+(* You will need the lemma [le_S_n].
   HINT : [funelim] must be applied to the parameters you want to do the induction on.
          Here, it is [n] and [l], and not [(n - length l)] and [l']. *)
 Lemma app_nth2 {A} (n : nat) (l l' : list A) :
