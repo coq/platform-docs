@@ -21,7 +21,7 @@
     - 3. Name clashes and disambiguation
     - 4. Other content types in Modules
     - 5. Selective import
-    - 6. Locality attributes
+    - 6. Locality attributes in modules
 
     *** Prerequisites
 
@@ -597,7 +597,7 @@ Check this_is_b'.
     would only really make sense when another one (say about integers) is also
     imported. *)
 
-(** ** 6. Locality attributes *)
+(** ** 6. Locality attributes in modules *)
 
 (** If you're not yet bored to death, let's end this tutorial with a last tool
     to give control over what should remain local (if not hidden) and what
@@ -610,8 +610,15 @@ Check this_is_b'.
     what is [Import]ed to the user of a module, locality attributes lets the
     writer of a module control what should be imported or not.
 
-    There are 3 locality attributes, one of which should never be used:
-    [#[local]], [#[export]] and the evil [[#global]]: *)
+    There are 3 locality attributes: [#[local]], [#[export]] and [[#global]].
+    
+    The availability and effect of these attribute depends on each command but,
+    in short, when supported:
+    - the `#[local]` attribute marks some content unavailable for import
+    - the `#[export]` attribute marks some content available only if the module
+      is [Import]ed
+    - the `#[global]` attribute, in some cases, marks some content available
+      outside the module even when not [Import]ed. *)
 
 (** We experiment with our useless module [Baz]: *)
 
@@ -635,50 +642,68 @@ Fail Compute (True + 2).
     You can try it by uncommenting: *)
 (** Compute 3 %%. *)
 
-(** As we see, using the [#[local]] attribute prevents to import some content
-    of a module, which means, for constants, to make them only available with
-    qualified names and for other categories (hints, coercions, etc), to
-    disable them outside the module.
+(** As we see, using the [#[local]] attribute in a module marks some content
+    unavailable for import, which means, for constants, to make them only
+    available with qualified names and for other categories (hints, coercions,
+    etc), to disable them outside the module.
 
     This should be used without restraint on anything which should not be part
     of the user's interface, e.g. convenience ad-hoc tactics or unstable
     implementation details. *)
 
-(** The [#[export]] attribute has less uses within modules.
-    Its only use is to allow some settings to be available when a module is
-    imported. *)
+(** The [#[export]] attribute is not as well supported as [#[local]].
+    In fact, in a module, it is either not supported, or the default behavior,
+    except when used with the [Set] command which is used to change some Coq
+    options. *)
 
 Module SetNotExported.
-  Set Printing Parentheses.
-  Check (3 + 2 + 5).
+  Set Universe Polymorphism.
+  Test Universe Polymorphism.
 End SetNotExported.
 
 Import SetNotExported.
-(** The option "Printing Parentheses" is not set outside the module. *)
-Check (3 + 2 + 5).
-
+(** The option "Universe Polymorphism" is not set outside the module. *)
+Test Universe Polymorphism.
 Module SetExported.
-  #[export] Set Printing Parentheses.
-  Check (3 + 2 + 5).
+  #[export] Set Universe Polymorphism.
+  Test Universe Polymorphism.
 End SetExported.
 
-Check (3 + 2 + 5).
+Test Universe Polymorphism.
 Import SetExported.
-Check (3 + 2 + 5).
+Test Universe Polymorphism.
 
-(** Now, for the [#[global]] evil setting. *)
+(** Now, for the [#[global]] setting. Again, it is often not supported and when
+    it is, commands have the default behaviour, except when [Set]ting options or
+    with the [Hint] command and typeclass instances. *)
 
 (** Let us restore the state of the [Printing Parentheses] option: *)
-Unset Printing Parentheses.
-Check (3 + 2 + 5).
+Unset Universe Polymorphism.
+Test Universe Polymorphism.
+
+Create HintDb foo.
 
 Module SetGlobalExported.
   #[global] Set Printing Parentheses.
-  Check (3 + 2 + 5).
+  Test Universe Polymorphism.
+  #[global] Hint Rewrite Nat.add_0_l Nat.add_0_r : foo.
+  Lemma this_is_a_cool_lemma (n : nat) : 0 + n + 0 + 0 = 0 + n.
+  Proof.
+    autorewrite with foo.
+    reflexivity.
+  Qed.
 End SetGlobalExported.
 
-Check (3 + 2 + 5).
-(** We didn't even imported the module, and the setting is already there!
-    As the reference manual says:
-    We strongly discourage using the global locality attribute because the
-    transitive nature of file loading gives the user little control. *)
+Test Universe Polymorphism.
+(** We didn't even import the module, and the setting is already there!
+    This should really be used with caution as it imposes our choice to any user
+    who [Require]s our library file. *)
+
+(** Our hints have also been silently added to our database, even without
+    [Import]. Since hint databases have a tendency to make proofs very brittle
+    this should also be used with caution. *)
+Lemma this_is_a_cool_lemma' (n : nat) : 0 + n + 0 + 0 = 0 + n.
+Proof.
+  autorewrite with foo.
+  reflexivity.
+Qed.
