@@ -148,7 +148,8 @@ Equations app'' {A} (l l' : list A) : list A :=
   | []    , l' := l'
   | (a::l), l' := a :: (app'' l l').
 
-(** In this tutorial, we will keep to the first syntax but both are can be used interchangeably..
+(** In this tutorial, we will keep to the first syntax but both are can be
+    used interchangeably.
 
     [Equations] enables us to pattern match on several different
     variables at the same time, for instance, to define a function [nth_option]
@@ -156,9 +157,9 @@ Equations app'' {A} (l l' : list A) : list A :=
 *)
 
 Equations nth_option {A} (n : nat) (l : list A) : option A :=
-nth_option 0 nil := None ;
+nth_option 0 []     := None ;
 nth_option 0 (a::l) := Some a ;
-nth_option (S n) nil := None ;
+nth_option (S n) []     := None ;
 nth_option (S n) (a::l) := nth_option n l.
 
 (** However, be careful that as for definitions using [Fixpoint], the order
@@ -267,13 +268,13 @@ Abort.
     defining [f], and declares them in a hint database named [f].
     For instance, for [app], it proves and declares [app [] l' = l'] and
     [app (a::l) l' = a :: (app l l')].
-    The equalities are named "function_name_equation_n", and you can check
-    them out using the command [Print Rewrite HintDb function_name]:
+    The equalities are named using the scheme "function_name_equation_n", and you
+    can check them out using the command [Print Rewrite HintDb function_name]:
 *)
 
 Print Rewrite HintDb app.
 
-(** It is then possible to simply simplify by the equations associated
+(** It is then possible to simplify by the equations associated
     to function [f1 ... fn] using the tactic [autorewrite with f1 ... fn].
     This provide a better control of unfolding when in proofs as
     compared to cbn the user can choose which functions [f1 ... fn],
@@ -311,9 +312,15 @@ Proof.
   - apply IHl.
 Abort.
 
-(** This process quickly gets tedious and complicated to do by hand on real life
-    examples, especially when using complicated inductive types, or more advanced
-    notions of matching like [with] and [where] clauses (c.f 2. and 3.).
+(** On real life examples, reproducing the patterns by hand with the good
+    induction hypotheses can quickly get tedious, if not challenging.
+    Inductive types and patterns can quickly get complicated.
+    Moreover, function may not even be defined following the natural structure
+    of an inductive type.
+    This is particularly the case when defining functions using more advanced
+    notions of matching like [with] and [where] clauses (c.f 2. and 3.)
+    or well-founded recursion.
+
     Consequently, for each definition, [Equations] derives a functional induction
     principle: this is an induction principle that follows the structure of the
     function, including deep pattern-matching, [with] and [where] clauses,
