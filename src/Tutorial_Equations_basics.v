@@ -56,6 +56,7 @@ Arguments to_fill {_}.
   let us start by importing the package:
 *)
 
+From Coq Require Import PeanoNat.
 From Equations Require Import Equations.
 
 (** ** 1.1 Defining functions by dependent pattern matching
@@ -292,10 +293,9 @@ Abort.
 Print Rewrite HintDb app.
 
 (** It is then possible to simplify by the equations associated
-    to function [f1 ... fn] using the tactic [autorewrite with f1 ... fn].
-    This provide a better control of unfolding when in proofs as
-    compared to cbn the user can choose which functions [f1 ... fn],
-    they wants to simplify.
+    to functions [f1 ... fn] using the tactic [autorewrite with f1 ... fn].
+    Note, it is also possible to simplify in hypotheses using
+    [autorewrite with f1 ... fn in H].
 
     As an example, let us prove [app_nil l : l ++ [] = l].
     As [app] is defined by pattern match on [l], we prove the result by
@@ -316,8 +316,12 @@ Proof.
   - rewrite IHl1. reflexivity.
 Qed.
 
-(** Note, you can also use [autorewrite] to simplify hypotheses using
-    [autorewrite with f1 ... fn in H]
+(** This provide a fine control of unfolding as it simplifies only by the defining
+    equations, and will not unfold nothing else, while leaving the possibility to
+    rewrite directly by a specific equation.
+    In particular, compared to [cbn] it will never unfold unwanted terms, like
+    proofs terms that would be part of the definition, for instance, when defining
+    proof carrying function or functions by well-fouded recursion.
 *)
 
 (** *** 1.2.2 Proving properties by functional elimination
@@ -445,8 +449,8 @@ Qed.
     that first simplify the goal by [autorewrite with f1 ... fn] then
     tries to solve the goal by a proof search by a particular instance of
     [try typeclasses eauto].
-    It does so using the equations associated to [f1 ... fn], and the database
-    Below and Subterm meant to TO_FILL.
+    It does so using the equations associated to [f1 ... fn], and the databases
+    [Below] and [Subterm].
 
     Linking [simp] with [funelim] like [funelim sth ; simp f1 ... fn] then
     enables us to simplify all the goals and at the same to automatically
@@ -460,9 +464,15 @@ Proof.
   all : reflexivity.
 Abort.
 
-(** As you can see, it does not run [reflexivity] by default.
-    You can add it to the proof search using the command
-    ISSUE *)
+(** As you can see, by default [simp] does not try to prove goals that hold
+    by definition, like [None = None].
+    If you wish for [simp] to do so, or to try any other tactic, you need to add
+    it as a hint to one of the hint databse used by [simp].
+    Currently, there is no dedicated database for that, and it is hence
+    recommanded to add hints to the hint database [Below].
+    In particular, you can extend [simp] to to prove definitional equality using
+    the following command.
+*)
 
 #[local] Hint Resolve eq_refl : Below.
 
@@ -551,7 +561,7 @@ Lemma nth_overflow {A} (n : nat) (l : list A) : length l <= n -> nth_option n l 
 Proof.
 Admitted.
 
-(* You will need to use the lemma [Arith_prebase.lt_S_n]
+(* You will need to use the lemma [PeanoNat.lt_S_n]
   HINT : [funelim] must be applied to the parameters you want to do the induction on.
          Here, it is [n] and [l], and not [n] and [l++l'].
 *)
