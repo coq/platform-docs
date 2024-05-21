@@ -167,11 +167,11 @@ nth_option (S n) []     := None ;
 nth_option (S n) (a::l) := nth_option n l.
 
 (** However, be careful that as for definitions using [Fixpoint], the order
-    of matching matters : it produces term that are equal but with
-    different computation rules.
+    of matching matters: it produces terms that are observationally equal but
+    with different computation rules.
     For instance, if we pattern match on [l] first, we get a function
     [nth_option'] that is equal to [nth_option] but computes differently
-    as it can been seen when proving [eq_nth].
+    as it can been seen below:
 *)
 
 Equations nth_option' {A} (l : list A) (n : nat) : option A :=
@@ -186,9 +186,20 @@ Proof.
   intros.
   autorewrite with nth_option.
   autorewrite with nth_option'.
+  (* We need to further destruct n to simplify *)
+  destruct n; reflexivity.
 Abort.
 
-(** As exercices, you can try to define:
+(** [Equations] also supports nested pattern matching.
+    For instance, we can define a function swapping lists of pairs
+    by matching pairs at the same as we match the list.
+*)
+
+Equations swap_list_pair {A B} (l : list (A * B)) : list (B * A) :=
+swap_list_pair [] := [];
+swap_list_pair ((a , b)::l) := (b,a)::(swap_list_pair l).
+
+(** As exercises, you can try to define:
     - A function [map f l] that applies [f] pointwise, on [ [a1, ... ,an] ] it
       returns [ [f a1, ... , f an] ]
     - A function [head_option] that returns the head of a list and [None] otherwise
@@ -351,7 +362,7 @@ mod2 0 := 0;
 mod2 1 := 1;
 mod2 (S (S n)) := mod2 n.
 
-(** If we try to naively prove a propertiy [P] about [half] or [mod2]
+(** If we try to naively prove a property [P] about [half] or [mod2]
     by double induction on [n], we actually quickly get stuck.
     Indeed, as we can see below, in the recursive case we have to prove
     [P (S (S n))] knowing [P (S n)] and that [P n -> P (S n)].
@@ -465,7 +476,7 @@ Qed.
     By default, the tactic [autorewrite with f] only simplifies a term by the
     equations defining [f], like [[] ++ l = l] for [app].
     In practice, it can happen that there are more equations that we have proven that
-    we would like to use for automatic simplificationwhen proving further properties.
+    we would like to use for automatic simplification when proving further properties.
     For instance, when reasoning on [app], we may want to further always simplify
     by [app_nil : l + [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
     It is possible to extend [autorewrite] (and hence [simp]) to make it automatic,
@@ -528,9 +539,9 @@ Proof.
   funelim (rev l); simp rev rev_acc app.
 Qed.
 
-(** *** Exercices *)
+(** *** Exercises *)
 
-(** As exercices, you can try to prove the following properties  *)
+(** As exercises, you can try to prove the following properties  *)
 Lemma app_length {A} (l l' : list A) : length (l ++ l') = length l + length l'.
 Proof.
 Admitted.
