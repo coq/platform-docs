@@ -449,12 +449,11 @@ Abort.
     You can add it to the proof search using the command
     ISSUE *)
 
-(* #[local] Hint Resolve Euqations.Init.reflexivity : Below. *)
+#[local] Hint Resolve eq_refl : Below.
 
 Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
 Proof.
   funelim (nth_option n l); simp nth_option nth_option'.
-  all : reflexivity.
 Qed.
 
 (** *** 1.2.4 Extending [autorewrite] and [simp]
@@ -520,7 +519,6 @@ Abort.
 Lemma rev_eq {A} (l l' : list A) : rev_acc l l' = rev l ++ l'.
 Proof.
   funelim (rev l); simp rev rev_acc app.
-  reflexivity.
 Qed.
 
 (** *** Exercices *)
