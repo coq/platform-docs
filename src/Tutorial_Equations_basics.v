@@ -31,6 +31,10 @@ Arguments to_fill {_}.
   - 1. Basic definitions and reasoning
     - 1.1 Defining functions by dependent pattern matching
     - 1.2 Reasoning with [Equations]
+      - 1.2.1 Simplifying goals with [autorewrite]
+      - 1.2.2 Proving properties by functional elimination with [funelim]
+      - 1.2.3 Discharging trivial goals with [simp]
+      - 1.2.4 Extending [autorewrite] and [simp]
   - 2. With clauses
   - 3. Where clauses
 
@@ -216,6 +220,8 @@ Succeed Example testing : fold_right Nat.mul 1 (1::2::3::4::[]) = 24 := eq_refl.
 (** Now that we have seen how to define basic functions, we need to
     understand how to reason about them.
 
+    *** 1.2.1 Simplifying goals
+
     By default, functions defined using [Equations] are opaque and cannot
     be unfolded with [unfold] nor simplified with [simpl] or [cbn] as one
     would do with a [Fixpoint] definition.
@@ -238,7 +244,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** If one wishes to recover unfolding, it is possible on a case by case
+(** If one really wishes to recover unfolding, it is possible though on a case by case
     basis using the option [Global Transparent f] as shown below.
     It is also possible to set this option globally with [Set Equations
     Transparent], but it is not recommended to casual users.
@@ -290,10 +296,19 @@ Proof.
   intros; induction l. all: autorewrite with app.
   - reflexivity.
   - rewrite IHl. reflexivity.
-Abort.
+Qed.
 
-(** In the example above of [app_nil], we mimicked the pattern used in the
-    definition of [app] by [induction l].
+Lemma app_assoc {A} (l1 l2 l3 : list A) : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+Proof.
+  induction l1. all: autorewrite with app.
+  - reflexivity.
+  - rewrite IHl1. reflexivity.
+Qed.
+
+(** *** 1.2.2 Proving properties by functional elimination
+
+    In the examples above [app_nil] and [app_assoc], we mimicked the pattern
+    used in the definition of [app] by [induction l].
     While it works on simple examples, it quickly gets more complicated.
     For instance, consider the barely more elaborate example proving
     that both definition of [nth_option] are equal.
@@ -315,49 +330,68 @@ Abort.
 (** On real life examples, reproducing the patterns by hand with the good
     induction hypotheses can quickly get tedious, if not challenging.
     Inductive types and patterns can quickly get complicated.
-    Moreover, function may not even be defined following the natural structure
-    of an inductive type.
-    This is particularly the case when defining functions using more advanced
-    notions of matching like [with] and [where] clauses (c.f 2. and 3.)
-    or well-founded recursion.
+    Moreover, function may actually not even be defined following the natural
+    structure of an inductive type making it hard to reproduce at all.
 
-    Consequently, for each definition, [Equations] derives a functional induction
-    principle: this is an induction principle that follows the structure of the
+    For a simple example, consider the function [half] and [mod2] that
+    are defined recursively on [S (S n)] rather than on [S n]:
+*)
+
+Equations half (n : nat) : nat :=
+half 0 := 0 ;
+half 1 := 0 ;
+half (S (S n)) := S (half n).
+
+Equations mod2 (n : nat) : nat :=
+mod2 0 := 0;
+mod2 1 := 1;
+mod2 (S (S n)) := mod2 n.
+
+(** If we try to naively prove a propertiy [P] about [half] or [mod2]
+    by double induction on [n], we actually quickly get stuck.
+    Indeed, as we can see below, in the recursive case we have to prove
+    [P (S (S n))] knowing [P (S n)] and that [P n -> P (S n)].
+    Yet, in general to be able to reason about [half] or [mod2],
+    we actually need to know that [P n] hold to prove [P (S (S n))].
+*)
+
+Goal forall (P : nat -> Prop) (H0 : P 0) (H1 : P 1) (n : nat), P n.
+Proof.
+  induction n. 1: exact H0.
+  induction n. 1: exact H1.
+  (* We are stuck *)
+Abort.
+
+(** This issue arise more generally as soon as we start defining functions using
+    more advanced notions of matching like [with] and [where] clauses (c.f 2. and 3.),
+    or when defining functions using well-founded recursion.
+
+    Consequently, to help us reason about complex functions, for each definition,
+    [Equations] derives a functional induction principle.
+    This is an induction principle that follows the structure of the
     function, including deep pattern-matching, [with] and [where] clauses,
     correct induction hypotheses and generalisation as in the above example.
     This principle is named using the scheme "function_name_elim".
 
-    For instance, to prove a goal [P] depending on [app_elim] [l], [l'], and [l ++ l'],
-    [app_elim] asserts that it suffices to:
-    - prove the base case [P [] l' l']
-    - and that [P l l' (l ++ l')] implies [P (a :: l) l' (a :: l ++ l'))]
+    For instance, to prove a goal [P] depending on [n] and [half n],
+    [half_elim] asserts that it suffices to prove
+    - [P 0 (half 0)]
+    - [P 1 (half 1)]
+    - and that [P n (half n) -> P (S (S n)) (half (S (S n)))]
+    that is, exactly the pattern we wanted.
 *)
 
-Check app_elim.
+Check half_elim.
 
 (** Moreover, [Equations] comes with a powerful tactic [funelim] that
     applies the induction principle while doing different simplifications.
     To use it, it suffices to write [funelim (function_name a1 ... an)]
     where [a1 ... an] are the arguments you want to do your induction on.
 
-    As an example, let us prove [app_nil], [app_assoc], and [nth_eq] for
+    As an example, let us prove [nth_eq] and [half_mod2] for
     which we can already see the advantages over trying to reproduce the
     pattern matching by hand:
 *)
-
-Lemma app_nil {A} (l : list A) : l ++ [] = l.
-Proof.
-  funelim (app l []). all: autorewrite with app.
-  - reflexivity.
-  - rewrite H. reflexivity.
-Qed.
-
-Lemma app_assoc {A} (l1 l2 l3 : list A) : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
-Proof.
-  funelim (app l1 l2). all : autorewrite with app.
-  - reflexivity.
-  - rewrite H. reflexivity.
-Qed.
 
 Lemma nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
 Proof.
@@ -369,18 +403,73 @@ Proof.
   - apply H.
 Abort.
 
-(** By default, the tactic [autorewrite with f] only simplifies a term by the
+Definition half_mod2 (n : nat) : n = half n + half n + mod2 n.
+Proof.
+  induction n; try reflexivity.
+  induction n; try reflexivity.
+  (* We simplify the goal *)
+  autorewrite with half mod2.
+  rewrite PeanoNat.Nat.add_succ_r. cbn.
+  f_equal. f_equal.
+  (* We then get stuck as we have the wrong hypotheses *)
+  Restart.
+  funelim (half n); try reflexivity.
+  autorewrite with half mod2.
+  rewrite PeanoNat.Nat.add_succ_r. cbn.
+  f_equal. f_equal.
+  (* We now have the good recursion hypotheses *)
+  assumption.
+Qed.
+
+(** *** 1.2.3 Discharging trivial goals with [simp]
+
+    In practice, it often happens in proofs by functional induction that after
+    simplification we get a lot of uninteresting cases, that we would like to
+    deal with in an automatic but controlled way.
+    To help us, [Equations] provides a tactic [simp f1 ... fn]
+    that first simplify the goal by [autorewrite with f1 ... fn] then
+    tries to solve the goal by a proof search by a particular instance of
+    [try typeclasses eauto].
+    It does so using the equations associated to [f1 ... fn], and the database
+    Below and Subterm meant to TO_FILL.
+
+    Linking [simp] with [funelim] like [funelim sth ; simp f1 ... fn] then
+    enables us to simplify all the goals and at the same to automatically
+    prove uninteresting ones.
+    For instance:
+*)
+
+Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
+Proof.
+  funelim (nth_option n l); simp nth_option nth_option'.
+  all : reflexivity.
+Abort.
+
+(** As you can see, it does not run [reflexivity] by default.
+    You can add it to the proof search using the command
+    ISSUE *)
+
+(* #[local] Hint Resolve Euqations.Init.reflexivity : Below. *)
+
+Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
+Proof.
+  funelim (nth_option n l); simp nth_option nth_option'.
+  all : reflexivity.
+Qed.
+
+(** *** 1.2.4 Extending [autorewrite] and [simp]
+
+    By default, the tactic [autorewrite with f] only simplifies a term by the
     equations defining [f], like [[] ++ l = l] for [app].
-    In practice, it can happen that there are more equations
-    that we have proven that we would like to use for automatic simplification
-    when proving further properties.
+    In practice, it can happen that there are more equations that we have proven that
+    we would like to use for automatic simplificationwhen proving further properties.
     For instance, when reasoning on [app], we may want to further always simplify
     by [app_nil : l + [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
-    It is possible to extend [autorewrite] to make it automatic by adding
-    lemma to the database associated to [f].
+    It is possible to extend [autorewrite] (and hence [simp]) to make it automatic,
+    by adding lemma to the database associated to [f].
     This can be done with the following syntax:
 
-      [ #[local] Hint Rewrite @name_lemma : function_name. ]
+      [ #[local] Hint Rewrite @lemma_name : function_name. ]
 
     This is a very powerful personnalisable rewrite mechanism.
     However, note that this mechanism is expressive enough to be
@@ -421,49 +510,20 @@ Qed.
 
 Lemma rev_eq {A} (l l' : list A) : rev_acc l l' = rev l ++ l'.
 Proof.
-  funelim (rev l). all: autorewrite with rev rev_acc app.
+  funelim (rev l);  autorewrite with rev rev_acc app.
   - reflexivity.
   (* There is no more need to call [app_assoc] by hand in proofs *)
   - apply H.
 Abort.
 
-
-(** In practice, it also often happens in such proofs by functional induction that
-    after simplification we get a lot of uninteresting cases, that we would like to
-    deal with in an automatic but controlled way.
-    To help us, [Equations] provides a tactic [simp f1 ... fn]
-    that first simplify the goal by [autorewrite with f1 ... fn] then
-    tries to solve the goal by a proof search by a particular instance of
-    [try typeclasses eauto].
-    It does so using the equations associated to [f1 ... fn], and the database
-    Below and Subterm meant to TO_FILL.
-
-    Linking [simpl] with [funelim] like [funelim sth ; simp f1 ... fn] then
-    enables us to simplify all the goals and at the same to automatically
-    prove uninteresting ones.
-    For instance:
-*)
-
-Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
-Proof.
-  funelim (nth_option n l). all: simp nth_option nth_option'.
-  all : reflexivity.
-Abort.
-
-(** As you can see, it does not run [reflexivity] by default.
-    You can add it to the proof search using the command
-    ISSUE *)
-
-(* #[local] Hint Resolve Euqations.Init.reflexivity : Below. *)
-
+(** It actually enables to greatly automatise proofs using [simp] *)
 Lemma rev_eq {A} (l l' : list A) : rev_acc l l' = rev l ++ l'.
 Proof.
-  funelim (rev l). all: simp rev rev_acc app.
+  funelim (rev l); simp rev rev_acc app.
   reflexivity.
 Qed.
 
-
-
+(** *** Exercices *)
 
 (** As exercices, you can try to prove the following properties  *)
 Lemma app_length {A} (l l' : list A) : length (l ++ l') = length l + length l'.
