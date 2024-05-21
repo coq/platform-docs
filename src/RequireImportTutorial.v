@@ -1,19 +1,19 @@
 (** * Require, Import and Export tutorial
-    
+
     *** Summary
 
-	  This tutorial is about how to get the most out of library files, that is
-    external files containing definitions, lemmas, etc and simple modules.
+    This tutorial is about how to get the most out of library files, that is
+    Coq files containing definitions, lemmas, notations, etc and simple modules.
     These topics are often skipped from lectures or courses about Coq
     because they are mostly technical and somewhat boring. However, any Coq
     user needs to learn (usually the hard way) this content before writing their
     own libraries.
-    
+
     In Coq, library files are modules, and modules provide, among other things,
     namespace facilities as well as some form of locality. Understanding what to
     expect when one [Import]s or [Export]s modules is important, even when not
     relying on modules and module types.
-    
+
     *** Table of content
 
     - 1. Library files
@@ -43,8 +43,7 @@
     available in the current file.
 
     If not stated otherwise (with the [-no-init] command-line flag), Coq's
-    initial state is populated by a dozen library files called the [Init]
-    library.
+    initial state is populated by a dozen library files called the [Prelude].
 
     We can see these files with the [Print Libraries] command: *)
 Print Libraries.
@@ -65,12 +64,8 @@ From Coq.Bool Require Bool.
     or, since there is no confusion (there is only one file named [Bool.vo] in
     Coq's standard library):
     [From Coq Require Bool.]
-    
-    For completeness let us mention that, at the moment of writing (this may
-    change soon), if one does not explicitly tell Coq [From] which library
-    to require a file, Coq assumes it is from the standard library, so a last
-   possibility, **which we strongly discourage** would be:
-    [Require Bool.]
+
+    We can also drop the [From] part and [Require Coq.Bool.Bool].
 *)
 
 (** Now let's see how our list of libraries has evolved: *)
@@ -85,7 +80,7 @@ Print Libraries.
     2. There is **no way** to "unrequire" anything. Once a file has been
        required, its content will remain in the global environment of the user
        for ever, possibly polluting [Search] output.
-    
+
     As a consequence, one should be very careful of what one [Require]s. *)
 
 (** Now that we have required [Coq.Bool.Bool], we have many more lemmas about
@@ -118,13 +113,12 @@ About Bool.andb_true_l.
       the root of the library) containing the identifier in the given library,
       in our case, on a Unix family system, it corresponds to [Bool/Bool.vo].
 
-    Now, at this point, there really is only one [Bool] library file, so Coq
-    accepts (and prints) as unambiguously _partially qualified_ the identifier
-    [Bool.andb_true_l].
+    Now, at this point, there really is only one [Bool] library file containing
+    an constant named [andb_true_l], so Coq accepts (and prints) as
+    unambiguously _partially qualified_ the identifier [Bool.andb_true_l].
 
     Another unambiguous partially qualified identifier for the same constant is
-    [Bool.Bool.andb_true_l] since there is no other library with a file
-    [Bool.vo] in a directory [Bool].
+    [Bool.Bool.andb_true_l].
 
     All these identifiers refer to the same constant: *)
 About Coq.Bool.Bool.andb_true_l.
@@ -331,7 +325,7 @@ About Coq.Init.Nat.
     - it is possible to have two files with the same name as long as they are
       in different directories;
     - it is possible to have two (non-file) modules with the same name as long
-      as they are in different files;
+      as they are in different modules (which can be library files);
     - it is possible to have two constants with the same name as long as they
       are in different modules (including library files) *)
 
@@ -441,8 +435,8 @@ Compute 1 !!.
 
 (** In fact, it is important to understand that there is no way to "un-import"
     anything in the same module. Once a module feature has been activated, it
-    remains so until the end of the current module (or file), the only exception
-    being shadowed short names. *)
+    remains so until the end of the current section or module (or file), the
+    only exception being shadowed short names. *)
 
 (** We can also select which constants are available by their short names: *)
 Import Baz(almost_b, almost_almost_b).
@@ -452,7 +446,10 @@ Fail Check b.
 
 (** We call the [coercions] and [notations] seen before _import categories_.
     The other import categories correspond to what we mentioned before, namely:
-    [hints], [canonicals], [ltac.notations] and [ltac2.notations]. *)
+    [hints], [canonicals], [ltac.notations] and [ltac2.notations].
+
+    It is possible to select more than one import category with: *)
+Import (hints, canonicals) Baz.
 
 (** Now there is also a way to tell Coq: Import everything except these
     categories. We just need to prepend them with a minus sign: *)
@@ -470,7 +467,7 @@ Check almost_other_b.
 Compute 10 ??.
 Fail Check (true + 3).
 
-(** Notice that, when we import everything except a category, it is not
+(** Notice that, when we import everything except some categories, it is not
     possible, at the time of writing, to choose which identifiers are imported
     to be available as short names: they all are. *)
 
@@ -612,14 +609,14 @@ Check this_is_b'.
     Contrarily to selective import, which gives some amount of control on
     what is [Import]ed to the user of a module, locality attributes lets the
     writer of a module control what should be imported or not.
-    
+
     There are 3 locality attributes, one of which should never be used:
     [#[local]], [#[export]] and the evil [[#global]]: *)
 
 (** We experiment with our useless module [Baz]: *)
 
 Module YetAnotherBaz.
-  #[local] Definition yet_anoter_b := 42.
+  #[local] Definition yet_another_b := 42.
   Definition almost_yet_another_b := 41.
   #[local] Definition almost_almost_yet_another_b := 40.
   #[local] Notation "x %%" := (x * 42) (at level 2) : nat_scope.
@@ -629,8 +626,8 @@ Module YetAnotherBaz.
 End YetAnotherBaz.
 
 Import YetAnotherBaz.
-Fail Check yet_anoter_b.
-Check YetAnotherBaz.yet_anoter_b.
+Fail Check yet_another_b.
+Check YetAnotherBaz.yet_another_b.
 Check almost_yet_another_b.
 Fail Compute (True + 2).
 (** The notation "x %%" is also unavailable, but we cannot show it without
@@ -647,7 +644,7 @@ Fail Compute (True + 2).
     of the user's interface, e.g. convenience ad-hoc tactics or unstable
     implementation details. *)
 
-(** The [#[export]] attribute as less uses within modules.
+(** The [#[export]] attribute has less uses within modules.
     Its only use is to allow some settings to be available when a module is
     imported. *)
 
