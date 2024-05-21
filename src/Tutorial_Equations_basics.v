@@ -53,10 +53,10 @@ Arguments to_fill {_}.
 
 (** * 1. Basic definitions and reasoning
 
-  let us start by importing the package:
+  Let us start by importing the package:
 *)
 
-From Coq Require Import PeanoNat.
+From Coq Require Import Arith.
 From Equations Require Import Equations.
 
 (** ** 1.1 Defining functions by dependent pattern matching
@@ -168,8 +168,8 @@ nth_option (S n) []     := None ;
 nth_option (S n) (a::l) := nth_option n l.
 
 (** However, be careful that as for definitions using [Fixpoint], the order
-    of matching matters: it produces terms that are observationally equal but
-    with different computation rules.
+    of matching matters: it produces terms that are pointwise propositionally
+    equal but with different computation rules.
     For instance, if we pattern match on [l] first, we get a function
     [nth_option'] that is equal to [nth_option] but computes differently
     as it can been seen below:
@@ -182,7 +182,7 @@ nth_option' (a::l) (S n) := nth_option' l n.
 
 Goal forall {A} (a:A) n, nth_option n (nil (A := A)) = nth_option' (nil (A := A)) n.
 Proof.
-  (* Here [autorewrite with f] is a simplification tactic of [Equations] (c.f 1.1.2).
+  (* Here [autorewrite with f] is a simplification tactic of [Equations] (c.f. 1.1.2).
      As we can see, [nth_option'] reduces on [ [] ] to [None] but not [nth_option]. *)
   intros.
   autorewrite with nth_option.
@@ -262,8 +262,8 @@ Qed.
     Transparent], but it is not recommended to casual users.
     To recover simplification by [simpl] and [cbn], one can additionally
     use the command [Arguments function_name !_ /. ].
-    It will simplify the function as soon as it is applied to one argument
-    that is a constructor.
+    It will simplify the function as soon as it is applied to at least one
+    argument that is a constructor.
 *)
 
 Equations f4 (n : nat) : nat :=
@@ -283,7 +283,7 @@ Abort.
 
 (** Rather than using [cbn] or [simpl], for each function [f], [Equations]
     internally proves an equality for each case of the pattern matching
-    defining [f], and declares them in a hint database named [f].
+    defining [f], and declares it in a hint database named [f].
     For instance, for [app], it proves and declares [app [] l' = l'] and
     [app (a::l) l' = a :: (app l l')].
     The equalities are named using the scheme "function_name_equation_n", and you
@@ -317,7 +317,7 @@ Proof.
 Qed.
 
 (** This provide a fine control of unfolding as it simplifies only by the defining
-    equations, and will not unfold nothing else, while leaving the possibility to
+    equations, and will not unfold anything else, while leaving the possibility to
     rewrite directly by a specific equation.
     In particular, compared to [cbn] it will never unfold unwanted terms, like
     proofs terms that would be part of the definition, for instance, when defining
@@ -349,7 +349,7 @@ Abort.
 (** On real life examples, reproducing the patterns by hand with the good
     induction hypotheses can quickly get tedious, if not challenging.
     Inductive types and patterns can quickly get complicated.
-    Moreover, function may actually not even be defined following the natural
+    Moreover, functions may actually not even be defined following the
     structure of an inductive type making it hard to reproduce at all.
 
     For a simple example, consider the function [half] and [mod2] that
@@ -367,7 +367,7 @@ mod2 1 := 1;
 mod2 (S (S n)) := mod2 n.
 
 (** If we try to naively prove a property [P] about [half] or [mod2]
-    by double induction on [n], we actually quickly get stuck.
+    by repeated induction on [n], we actually quickly get stuck.
     Indeed, as we can see below, in the recursive case we have to prove
     [P (S (S n))] knowing [P (S n)] and that [P n -> P (S n)].
     Yet, in general to be able to reason about [half] or [mod2],
@@ -381,14 +381,14 @@ Proof.
   (* We are stuck *)
 Abort.
 
-(** This issue arise more generally as soon as we start defining functions using
-    more advanced notions of matching like [with] and [where] clauses (c.f 2. and 3.),
+(** This issue arises more generally as soon as we start defining functions using
+    more advanced notions of matching like [with] and [where] clauses (c.f. 2. and 3.),
     or when defining functions using well-founded recursion.
 
     Consequently, to help us reason about complex functions, for each definition,
     [Equations] derives a functional induction principle.
     This is an induction principle that follows the structure of the
-    function, including deep pattern-matching, [with] and [where] clauses,
+    function, including nested pattern-matching, [with] and [where] clauses,
     correct induction hypotheses and generalisation as in the above example.
     This principle is named using the scheme "function_name_elim".
 
@@ -466,8 +466,8 @@ Abort.
 
 (** As you can see, by default [simp] does not try to prove goals that hold
     by definition, like [None = None].
-    If you wish for [simp] to do so, or to try any other tactic, you need to add
-    it as a hint to one of the hint databse used by [simp].
+    If you wish for [simp] to do so, or for [simp] to try any other tactic,
+    you need to add it as a hint to one of the hint databses used by [simp].
     Currently, there is no dedicated database for that, and it is hence
     recommanded to add hints to the hint database [Below].
     In particular, you can extend [simp] to to prove definitional equality using
@@ -543,7 +543,7 @@ Proof.
   - apply H.
 Abort.
 
-(** It actually enables to greatly automatise proofs using [simp] *)
+(** It actually enables to greatly automate proofs using [simp] *)
 Lemma rev_eq {A} (l l' : list A) : rev_acc l l' = rev l ++ l'.
 Proof.
   funelim (rev l); simp rev rev_acc app.
@@ -615,7 +615,7 @@ Admitted.
     predicate [p].
     In the case [cons a l], the [with] clause enables us to compute
     the intermediate value [p a] and to check whether it is [true] or [false],
-    and hence if [a] satisfy the predicate [p] and should be kept or not:
+    and hence if [a] satisfies the predicate [p] and should be kept or not:
 *)
 
 Equations filter {A} (l : list A) (p : A -> bool) : list A :=
@@ -798,5 +798,4 @@ Proof.
   unshelve eapply rev_acc'_elim.
   1: exact (fun A _ l acc aux_res => aux_res = rev l ++ acc).
   all: cbn; intros; simp rev app in *.
-  reflexivity.
 Qed.
