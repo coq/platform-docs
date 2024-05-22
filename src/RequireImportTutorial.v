@@ -327,69 +327,73 @@ About Coq.Init.Nat.
     same name in different libraries or directories (but we cannot illustrate
     this case conveniently in a single-file tutorial). *)
 
-Module NestedFoo1.
-  Module Foo.
+Module NestedABC1.
+  Module ABC.
     Definition alice := 23.
     Definition bob := 10.
-  End Foo.
-End NestedFoo1.
+  End ABC.
+End NestedABC1.
 
-Module NestedFoo2.
-  Module Foo.
+Module NestedABC2.
+  Module ABC.
     Definition alice := 12.
     Definition charlie := 1.
-  End Foo.
-End NestedFoo2.
+  End ABC.
+End NestedABC2.
 
 (** For now, there is no ambiguity, since we have not imported any module.
     Our 4 new constants are:
-    - [NestedFoo1.Foo.alice]
-    - [NestedFoo1.Foo.bob]
-    - [NestedFoo2.Foo.alice]
-    - [NestedFoo2.Foo.charlie] *)
+    - [NestedABC1.ABC.alice]
+    - [NestedABC1.ABC.bob]
+    - [NestedABC2.ABC.alice]
+    - [NestedABC2.ABC.charlie] *)
 Locate alice.
 Locate bob.
 Locate charlie.
 
 (** Now we [Import] both outer modules: *)
-Import NestedFoo1.
-Print Foo.alice.
-Print Foo.bob.
+Import NestedABC1.
+Print ABC.alice.
+Print ABC.bob.
 
-Import NestedFoo2.
+Import NestedABC2.
 
-(** What are [Foo.alice], [Foo.bob] and [Foo.charlie] now? *)
-Print Foo.alice.
-Print Foo.bob.
-Print Foo.charlie.
+(** What are [ABC.alice], [ABC.bob] and [ABC.charlie] now? *)
+Print ABC.alice.
+Print ABC.bob.
+Print ABC.charlie.
 
-(** As we see, [Foo.alice] from [NestedFoo1] has now been shadowed by
-    [Foo.alice] in [NestedFoo2]. Other than that, Coq is perfectly fine with
-    [Foo.bob], which means that the [Foo] prefix in these three identifiers
+(** As we see, [ABC.alice] from [NestedABC1] has now been shadowed by
+    [ABC.alice] in [NestedABC2]. Other than that, Coq is perfectly fine with
+    [ABC.bob], which means that the [ABC] prefix in these three identifiers
     can actually refer to different modules.
 
     Of course, we can still refer to the [alice] constant in the first module
     with a more qualified identifier: *)
 Locate alice.
-Print NestedFoo1.Foo.alice.
+Print NestedABC1.ABC.alice.
 
-(** What happens if we [Import] both [Foo] momdules?
+(** What happens if we [Import] both [ABC] momdules?
     Not much more than what we already saw: the order of the [Import] commands
     will determine the meaning of the short name [alice]. *)
-Import NestedFoo1.Foo.
-Import Foo.
+Import NestedABC1.ABC.
+
+(** The previous command did not shadow the module name [ABC] itself, so it
+    still refers to the previously [Import]ed [NestedABC2.ABC] and we can
+    [Import] it that way: *)
+Import ABC.
 Print alice.
 Print bob.
 Print charlie.
 
 (** Where is the other [alice]? *)
 Locate alice.
-Print NestedFoo1.Foo.alice.
+Print NestedABC1.ABC.alice.
 
 (** To conclude this part, let us sum up what Coq allows and disallows regarding
     identifiers:
     - it is possible to have two files with the same name as long as they are
-      in different directories or libraries;
+      in different directories;
     - it is possible to have two (non-file) modules with the same name as long
       as they are in different modules (which can be library files);
     - it is possible to have two constants with the same name as long as they
@@ -495,8 +499,10 @@ Module Baz.
   Notation "x !!" := (x * 42) (at level 2) : nat_scope.
   (* A coercion: *)
   Coercion to_nat := fun (x : Z) => 42.
-  (* A hint: *)
-  Hint Rewrite b_rel : req_tut.
+  (* A hint (please _do not_ pay attention to the [#[export]] locality
+     attribute, it is here for compatibility reasons and will be discussed
+     in the next section) *)
+  #[export] Hint Rewrite b_rel : req_tut.
   (* A canonical structure giving [nat] a default [PointedType] structure: *)
   Canonical nat_pointed_type := {|carrier := nat; point := 42|}.
   (* The canonical structure works: *)
@@ -706,7 +712,8 @@ Check this_is_b'.
 
     There are 3 locality attributes: [#[local]], [#[export]] and [[#global]].
     
-    The availability and effect of these attribute depends on each command but,
+    The availability and effect of these attribute depends on each command (and
+    even which Coq version we use) but,
     in short, when supported:
     - the `#[local]` attribute marks some content unavailable for import
     - the `#[export]` attribute marks some content available only if the module
@@ -746,29 +753,61 @@ Fail Compute (True + 2).
     implementation details. *)
 
 (** The [#[export]] attribute is not as well supported as [#[local]].
-    In fact, in a module, it is either not supported, or the default behavior,
-    except when used with the [Set] command which is used to change some Coq
-    options. *)
-Module SetNotExported.
-  Set Universe Polymorphism.
-  Test Universe Polymorphism.
-End SetNotExported.
+    In fact, in a module, since Coq 8.18, it is either not supported, or the
+    default behavior, except when used with the [Set] command which is used to
+    change some Coq options.
 
-Import SetNotExported.
+    Prior to Coq 8.18, if one wants Hints to be available if (and only if) the
+    module is [Import]ed, they should have the [#[export]] attribute and in
+    Coq 8.17, Coq will emit a fatal warning they do not have any attribute.
+
+    The following example shows what to expect (in any recent Coq version)
+    when a Hint is kept local and a [Set] command has no attribute: *)
+Module NotExported.
+  Set Universe Polymorphism.
+  #[local] Hint Rewrite Nat.add_1_r : req_tut.
+  Test Universe Polymorphism.
+End NotExported.
+
+Import NotExported.
+
+Lemma add_ones_r (n : nat) : n + 1 + 1 + 1 = S (S (S n)).
+Proof.
+  autorewrite with req_tut. (* This did _nothing_. *)
+  rewrite 3!Nat.add_1_r.
+  reflexivity.
+Qed.
+
 (** The option "Universe Polymorphism" is not set outside the module. *)
 Test Universe Polymorphism.
-Module SetExported.
+
+(** Now, here is the same module with [#[export]] locality attributes: *)
+Module Exported.
   #[export] Set Universe Polymorphism.
   Test Universe Polymorphism.
-End SetExported.
+  #[export] Hint Rewrite Nat.add_1_r : req_tut.
+End Exported.
+
+Import Exported.
+
+Lemma add_ones_r' (n : nat) : n + 1 + 1 + 1 = S (S (S n)).
+Proof.
+  autorewrite with req_tut.
+  reflexivity.
+Qed.
 
 Test Universe Polymorphism.
-Import SetExported.
-Test Universe Polymorphism.
+
+(** As we saw, the [#[export]] locality attribute allowed us to [Set] our
+    option whenever the module is [Import]ed.
+
+    For our hint, [#[export]] is the default attribute since Coq 8.18, but if
+    you need to work older versions, you should add it to your Hints, if you
+    want them to be available after import. *)
 
 (** Now, for the [#[global]] setting. Again, it is often not supported and when
     it is, commands have the default behaviour, except when [Set]ting options or
-    with the [Hint] command and typeclass instances. *)
+    with the [Hint] command (and typeclass instances). *)
 
 (** Let us restore the state of the [Printing Parentheses] option: *)
 Unset Universe Polymorphism.
@@ -777,7 +816,7 @@ Test Universe Polymorphism.
 Create HintDb foo.
 
 Module SetGlobalExported.
-  #[global] Set Printing Parentheses.
+  #[global] Set Universe Polymorphism.
   Test Universe Polymorphism.
   #[global] Hint Rewrite Nat.add_0_l Nat.add_0_r : foo.
   Lemma this_is_a_cool_lemma (n : nat) : 0 + n + 0 + 0 = 0 + n.
@@ -795,8 +834,9 @@ Test Universe Polymorphism.
 (** Our hints have also been silently added to our database, even without
     [Import]. Since hint databases have a tendency to make proofs very brittle
     this should also be used with caution. *)
-Lemma this_is_a_cool_lemma' (n : nat) : 0 + n + 0 + 0 = 0 + n.
+Lemma this_is_a_cool_lemma (n : nat) : 0 + n + 0 + 0 = 0 + n.
 Proof.
   autorewrite with foo.
   reflexivity.
 Qed.
+(** **** Exercise: why could we use the same name in the two previous lemmas? *)
