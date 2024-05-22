@@ -65,8 +65,7 @@ From Coq.Bool Require Bool.
     Coq's standard library):
     [From Coq Require Bool.]
 
-    We can also drop the [From] part and [Require Coq.Bool.Bool].
-*)
+    We can also drop the [From] part and [Require Coq.Bool.Bool]. *)
 
 (** Now let's see how our list of libraries has evolved: *)
 Print Libraries.
@@ -79,9 +78,10 @@ Print Libraries.
        [Require]d (and any file [Require]d in the [Require]d files, and so on).
     2. There is **no way** to "unrequire" anything. Once a file has been
        required, its content will remain in the global environment of the user
-       for ever, possibly polluting [Search] output.
+       in every file where it was (transitively) required ever, possibly
+       polluting [Search] output.
 
-    As a consequence, one should be very careful of what one [Require]s. *)
+    As a consequence, one should be careful of what one [Require]s. *)
 
 (** Now that we have required [Coq.Bool.Bool], we have many more lemmas about
     boolean operations. *)
@@ -113,11 +113,12 @@ About Bool.andb_true_l.
       the root of the library) containing the identifier in the given library,
       in our case, on a Unix family system, it corresponds to [Bool/Bool.vo].
 
-    Now, at this point, there really is only one [Bool] library file containing
-    an constant named [andb_true_l], so Coq accepts (and prints) as
-    unambiguously _partially qualified_ the identifier [Bool.andb_true_l].
+    Now, at this point, [Coq.Bool.Bool] is the last required library file
+    called [Bool] containing a constant named [andb_true_l], so Coq accepts
+    (and prints) as a shorter _partially qualified_ the identifier
+    [Bool.andb_true_l].
 
-    Another unambiguous partially qualified identifier for the same constant is
+    Another valid partially qualified identifier for the same constant is
     [Bool.Bool.andb_true_l].
 
     All these identifiers refer to the same constant: *)
@@ -125,10 +126,8 @@ About Coq.Bool.Bool.andb_true_l.
 About Bool.Bool.andb_true_l.
 About Bool.andb_true_l.
 
-(** Now, would the unqualified [andb_true_l] be ambiguous? *)
-Search "andb_true_l".
-
-(** The answer is no. However, Coq does not accept it as an identifier: *)
+(** However, at this point Coq does not accept the unqualified [andb_true_l] as
+    a valid identifier: *)
 Fail Check andb_true_l.
 
 (** The [Locate] command shows all constants associated to an unqualified
@@ -141,9 +140,8 @@ Locate andb_true_l.
 Import Bool.
 Check andb_true_l.
 
-(** We have used the unambiguous [Bool] name for the [Import] command, but we
-    could as well have written [Import Coq.Bool.Bool] or [Import Coq.Bool]
-    for the same reasons as before.
+(** We have used the name [Bool] for the [Import] command, but we
+    could as well have written [Import Coq.Bool.Bool] or [Import Coq.Bool].
 
     Most users prefer short names to fully qualified names so, in practice, one
     usually [Require]s and [Import]s a file at the same time.
@@ -240,7 +238,7 @@ Import OtherFoo.
 Print foo.
 About foo.
 
-(** Our [OtherFoo.foo] identifier has actually [shadowed] [Foo.foo].
+(** Our [OtherFoo.foo] identifier has actually _shadowed_ [Foo.foo].
 
     To identify it, we now need to use a more qualified name. *)
 Print Foo.foo.
@@ -313,17 +311,85 @@ About add_0_r.
 About Nat.
 About Coq.Init.Nat.
 
-(** We have one module named [Nat] in [PeanoNat] and another one in the [Init]
-    prelude. The [Coq.Init.Nat] module was shadowed when we [Import]ed
-    the module [Coq.Arith.PeanoNat].
+(** We have one module named [Nat] in [PeanoNat] and another one in the form
+    of a library file in the [Init] directory.
+    The name of the module [Coq.Init.Nat] was shadowed when we
+    [Import]ed the module [Coq.Arith.PeanoNat].
 
     As we have just seen, it suffices to qualify more the module which is
-    shadowed.
+    shadowed if we want to explicitly refer to it. *)
 
-    To conclude this part, let us sum up what Coq allows and disallows regarding
+(** When two modules share the same name, there can be name clashes and
+    shadowing if some of their constants have the same name. Let us illustrate
+    it with nested modules.
+    
+    The situation would be similar if we required two library files with the
+    same name in different libraries or directories (but we cannot illustrate
+    this case conveniently in a single-file tutorial). *)
+
+Module NestedFoo1.
+  Module Foo.
+    Definition alice := 23.
+    Definition bob := 10.
+  End Foo.
+End NestedFoo1.
+
+Module NestedFoo2.
+  Module Foo.
+    Definition alice := 12.
+    Definition charlie := 1.
+  End Foo.
+End NestedFoo2.
+
+(** For now, there is no ambiguity, since we have not imported any module.
+    Our 4 new constants are:
+    - [NestedFoo1.Foo.alice]
+    - [NestedFoo1.Foo.bob]
+    - [NestedFoo2.Foo.alice]
+    - [NestedFoo2.Foo.charlie] *)
+Locate alice.
+Locate bob.
+Locate charlie.
+
+(** Now we [Import] both outer modules: *)
+Import NestedFoo1.
+Print Foo.alice.
+Print Foo.bob.
+
+Import NestedFoo2.
+
+(** What are [Foo.alice], [Foo.bob] and [Foo.charlie] now? *)
+Print Foo.alice.
+Print Foo.bob.
+Print Foo.charlie.
+
+(** As we see, [Foo.alice] from [NestedFoo1] has now been shadowed by
+    [Foo.alice] in [NestedFoo2]. Other than that, Coq is perfectly fine with
+    [Foo.bob], which means that the [Foo] prefix in these three identifiers
+    can actually refer to different modules.
+
+    Of course, we can still refer to the [alice] constant in the first module
+    with a more qualified identifier: *)
+Locate alice.
+Print NestedFoo1.Foo.alice.
+
+(** What happens if we [Import] both [Foo] momdules?
+    Not much more than what we already saw: the order of the [Import] commands
+    will determine the meaning of the short name [alice]. *)
+Import NestedFoo1.Foo.
+Import Foo.
+Print alice.
+Print bob.
+Print charlie.
+
+(** Where is the other [alice]? *)
+Locate alice.
+Print NestedFoo1.Foo.alice.
+
+(** To conclude this part, let us sum up what Coq allows and disallows regarding
     identifiers:
     - it is possible to have two files with the same name as long as they are
-      in different directories;
+      in different directories or libraries;
     - it is possible to have two (non-file) modules with the same name as long
       as they are in different modules (which can be library files);
     - it is possible to have two constants with the same name as long as they
@@ -331,7 +397,7 @@ About Coq.Init.Nat.
 
 (** ** 4. Other content types in Modules *)
 
-(** Our module [Foo] contained only definitions and lemmas.
+(** So far, our module [Foo] contained only definitions and lemmas.
     In practice there are many more content types in a module:
     - parameters and axioms
     - tactics
@@ -342,13 +408,13 @@ About Coq.Init.Nat.
 
     It is not an issue if some (or all) these categories are obscure to you.
     We are only interested in what persists outside the module and in which
-    case. We will only experiment with some of these categories.
-*)
+    case. We will only experiment with some of these categories. *)
 
 Module Bar.
   Parameter (secret : nat).
   Axiom secret_is_42 : secret = 42.
   Ltac find_secret := rewrite secret_is_42.
+  Notation add_42 := (Nat.add 42).
   Tactic Notation "fs" := find_secret.
   Infix "+p" := Nat.add (only parsing, at level 30, right associativity) : nat_scope.
   Lemma secret_42 : secret = 42.
@@ -370,17 +436,18 @@ Print Assumptions Bar.baz.
     such after the end of the module.
 
     What about the other content? *)
-Fail Check (21 +p 21).
+Print Bar.add_42. (* Our abbreviation is available. *)
+Fail Check (21 +p 21). (* Our notation is not. *)
 Lemma forty_two : Bar.secret = 42.
 Proof.
   Fail fs.
-  Fail Bar.fs.
-  Bar.find_secret.
+  Fail Bar.fs. (* Our tactic notation is not available. *)
+  Bar.find_secret. (* But our tactic is. *)
   reflexivity.
 Qed.
 
-(** As we can see, only the _tactic_ `find_secret` was available.
-    Now let's [Import Bar]: *)
+(** As we can see, only the _tactic_ `find_secret` and the _abbreviation_
+    [add_42] were available. Now let's [Import Bar]: *)
 Import Bar.
 Check (21 +p 21).
 Lemma forty_two' : secret = 42.
@@ -390,31 +457,50 @@ Proof.
 Qed.
 
 (** To sum things up:
-    - parameters, definitions, lemmas, axioms, etc and tactics contained in a
-      module are available even if we do not [Import] a module, with a
-      qualified name;
+    - constants (i.e. parameters, definitions, lemmas, axioms, etc), tactics
+      and abbreviations contained in a module are available even if we do not
+      [Import] a module, with a qualified name;
     - notations, [Ltac] notations, [Ltac2] notations need the module to be
       imported to be available;
-    - the same holds for coercions, hints, abbreviations and canonical
-      structures (we omit the experiments for brevity). *)
+    - the same holds for coercions, hints and canonical structures (we omit the
+      experiments for brevity). *)
 
 (** ** 5. Selective import *)
 
 (** Now is a good time to present a recent (8.17) addition: selective import of
     modules. Recall that importing a module has basically two effects:
-    - make the short names of constants (lemmas, definitions, ...) and tactics
-      available
+    - make the short names of constants (lemmas, definitions, ...),
+      abbreviations and tactics available
     - enable the other content: notations, tactic notations, hints, coercions
       and canonical
 
     Selective import lets us precisely choose what we want to import. *)
 
+(** To illustrate this, we create a hint database and a [PointedType]
+    [Structure]: *)
+Create HintDb req_tut.
+Structure PointedType := {carrier :> Type; point : carrier}.
+
+(** Our next example contains almost every categories of content: *)
 Module Baz.
-  Definition b := 42.
+  (* Constants: *)
+  Parameter b : nat.
   Definition almost_b := 41.
-  Definition almost_almost_b := 40.
+  Axiom b_rel : b = almost_b + 1.
+  (* An abbreviation: *)
+  Notation add_two := (fun x => x + 2).
+  (* A tactic: *)
+  Ltac rfl := reflexivity.
+  (* A notation: *)
   Notation "x !!" := (x * 42) (at level 2) : nat_scope.
+  (* A coercion: *)
   Coercion to_nat := fun (x : Z) => 42.
+  (* A hint: *)
+  Hint Rewrite b_rel : req_tut.
+  (* A canonical structure giving [nat] a default [PointedType] structure: *)
+  Canonical nat_pointed_type := {|carrier := nat; point := 42|}.
+  (* The canonical structure works: *)
+  Compute (point _ + 3).
 End Baz.
 
 (** Let us import our notations first: *)
@@ -422,9 +508,13 @@ Import (notations) Baz.
 Compute 10 !!.
 
 (** Everything else has not been imported. *)
-Fail Check pi.
-Fail Check almost_pi.
-Fail Compute (0%Z + 3).
+Fail Check b.
+Fail Check almost_.
+Fail Check b_rel.
+Fail Compute (0%Z + 3). (* Our coercion is not there. *)
+Print HintDb req_tut. (* Our hint database is sadly empty. *)
+Fail Compute (point nat). (* Our [nat_pointed_type] structure is not canonical... *)
+Print Baz.nat_pointed_type. (* ... even though it does exists. *)
 
 (** Let us now import our coercions: *)
 Import (coercions) Baz.
@@ -434,49 +524,61 @@ Compute (0%Z + 3).
 Compute 1 !!.
 
 (** In fact, it is important to understand that there is no way to "un-import"
-    anything in the same module. Once a module feature has been activated, it
-    remains so until the end of the current section or module (or file), the
-    only exception being shadowed short names. *)
+    anything in the same module or section. Once a module feature has been
+    activated, it remains so until the end of the current section or module (or
+    file), the only exception being shadowed short names.
 
-(** We can also select which constants are available by their short names: *)
-Import Baz(almost_b, almost_almost_b).
-Check almost_b.
-Check almost_almost_b.
-Fail Check b.
-
-(** We call the [coercions] and [notations] seen before _import categories_.
+    We call the [coercions] and [notations] seen before _import categories_.
     The other import categories correspond to what we mentioned before, namely:
     [hints], [canonicals], [ltac.notations] and [ltac2.notations].
 
-    It is possible to select more than one import category with: *)
+    It is possible to select more than one import category at once with: *)
 Import (hints, canonicals) Baz.
+Print HintDb req_tut. (* Our hint is available *)
+Compute (point nat).
+Lemma b_42 : Baz.b = 42.
+Proof. autorewrite with req_tut. unfold Baz.almost_b. Baz.rfl. Qed.
 
-(** Now there is also a way to tell Coq: Import everything except these
+(** We can also select which constants, tactics and abbreviations are available
+    by their short names: *)
+Import Baz(almost_b, b_rel, add_two).
+Check almost_b.
+Check b_rel.
+Fail Check b.
+Print add_two.
+Fail Print rfl.
+Print Baz.rfl.
+
+(** There is also a way to tell Coq: [Import] everything except these
     categories. We just need to prepend them with a minus sign: *)
-
 Module OtherBaz.
   Definition other_b := 42.
   Definition almost_other_b := 41.
   Definition almost_almost_other_b := 40.
   Notation "x ??" := (x * 42) (at level 2) : nat_scope.
   Coercion to_nat := fun (x : bool) => 42.
+  Canonical bool_pointed_type := {| carrier := bool; point := false |}.
 End OtherBaz.
 
-Import -(coercions) OtherBaz.
+Import -(coercions, canonicals) OtherBaz.
 Check almost_other_b.
 Compute 10 ??.
 Fail Check (true + 3).
+Fail Compute (negb (point _)).
 
 (** Notice that, when we import everything except some categories, it is not
     possible, at the time of writing, to choose which identifiers are imported
-    to be available as short names: they all are. *)
+    to be available as short names: they all are.
 
-(** To end this section, we turn to abbreviations and inductive types. *)
+    We can always change our mind and decide to import a category we did not: *)
+Import (canonicals) OtherBaz.
+Compute (negb (point _)).
+
+(** To end this section, we turn to inductive types. *)
 
 Module Unary.
   Inductive UnaryPos := one | successor (n : UnaryPos).
   Inductive UnaryZ := zero | plus (n : UnaryPos) | minus (n : UnaryPos).
-  Notation succ := successor.
 End Unary.
 
 (** We have not imported anything yet.
@@ -487,13 +589,10 @@ Check Unary.one.
 Check Unary.UnaryZ.
 Check Unary.minus.
 
-(** Si are our automatically generated induction principles (ending with
+(** So are our automatically generated induction principles (ending with
     [_sind], [_ind], [_rec] or [_rect]): *)
 Check Unary.UnaryPos_rec.
 Check Unary.UnaryZ_ind.
-
-(** Our [succ] abbreviation is also available: *)
-Check Unary.succ.
 
 (** We can selectively [Import] all these constants and abbreviations.
 
@@ -503,7 +602,7 @@ Import Unary(UnaryPos).
 Print UnaryPos.
 
 (** However, its constructors and induction principles are not imported: *)
-Check one. (* still shadowed by Z.one *)
+Check one. (* This is still Z.one *)
 Fail Check UnaryPos_rec.
 
 (** It is possible to [Import] them manually: *)
@@ -514,7 +613,6 @@ Check UnaryPos_rec.
 (** But there is a shortcut: using [UnaryPos(..)] imports at once the type, as
     well as its constructors and induction principles: *)
 Import Unary(UnaryPos(..)).
-Check successor.
 Check UnaryPos_ind.
 
 (** The following command enables all short names associated to the inductive
@@ -523,10 +621,6 @@ Import Unary(UnaryZ(..)).
 Check UnaryZ.
 Check plus.
 Check UnaryZ_ind.
-
-(** The [succ] abbreviation itself can also be selected: *)
-Import Unary(succ).
-Check succ.
 
 (** Exporting a module *)
 
@@ -607,8 +701,8 @@ Check this_is_b'.
     a module. We're only interested in modules in this tutorial.
 
     Contrarily to selective import, which gives some amount of control on
-    what is [Import]ed to the user of a module, locality attributes lets the
-    writer of a module control what should be imported or not.
+    what is [Import]ed to _the user_ of a module, locality attributes lets _the
+    writer_ of a module control what should be imported or not.
 
     There are 3 locality attributes: [#[local]], [#[export]] and [[#global]].
     
@@ -655,7 +749,6 @@ Fail Compute (True + 2).
     In fact, in a module, it is either not supported, or the default behavior,
     except when used with the [Set] command which is used to change some Coq
     options. *)
-
 Module SetNotExported.
   Set Universe Polymorphism.
   Test Universe Polymorphism.
