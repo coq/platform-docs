@@ -23,9 +23,9 @@
     In Section 2.1, we show an example of that and discuss the inspect
     method as a possible solution to this problem.
   - When defining functions by well-founded recursion, it often happens
-    that we are left with easy theory specific obligations to solve,
+    that we are left with easy theory-specific obligations to solve,
     for instance basic arithmetic on lists.
-    In section 2.2, we explain how to adapt locally the tactic trying to
+    In section 2.2, we explain how to locally adapt the tactic trying to
     solve obligations to deal with such goals.
 
   *** Table of content
@@ -41,17 +41,17 @@
   *** Prerequisites
 
   Needed:
-  - We assume known basic knowledge of Coq, of and defining functions by recursion
-  - We assume basic knowledge of the plugin Equations, e.g, as presented
+  - We assume basic knowledge of Coq, and of defining functions by recursion
+  - We assume basic knowledge of the Equations plugin, e.g, as presented
     in the tutorial Equations: Basics
 
   Not needed:
-  - This tutorial discuss well-founded recursion but no prior knowledge
-    about it is required, and we recall the concept at the beginning
+  - This tutorial discusses well-founded recursion but no prior knowledge
+    about it is required: we will explain the concept
   - Defining functions by well-founded recursion using Equations relies on
-    Coq's obligation mechanism, but no previous knowledge about it is needed.
-  - To simplify proofs involving arithmetics, we use the automatisation
-    tactic [lia] and [auto with arith], but they can be used as black boxes
+    Coq's obligation mechanism, but no previous knowledge about it is needed
+  - To simplify proofs involving arithmetics, we use the automation
+    tactics [lia] and [auto with arith], but they can be used as black boxes
 
   Installation:
   - Equations is available by default in the Coq Platform
@@ -72,11 +72,11 @@ Arguments to_fill {_}.
     *** 1.1 Introduction to well-founded recursion
 
     For Coq to be consistent, all functions must be terminating.
-    To ensure they are, Coq check that they verify a complex syntactic
+    To ensure they are, Coq checks that they satisfy a syntactic
     criterion named the guard condition.
     While powerful, this syntactic criterion is by nature limited, and it
     happens that functions can be proven terminating, using a potentially non
-    trivial size argument and some mathematical reasoning, that Coq syntactic
+    trivial size argument and some mathematical reasoning, that Coq's syntactic
     guard fails to see as such on its own.
 
 
@@ -89,7 +89,7 @@ Arguments to_fill {_}.
     [ last (a::(a'::l)) := last (a'::l) ].
     Yet, doing so is not accepted by Coq's current syntactic guard as the
     nested matching forgets that [a'::l] is a subterm of [a::(a'::l)]
-    and only recall [l] as a smaller subterm.
+    and only remembers [l] as a smaller subterm.
 *)
 
 Fail Equations last {A} (l : list A) : option A   :=
@@ -98,7 +98,7 @@ last (a::nil) := Some a;
 last (a::(a'::l)) := last (a'::l).
 
 (** For an other example consider the definition of the Ackerman function.
-    This function is clearly terminating using the lexicographic order:
+    We can show that this function is terminating by using the lexicographic order:
     [(n,m) <lex (k,l) iff n < m or n = m and k < l].
     Yet, Coq syntactic guard can not see it as terminating as [n] is not
     universally quantified in this definition.
@@ -119,20 +119,20 @@ ack (S m) (S n) := ack m (ack (S m) n).
     datastructures complexify.
     We would like to be able to define this kind of definition as though.
 
-    Moreover, there are functions that can not be accepted even by twisting
+    Moreover, there are functions that cannot be accepted even by twisting
     the syntax as the recursive call are not performed on the recursive arguments.
 
     For instance, it can happen that the algorithm applies a function to
     one of the recursive argument preventing the syntactic guard condition
     from checking that it is still indeed smaller.
-    Consider, bellow, the function [nubBy] that given an equality
+    Consider below the function [nubBy] that given an equality
     test recursively filters out the duplicates of a list.
     The recursive call is not performed on the recursive argument [l] but
     on the list [filter (fun y => negb (eq x y)) l].
-    We can prove that [filter] do not increase the size of a list, and hence
+    We can prove that [filter] does not increase the size of a list, and hence
     that the recursive call is indeed performed on a smaller instance, and
     that nubBy is terminating.
-    But, without surprise, it can not be checked automatically using Coq's
+    But, without surprise, it cannot be checked automatically using Coq's
     syntactic guard as it involves mathematical reasoning on [filter].
 *)
 
@@ -140,14 +140,14 @@ Fail Equations nubBy {A} (eq : A -> A -> bool) (l : list A) : list A :=
 nubBy eq []        => [];
 nubBy eq (a :: l) => a :: nubBy eq (filter (fun b => negb (eq a b)) l).
 
-(** Furthermore, opposite to functions like [ack] or [nubBy], some recursive
+(** Furthermore, in contrast to to functions like [ack] or [nubBy], some recursive
     functions are simply not naturally defined by structural recursion.
     A prime example is the Euclidean algorithm computing the gcd of
     [x] and [y] assuming that [x > y].
     It performs recursion on [x mod y] which is not a function of
-    any recursively smaller arguments, as [gcd] do not match any inputs.
+    any recursively smaller arguments, as [gcd] does not match any inputs.
     It is well-founded and terminating for [lt], as we have tested
-    that [y > 0] and that in this case we can prove that [x mod y < y].
+    that [y > 0] and we can prove that [x mod y < y].
     Consequently, there is no hope for a syntactic guard to accept [gcd] as
     its definition fully relies on theoretic reason to ensure termination.
 *)
@@ -160,15 +160,15 @@ gcd x y with Nat.eq_dec y 0 => {
 
 (** *** Well-founded recursion
 
-    It would be limiting if all this kind of functions could not be defined.
-    Fortunately, they can be using well-founded recursion.
+    It would be limiting if functions of this kind could not be defined.
+    Fortunately, they can be, using well-founded recursion.
 
     Given a well-founded relation [R : A -> A -> Type], defining a function
-    [f] by well-founded recursion on [a : A] basically consists in defining [f] assuming that
-    [f] is defined for all [a'] smaller than [a], that is such that [R a a'].
-    When particularise to natural numbers and [<], this concept is sometimes
+    [f] by well-founded recursion on [a : A] consists in defining [f] assuming that
+    [f] is defined for all [a'] smaller than [a], that is such that [R a' a].
+    When particularised to natural numbers and [<], this concept is sometimes
     known as "strong recursion / induction": when defining [f n] one assumes
-    that [f] is defined for all smaller natural numbers [n' < n].
+    that [f] is defined/proven for all smaller natural numbers [n' < n].
 
     There are several methods to define functions by well-founded recursion using Coq.
     They all have their pros and cons, but as a general rules defining functions
@@ -205,10 +205,10 @@ Definition gcd_Fix (x y : nat) : nat :=
     as:
     - there is an explicit fixpoint combinator [Fix] in the definition
     - it forced us to use curryfication and the order of the arguments has changed
-    - there is are explicit proof appearing in the definition of the function,
-      here through [gcd_oblig], as we must provide a proof that recursive calls
+    - explicit proofs appear in the definition of the function,
+      here through [gcd_oblig], as we must prove that recursive calls
       are indeed smaller.
-    It can also make it harder to reason about as the recursion scheme is no
+    It can also make it harder to reason about the function, as the recursion scheme is no
     longer trivial.
     Moreover, as we had to use curryfication in our definition, we may need
     the axiom of function extensionally to reason about [gcd_Fix].
@@ -220,7 +220,7 @@ Definition gcd_Fix (x y : nat) : nat :=
 
 (** *** 1.2 Basic definitions and reasoning
 
-    To define a function by well-founded recursion with Equations, one must add
+    To define a function by well-founded recursion with Equations, one must add,
     after the type of the function, the command [by wf x R] where [x] is the term
     decreasing, and [R] the well-founded relation for which [x] decreases.
 
@@ -234,13 +234,13 @@ Definition gcd_Fix (x y : nat) : nat :=
     ]]
 
     Equations will then automatically:
-    - 1. Check for a proof that [R] is a well-founded in a type classes
-         specific to [Equations] logically named [WellFounded]
-    - 2. Try to prove that the recursive call are made on decreasing arguments,
-         and if it can not do it on its own, it will generate a proof obligation
-         i.e. intuitively a goal for the user to fill.
+    - 1. Search for a proof that [R] is well-founded, using type classes from a database
+         specific to [Equations] suitably named [WellFounded]
+    - 2. Try to prove that the recursive calls are done on decreasing arguments,
+         and if it cannot do it on its own, it will generate a proof obligation
+         i.e. a goal for the user to fill.
 
-    This enables to separate the proofs that the recursive call are smaller
+    This allows to separate the proofs that the recursive call are smaller
     from the definition of the function, making it easier to read while dealing
     automatically with trivial cases.
 
@@ -248,12 +248,12 @@ Definition gcd_Fix (x y : nat) : nat :=
     left for the user to solve, and we refer to section 1.3 for more involved
     examples with non trivial obligations.
 
-    Let's first consider the definition of [last] that we can define by
-    well-founded recursion by adding [by wf (length l) lt].
+    Let us first consider the definition of [last] that we can define by
+    well-founded recursion, adding the following indication: [by wf (length l) lt].
     [Equations] will then creates one obligation per recursive call and
     try to solve them.
     In the case of [last], it creates the obligation [length (a'::l) < length (a::a'::l)]
-    which as we can check can be solved automatically.
+    which as we can check is solved automatically.
 *)
 
 Equations last {A} (l : list A) : option A by wf (length l) lt   :=
@@ -262,23 +262,23 @@ last (a::nil) := Some a;
 last (a::(a'::l)) := last (a'::l).
 
 (** Defining [last] by well-founded recursion is hence effortless and the
-    the definition is as legible as we would hope.
+    definition is as legible as we would hope.
 
-    Moreover, thanks to functional elimination through [funelim], we can reason
-    about function defined by well-founded recursion without having to repeat
+    Moreover, thanks to functional induction through [funelim], we can reason
+    about functions defined by well-founded recursion without having to repeat
     the well-founded induction principle.
     For each recursive call, the tactic [funelim] will create a goal
     goal and an induction hypothesis where all the dependent terms have been
     quantified.
 
-    For instance, let's prove that if [l <> nil], then there exists an
+    For instance, let us prove that if [l <> nil], then there exists an
     [a : A] such that [last l = (Some a)].
     By functional elimination, we only need to deal with the case where
     [l := nil], [l := [a]] and [l := (a::a'::l)].
     Moreover, in the last case, we know recursively that
     [a' :: l <> [] -> {a : A & last (a' :: l) = Some a}].
-    As we can see, the condition [l <> nil] as correctly been
-    particularise and quantified by.
+    As we can see, the condition [l <> nil] has correctly been
+    particularised and quantified.
 *)
 
 Definition exists_last {A} (l : list A) (Hneq : l <> nil) :
@@ -307,12 +307,12 @@ Qed.
 
 (** Let's now consider the Ackerman function which is decreasing according to
     the usual lexicographic order on [nat * nat], [(<,<)] which is accessible
-    as both [<] are.
+    as [<] is, and the lexicographic combination of well-founded relations is too.
     You can define the lexicographic order and automatically derive a proof
     it is well-founded using the function [Equations.Prop.Subterm.lexprod].
     As we can see, with this order, once again no obligations are left to prove as
     Coq can prove on its own that [(m, (ack (S m) n)) <lex (S m, S n)] and
-    [(S m, n) < n].
+    [(S m, n) <lex (S m, S n)].
 *)
 
 Equations ack (m n : nat) : nat by wf (m, n) (Equations.Prop.Subterm.lexprod _ _ lt lt) :=
@@ -321,8 +321,8 @@ ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
 
-(** Theoretically, we should be able to reason about [ack] as usual using [funelim].
-    Unfortunately, in this case, [funelim] takes a very long runs if it terminates.
+(** In principle, we should be able to reason about [ack] as usual using [funelim].
+    Unfortunately, in this case, [funelim] runs for very long if it terminates.
     You can check it out by uncommenting the timed-out [funelim] below:
 *)
 
@@ -336,9 +336,9 @@ Abort.
     problem here.
     This a known issue and it is currently being investigated and fixed.
 
-    There are two main solutions to go around the issue depending on your case:
+    There are two main solutions to go around similar issue depending on your case:
     - If your pattern is fully generic, i.e. of the form [ack m n], you can
-      apply [ack_elim] directly.
+      apply the [ack_elim] lemma directly.
       Though note, that in this case you may need to generalise the goal by hand,
       in particular by equalities (e.g. using the remember tactic) if the function
       call being eliminated is not made of distinct variables.
@@ -348,7 +348,7 @@ Abort.
       and tries to prove [ack m n = 2 + n] by induction, creating cases like
       [ack (S m) n] which clearly are not warranted here.
 
-    For instance, let's prove [ack1 : ack 1 n = 2 + n]:
+    For instance, let us prove [ack1 : ack 1 n = 2 + n]:
 *)
 
 Definition ack1 {n} : ack 1 n = 2 + n.
@@ -371,9 +371,9 @@ Proof.
   - eapply Nat.le_lt_trans; eassumption.
 Qed.
 
-(** Let's now mention an issue due to [rewrite] that can sometimes come up.
+(** Let us now mention an issue due to [rewrite] that can sometimes come up.
 
-    If we try to prove [ack_incr] by induction, in the base case, we have to prove
+    If we try to prove [ack_incr] below by induction, in the base case, we have to prove
     that [S n0 < ack 0 (n0 + 1)] which should be simple as [ack 0 (n0 + 1)] is equal
     to [S (n0 + 1)], and clearly [S n0 < S (n0 + 1)].
     Yet, surprisingly [simp ack] fails to simplify [ack 0 (n0 + 1)] to [S (n0 + 1)].
@@ -385,7 +385,7 @@ Qed.
     or another, [rewrite] ends up converting [S n] to [ack 0 n] and
     unify [n] with [n0] which then creates a loop.
 
-    The simplest method to go around this issue is to given [n] by hand.
+    The simplest method to go around this issue is to give [n] by hand.
     This way it can not be inferred wrong, and rewrites work:
 *)
 Definition ack_incr {m n} : ack m n < ack m (n+1).
@@ -428,8 +428,8 @@ Admitted.
 
 (** *** 1.3 Well-founded recursion and Obligations
 
-    For a more involved example where Coq can not prove on its own that the
-    recursive call are performed on smaller arguments, let's consider the
+    For a more involved example where Coq cannot prove on its own that the
+    recursive call are performed on smaller arguments, let us consider the
     [nubBy] function.
 
     Given an equality test, [nubBy] recursively filters out the duplicates
@@ -456,11 +456,11 @@ nubBy eq (a :: l) => a :: nubBy eq (filter (fun b => negb (eq a b)) l).
 Fail Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
                : In a (nubBy eq l) -> In a l.
 
-(** The reason is that Coq can not prove on its own that the recursive
+(** The reason is that Coq cannot prove on its own that the recursive
     call is performed on a smaller instance.
     It is not surprising as our argument rests on the property that
     for any test [f : A -> bool], [length (filter f l) ≤ length l].
-    Property that is not trivial, and that Coq can not prove on its own,
+    Property that is not trivial, and that Coq cannot prove on its own,
     nor look for on its own without any indications.
     Consequently, there is an obligation left to solve, and [nubBy] is not
     defined as long as we have not solve it.
@@ -520,10 +520,10 @@ Defined.
 
     Though, note that [Equations?] triggers a warning when used on a definition
     that leaves no obligations unsolved.
-    It is because for technical reasons, [Equations?] can not check if they
-    are at least obligation left to solve before opening the proof mode.
+    It is because for technical reasons, [Equations?] cannot check if there
+    is at least on obligation left to solve before opening the proof mode.
     Hence, when there is no obligation proof mode is open for nothing, and
-    as to be closed by hand using [Qed] or [Defined] as it can be seen bellow.
+   has to be closed by hand using [Qed] or [Defined] as can be seen below.
     As it is easy to forget, a warning is raised.
 *)
 
@@ -532,7 +532,7 @@ foo _ => 0.
 Qed.
 
 (** In practice, if you wish to automatically test if obligations are
-    left to solve and unshelved them if so, you can just start all your definitions
+    left to solve and unshelve them if so, you can just start all your definitions
     with [Equations?] and remove the [?] if the warning is triggered.
 
     Reasoning on functions defined by well-founded recursion with
@@ -574,7 +574,7 @@ Qed.
 
     *** 2.1 The inspect method
 
-    When defining a functions, it can happen that we loose information
+    When defining a function, it can happen that we loose information
     relevant to termination when matching a value, and that we then get
     stuck trying to prove termination.
 
@@ -597,8 +597,8 @@ Section Inspect.
     [a].
     Naively, we would like to do so as below.
     That is check if there is an element smaller than [a] by matching [f a]
-    with a with clause, if there is one [Some p] then returns [p] added to
-    chain starting [f_sequence p] here our recursive call, and otherwise
+    with a with clause, if there is one [Some p] then return [p] added to the
+    chain starting with [p], i.e., our recursive call [f_sequence p], and otherwise
     stop the computation.
 *)
 
@@ -612,8 +612,8 @@ Section Inspect.
     (* What to do now ? *)
   Abort.
 
-(** Unfortunately, as we can see, if do so it generates an unprovable
-    obligation as we don't remember information about the call to [f n] being
+(** Unfortunately, as we can see, if done so we generate an unprovable
+    obligation as we do not remember information about the call to [f n] being
     equal to [Some p] in the recursive call [f_sequence p].
 
     To go around this issue and remember the origin of the pattern,
@@ -631,7 +631,7 @@ Section Inspect.
     [inspect (f a)] then on the first component which is by definition [f a],
     rather than directly on the term [f a].
     This may seem pointless as if one destruct [f a] in an equality
-    [f a = f a], one would surely get [Some p = Some p] and learn nothing ?
+    [f a = f a], one would surely get [Some p = Some p] and learn nothing?
     The trick here is that [inspect (f a)] returns an object of type
     [{b : A | f a = b}], type in which [f a] is a fixed constant.
     Consequently, destructing the first component, in our case [f a],
@@ -654,7 +654,7 @@ End Inspect.
 (** *** 2.2 Personalising the tactic proving obligations
 
     When working, it is common to be dealing with a particular class of
-    functions that shares a common theory, e.g, they involves basic
+    functions that share a common theory, e.g, they involve basic
     arithmetic.
     Yet, without surprise, by default the tactic trying to prove obligations is not
     aware of the particular theory at hand, and it will fail to solve
@@ -704,7 +704,7 @@ Show Obligation Tactic.
     obligations to take into account arithmetic, and try lia.
 
     To do so, we use the command [ #[local] Obligation Tactic := tac ]
-    to change locally the tactic solving obligation to a tactic [tac].
+    to locally change the tactic solving obligation to a tactic [tac].
 
     In our case, we choose for [tac] to be the previously used
     tactic to which we have added a call to [lia] at the end:
