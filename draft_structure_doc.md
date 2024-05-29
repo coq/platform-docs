@@ -12,8 +12,8 @@
   - Basic tactics
   - Solvers and Decision procedures
   - SSReflect
-  - MetaProgrammation
-- Programmation in Coq
+  - MetaProgramming
+- Programming in Coq
   - Writing programs in Coq
   - Extraction
   - Programming by dependent pattern matching with Equations
@@ -64,7 +64,7 @@
 ### SSReflect
 - I guess there is much to say :smile:
 
-### MetaProgrammation, writing your own tactics
+### MetaProgramming, writing your own tactics
 - Ltac
 - Ltac2
 - MTac2
