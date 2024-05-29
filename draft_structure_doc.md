@@ -64,7 +64,7 @@
 ### SSReflect
 - I guess there is much to say :smile:
 
-### MetaProgrammaing, writing your own tactics
+### MetaProgramming, writing your own tactics
 - Ltac
 - Ltac2
 - MTac2
