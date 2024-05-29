@@ -57,11 +57,11 @@ specific features of Coq, such that users can both learn and discover new
 features by themselves, but also consult them when they are trying to use
 features and are stuck.
 
-Apart from long, course-shaped books, Coq currently has only minimal and
+Apart from long, course-shaped books, Coq and the packages from its ecosystem currently have only minimal and
 scattered action-oriented documentation.
 The reference manual is by design not learning-oriented and not action-oriented,
 and it would be a mistake to try to bend it that way.
-Books like CoqArt or Software Foundations provide nice pedagogical explanations
+Books like Coq'Art or Software Foundations provide nice pedagogical explanations
 but target specific audiences, and often read from cover to cover.
 Moreover, they are not well suited to learn about specific features, to discover
 horizontally, and are not easy to keep updated.
@@ -72,15 +72,15 @@ Yet, short action-oriented documentation has many interests:
         centralized online interface is of utmost importance to engage new
         users, and keep current users.
         We cannot expect users to have to dig on their own through the
-        reference manual, books, or github repositories to learn how to use or
+        reference manual, books, or GitHub repositories of ecosystem packages to learn how to use or
         get information while working about a specific feature.
         Most particularly as these sources may not contain the basic answers
         they are looking for, due to their nature.
   \item Not having such a documentation prevents people from actually
         discovering and learning by themselves new amazing features, as well as
         the richness of our ecosystem.
-        Indeed, many features are still currently under-documented, and
-        when existing, the documentation is often scattered out making it hard
+        Indeed, many features and packages are still currently under-documented, and
+        when existing, the documentation is often scattered out, making it hard
         to discover a feature if one is not already an expert.
         A symptom of that is the trouble that students are currently facing to
         find answers or discover new functionalities by themselves, even sometimes
@@ -90,7 +90,7 @@ Yet, short action-oriented documentation has many interests:
         get the code working, thus to understand better features.
         Therefore, we hope that by writing the documentation, we will clarify
         the use of many features, and potentially discover or shed lights on bugs.
-        Actually, writing tutorials for Equations as already revealed different
+        Actually, writing tutorials for Equations has already revealed different
         issues with the main tactic \href{https://github.com/Zimmi48/platform-docs/pull/1}{funelim}
         and bugs involving \href{https://coq.zulipchat.com/#narrow/stream/237659-Equations-devs-.26-users/topic/Bug.20funelim.20on.20Ack}{rewrite}.
   \item Most math users are currently unaware of the extent of what has been
@@ -114,7 +114,7 @@ Tutorials and how-to guides serve different purposes and are complementary.
 Tutorials guide a user during learning in discovering specific aspects of a
 feature like ``Notations in Coq'', by going through (simple) predetermined
 examples, and introducing notions gradually. In contrast, how-to guides are
-use-case-oriented and guides users through real life problems and their inherent
+use-case-oriented and guide users through real life problems and their inherent
 complexity, like ``How to define functions by well-founded recursion and reason
 about them''.
 
@@ -125,29 +125,29 @@ the reference manual, and has several advantages:
 
 \begin{itemize}[itemsep=0pt]
   \item Tutorials should enable users to learn and discover specific features on
-        their own, modularly, and according to their needs
+        their own, modularly, and according to their needs.
   \item How-tos should provide users practical answers to practical problems
-        that they can refer to when working
+        that they can refer to when working.
   \item By nature, the documentation should be mostly horizontal, which should:
     \begin{itemize}[itemsep=0pt]
-      \item make it easy to navigate and to find specific information
+      \item make it easy to navigate and to find specific information,
       \item prevent users from having to read a bunch of documentation to be
-	    able to read a specific tutorial
+	    able to read a specific tutorial,
       \item make it possible to build it gradually, making new tutorials and
-	    how-tos available as we progress
+	    how-tos available as we progress,
       \item allow differentiated learning: depending on your background or
             objective you can navigate the documentation differently,
             potentially reading different tutorials.
     \end{itemize}
-  \item It will enable us to showcase all that is possible in Coq's ecosystem
-  \item It should be easy to maintain as once fully written a tutorial or how-to
-        should have any reason to change, except if the associated feature or
+  \item It will enable us to showcase all that is possible in Coq's ecosystem.
+  \item It should be easy to maintain, as once fully written, a tutorial or how-to
+        should not have any reason to change, except if the associated feature or
         known best practices change.
 \end{itemize}
 
 \paragraph{Current status}
 
-There now is a \href{https://github.com/Zimmi48/platform-docs}{github repository}
+There now is a \href{https://github.com/Zimmi48/platform-docs}{GitHub repository}
 that people can check out to discover the project, and a dedicated
 \href{https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs}{Zulip stream}
 to discuss the project.
@@ -161,7 +161,7 @@ being developed and will be available soon.
 In the future, we hope to support a more standard and expressive format,
 possibly using Alectryon.
 
-Otherwise, a Coq Enhancement Proposal is currently being written to discuss the
+A Coq Enhancement Proposal is currently being written to discuss the
 project further with the community.
 We hope that on the long run, this documentation will be integrated in Rocq's
 future website.
