@@ -4,7 +4,7 @@
 \usepackage{enumitem}
 \usepackage{hyperref}
 
-\title{Coq Platforms docs: A Compilation of Short Interactive Tutorials and
+\title{Coq Platform docs: A Compilation of Short Interactive Tutorials and
 How-To Guides for Coq}
 
 \date{}
@@ -51,18 +51,18 @@ There are different forms of documentation: abstract and detailed documentation
 like the reference manual~(\cite{Link_Coq_Ref}), course-shaped documentation like
 Coq'Art~(\cite{bertot2013interactive}) or
 Software Foundations~(\cite{Pierce:SF1}), or short action-oriented
-documentation. Here, we focus on the latter.
+documentation. We focus on the latter.
 Short action-oriented documentation provides users with practical information on
-specific features of Coq, such that users can both learn and discover new
-features by themselves, but also consult them when they are trying to use
-features and are stuck.
+specific features of Coq, so that users can learn and discover new
+features by themselves or consult it when they fail to use them efficiently.
 
-Apart from long, course-shaped books, Coq and the packages from its ecosystem currently have only minimal and
-scattered action-oriented documentation.
+At this point, Coq has only minimal and scattered action-oriented documentation
+about specific features or topics.
 The reference manual is by design not learning-oriented and not action-oriented,
 and it would be a mistake to try to bend it that way.
 Books like Coq'Art or Software Foundations provide nice pedagogical explanations
-but target specific audiences, and often read from cover to cover.
+but target specific audiences, and are rather meant to be read from cover to
+cover.
 Moreover, they are not well suited to learn about specific features, to discover
 horizontally, and are not easy to keep updated.
 
@@ -70,11 +70,11 @@ Yet, short action-oriented documentation has many interests:
 \begin{itemize}[itemsep=0pt]
   \item Having an easy to access documentation, accessible through a nice
         centralized online interface is of utmost importance to engage new
-        users, and keep current users.
+        users and keep current users.
         We cannot expect users to have to dig on their own through the
         reference manual, books, or GitHub repositories of ecosystem packages to learn how to use or
         get information while working about a specific feature.
-        Most particularly as these sources may not contain the basic answers
+        Moreover, these sources may not contain the basic answers
         they are looking for, due to their nature.
   \item Not having such a documentation prevents people from actually
         discovering and learning by themselves new amazing features, as well as
@@ -85,10 +85,15 @@ Yet, short action-oriented documentation has many interests:
         A symptom of that is the trouble that students are currently facing to
         find answers or discover new functionalities by themselves, even sometimes
         about basic features.
+  \item Even advanced users need help to keep up to date with recent
+        developments inside of Coq (\texttt{SProp}, universe polymorphism,
+        Ltac2, ...) or around it (MetaCoq, coq-elpi, Hierarchy Builder, ...).
   \item Writing proper documentation forces us to explain the different aspects
-        of a feature clearly, step by step, thus to understand features better.
+        of a feature clearly, step by step, and without relying on recipes to
+        get the code working, thus to understand it better.
         Therefore, we hope that by writing the documentation, we will clarify
-        the use of many features, and potentially discover or shed light on bugs.
+        the use of many features, and potentially discover or shed light on bugs
+        or weaknesses.
         Actually, writing tutorials for Equations has already revealed different
         issues with the main tactic \href{https://github.com/Zimmi48/platform-docs/pull/1}{funelim}
         and bugs involving \href{https://coq.zulipchat.com/#narrow/stream/237659-Equations-devs-.26-users/topic/Bug.20funelim.20on.20Ack}{rewrite}.
@@ -105,9 +110,9 @@ Yet, short action-oriented documentation has many interests:
 This project aims to create an online compilation of short and interactive
 tutorials and how-to guides for Coq and the Coq Platform~\cite{Link_Coq_Platform,palmskog2022reliably}.
 Each core functionality and plugin of Coq and the Coq Platform should have
-(short) pedagogical tutorials and/or how-to guides demonstrating how to use the
+(short) pedagogical tutorials and/or how-to guides demonstrating how to use this
 functionality, with practical examples. They should further be available online
-through an interactive interface, most likely using JsCoq~\cite{jscoq},
+through an interactive interface, most likely using jsCoq~\cite{jscoq},
 and a non-interactive interface (for reading on mobile devices).
 
 Tutorials and how-to guides serve different purposes and are complementary.
@@ -118,15 +123,13 @@ use-case-oriented and guide users through real life problems and their inherent
 complexity, like ``How to define functions by well-founded recursion and reason
 about them''.
 
-\paragraph{Advantages of such a documentation}
-
-Such form of documentation is complementary to other kinds of documentation like
-the reference manual, and has several advantages:
+This form of documentation is complementary to other kinds of documentation and
+has several advantages:
 
 \begin{itemize}[itemsep=0pt]
   \item Tutorials should enable users to learn and discover specific features on
         their own, modularly, and according to their needs.
-  \item How-tos should provide users practical answers to practical problems
+  \item How-to guides should provide users practical answers to practical problems
         that they can refer to when working.
   \item By nature, the documentation should be mostly horizontal, which should:
     \begin{itemize}[itemsep=0pt]
@@ -134,35 +137,27 @@ the reference manual, and has several advantages:
       \item prevent users from having to read a bunch of documentation to be
 	    able to read a specific tutorial,
       \item make it possible to build it gradually, making new tutorials and
-	    how-tos available as we progress,
+	    how-to guides available as we progress
       \item allow differentiated learning: depending on your background or
             objective you can navigate the documentation differently,
             potentially reading different tutorials.
     \end{itemize}
   \item It will enable us to showcase all that is possible in Coq's ecosystem.
-  \item It should be easy to maintain, as once fully written, a tutorial or how-to
-        should not have any reason to change, except if the associated feature or
-        known best practices change.
 \end{itemize}
 
-\paragraph{Current status}
-
-There now is a \href{https://github.com/Zimmi48/platform-docs}{GitHub repository}
+At the moment, we use a \href{https://github.com/Zimmi48/platform-docs}{GitHub repository}
 that people can check out to discover the project, and a dedicated
 \href{https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs}{Zulip stream}
 to discuss the project.
-
-A few tutorials have already been written and are available on the repository.
-They have already proven useful by providing practical answers that are
+A few tutorials are already available on the repository.
+They have proven useful by providing practical answers that are
 otherwise hard to find without asking directly to an expert.
-
 A first online interactive interface based on JsCoq and coqdoc is currently
 being developed and will be available soon.
 In the future, we hope to support a more standard and expressive format,
 possibly using Alectryon~\cite{pit2020untangling}.
 
-A Coq Enhancement Proposal is currently being written to discuss the
-project further with the community.
+We are also writing a Coq Enhancement Proposal to discuss the project further with the community.
 We hope that, eventually, this documentation will become part of the website that will be created when renaming Coq to \emph{the Rocq Prover}.
 
 \label{sect:bib}
