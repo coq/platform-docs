@@ -417,12 +417,19 @@ Print NestedABC1.ABC.alice.
     case. We will only experiment with some of these categories. *)
 
 Module Bar.
+  (* A parameter: *)
   Parameter (secret : nat).
+  (* An axiom: *)
   Axiom secret_is_42 : secret = 42.
+  (* A custom tactic: *)
   Ltac find_secret := rewrite secret_is_42.
+  (* An abbreviation: *)
   Notation add_42 := (Nat.add 42).
+  (* A tactic notation: *)
   Tactic Notation "fs" := find_secret.
+  (* A notation: *)
   Infix "+p" := Nat.add (only parsing, at level 30, right associativity) : nat_scope.
+  (* Two lemmas: *)
   Lemma secret_42 : secret = 42.
   Proof. find_secret. reflexivity. Qed.
   Lemma baz : 21 +p 21 = secret.
@@ -438,8 +445,8 @@ Print Assumptions Bar.secret_42.
 About Bar.baz.
 Print Assumptions Bar.baz.
 
-(** We see that parameters and axioms are available, and axioms are treated as
-    such after the end of the module.
+(** We see that parameters, axioms and lemmas are available, and axioms are
+    treated as such after the end of the module.
 
     What about the other content? *)
 Print Bar.add_42. (* Our abbreviation is available. *)
