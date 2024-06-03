@@ -79,7 +79,7 @@ Print Libraries.
     2. There is **no way** to "unrequire" anything. Once a file has been
        required, its content will remain in the global environment of the user
        in every file where it was (transitively) required ever, possibly
-       polluting [Search] output.
+       cluttering up [Search] output.
 
     As a consequence, one should be careful of what one [Require]s. *)
 
@@ -178,7 +178,9 @@ Print Foo.foo.
 Check Foo.bar.
 Check Foo.baz.
 
-(** [Foo.bar] and [Foo.baz] are not [Parameters] or [Axioms]: *)
+(** [Foo.bar] and [Foo.baz] are not [Parameters] or [Axioms]: the following
+    [Print Assumptions] commands show that they are "closed under the global
+    context", that is they do not rely on any axiom and are indeed proved. *)
 Print Assumptions Foo.bar.
 Print Assumptions Foo.baz.
 
@@ -244,12 +246,12 @@ About foo.
 Print Foo.foo.
 About Foo.foo.
 
-(** The [Locate] command shows the _stack_ of identifiers whose unqualified name
+(** The [Locate] command shows the list of identifiers whose unqualified name
     is the given argument: *)
 Locate foo.
 
-(** On top of it (first) is our [OtherFoo.foo] constant, it is available by its
-    short name. Next is [Foo.foo] and Coq gives us the shortest partially
+(** The first item in the list is our [OtherFoo.foo] constant, it is available
+    by its short name. Next is [Foo.foo] and Coq gives us the shortest partially
     qualified name to refer to it.
 
     What happens if we now [Import Foo] again? *)
@@ -259,9 +261,9 @@ About foo.
 Locate foo.
 
 (** We have changed again to which constant refers the short name [foo]!
-    Our [Foo.foo] constant is on top of the stack of [foo] constants.
+    Our [Foo.foo] constant is now the first item in our list of [foo] constants.
     This changing short name resolution may look innocuous but it has a very
-    nasty consequence:
+    important consequence:
 
     _The order of the [Import] commands matters, changing it can break things._
 *)
@@ -643,7 +645,7 @@ Module A.
 End A.
 
 (** This situation may seem contrived, but imagine rather a library file, say
-    A.v which [Require]s and [Imports] another library file, say B.v.
+    A.v which [Require]s and [Import]s another library file, say B.v.
     At this point, we are in a situation similar to being in yet another file
     C.v which has [Require]d the file A.v (but not yet [Import]ed it). *)
 
@@ -699,9 +701,9 @@ Check this_is_b'.
 
 (** ** 6. Locality attributes in modules *)
 
-(** If you're not yet bored to death, let's end this tutorial with a last tool
-    to give control over what should remain local (if not hidden) and what
-    should be exposed in a module (which can be a library file).
+(** Let's end this tutorial with a last tool to give control over what should
+    remain local (if not hidden) and what should be exposed in a module (which
+    can be a library file).
 
     Locality attributes change the visibility of content outside a section or
     a module. We're only interested in modules in this tutorial.
@@ -715,10 +717,10 @@ Check this_is_b'.
     The availability and effect of these attribute depends on each command (and
     even which Coq version we use) but,
     in short, when supported:
-    - the `#[local]` attribute marks some content unavailable for import
-    - the `#[export]` attribute marks some content available only if the module
+    - the `#[local]` attribute makes some content unavailable for import
+    - the `#[export]` attribute makes some content available only if the module
       is [Import]ed
-    - the `#[global]` attribute, in some cases, marks some content available
+    - the `#[global]` attribute, in some cases, makes some content available
       outside the module even when not [Import]ed. *)
 
 (** We experiment with our useless module [Baz]: *)
