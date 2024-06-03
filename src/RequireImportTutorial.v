@@ -1,27 +1,51 @@
-(** * Require, Import and Export tutorial
+(** * Basic library files and modules management
 
     *** Summary
 
     This tutorial is about how to get the most out of library files, that is
-    Coq files containing definitions, lemmas, notations, etc and simple modules.
+    Coq files containing definitions, lemmas, notations, ...
+
+    Coq Library files are modules, which may themselves contain (non-file) inner
+    modules. In order to reuse the content of a file, one has to [Require] it
+    first. We will first see how these library files are identified by Coq and
+    how to [Require] them in practice.
+
+    Coq Modules provide, among other things, namespace facilities as well as
+    some form of locality. We will see how to identify the constants
+    (definitions, lemmas, ...) contained in a module with a (more or less)
+    qualified name such as [Bool.andb_true_l]. In order to use an unqualified
+    name, such as [andb_true_l], one has to [Import] this module. It turns out
+    this can lead to shadowing other existing constants. We will detail when and
+    how it may happen.
+
+    Next, we will be interested with other content types in modules, that is,
+    hints, coercions, notations, ... and how they are typically not available
+    when the module is not [Import]ed. We will see how to restrict what is
+    visible outside a module, either from the user side with selective imports,
+    or from the module writer side with locality attributes.
+
+    We will finally clarify the difference between [Import]ing and [Export]ing a
+    module.
+
+    The second and third part of this tutorial are (almost) independent.
+
     These topics are often skipped from lectures or courses about Coq
     because they are mostly technical and somewhat boring. However, any Coq
     user needs to learn (usually the hard way) this content before writing their
     own libraries.
 
-    In Coq, library files are modules, and modules provide, among other things,
-    namespace facilities as well as some form of locality. Understanding what to
-    expect when one [Import]s or [Export]s modules is important, even when not
-    relying on modules and module types.
-
     *** Table of content
 
-    - 1. Library files
-    - 2. Simple modules
-    - 3. Name clashes and disambiguation
-    - 4. Other content types in Modules
-    - 5. Selective import
-    - 6. Locality attributes in modules
+    - 1. Library files, modules and identifiers
+      - 1.1 The [Require] command and fully qualified names
+      - 1.2. Basic modules and the [Import] command
+      - 1.3. Name clashes and disambiguation
+      - 1.4. Guidelines about the order of [Require] and [Import] commands
+      - 1.5. Other content types in modules
+    - 2. Fine control over module features
+      - 2.1. On the user's side: selective import
+      - 2.2. On the writer's side: locality attributes in modules
+    - 3. The [Export] command
 
     *** Prerequisites
 
@@ -36,7 +60,9 @@
     This tutorial should work for Coq V8.17 or later.
 *)
 
-(** ** 1. Library files *)
+(** ** 1. Library files, modules and identifiers *)
+
+(** *** 1.1 The [Require] command and fully qualified names *)
 
 (** Coq's basic compilation unit is the _library file_. Each compiled file can
     be [Require]d in order to make its logical and computational content
@@ -50,22 +76,20 @@ Print Libraries.
 
 (** As we can see, these files share a common logical prefix made of:
     - [Coq]: the library prefix used by the standard library
-    - [Init]: the directory where these library files are located
+    - [Init]: the subdirectory of the root directory of Coq's standard library
+      where these library files are located
 
-    Let's require another small library file. *)
-From Coq.Bool Require Bool.
+    This means that the [Init] directory contains the (compiled) files
+    [Notations.vo], [Ltac.vo], [Logic.vo], ... and we can already use their
+    content, for instance the commutativity of the disjunction: *)
+Check or_comm.
 
-(** The last command told [Coq] to load all logical and computational content
-    in the file [Bool.vo] contained in the directory [Bool] of the root
-    directory of Coq's standard library.
+(** Let's require another small library file. *)
+From Coq Require Bool.Bool.
 
-    Let us mention other possibilities, we could have written:
-    [From Coq Require Bool.Bool.]
-    or, since there is no confusion (there is only one file named [Bool.vo] in
-    Coq's standard library):
-    [From Coq Require Bool.]
-
-    We can also drop the [From] part and [Require Coq.Bool.Bool]. *)
+(** The previous command told [Coq] to load all logical and computational
+    content in the file [Bool.vo] contained in the directory [Bool] of the root
+    directory of Coq's standard library. *)
 
 (** Now let's see how our list of libraries has evolved: *)
 Print Libraries.
@@ -78,8 +102,8 @@ Print Libraries.
        [Require]d (and any file [Require]d in the [Require]d files, and so on).
     2. There is **no way** to "unrequire" anything. Once a file has been
        required, its content will remain in the global environment of the user
-       in every file where it was (transitively) required ever, possibly
-       cluttering up [Search] output.
+       in every file where it was (transitively) required, possibly cluttering
+       up [Search] output.
 
     As a consequence, one should be careful of what one [Require]s. *)
 
@@ -103,12 +127,12 @@ About Bool.andb_true_l.
     identifier_.
 
     This is a technical but important notion, so we should take some time to
-    describe this identifer. There are several parts separated by dots.
+    describe this identifier. There are several parts separated by dots.
     - The first part is Coq: it is the _logical name_ of the library. Other
       mechanisms (for instance a [_CoqProject] file, or [-R] and [-Q] options
-      for [coqc], location which are known by [coqc], such as
-      the output of [coqc -where], ...) associate a logical name to a physical
-      directory containing the library files.
+      for [coqc], location which are known by [coqc], such as the output of
+      [coqc -where], ...) associate a logical name to a physical directory
+      containing the library files.
     - The second and third part correspond to the path of the file (relative to
       the root of the library) containing the identifier in the given library,
       in our case, on a Unix family system, it corresponds to [Bool/Bool.vo].
@@ -130,6 +154,9 @@ About Bool.andb_true_l.
     a valid identifier: *)
 Fail Check andb_true_l.
 
+(** Coq does not allow us to use this _short name_ automatically because it
+    risks to silently shadow another constant with the same short name. *)
+
 (** The [Locate] command shows all constants associated to an unqualified
     identifier and how to refer to it in the shortest way possible. *)
 Locate andb_true_l.
@@ -138,18 +165,51 @@ Locate andb_true_l.
     module (yes, we said module here and not library file, more about this
     later). *)
 Import Bool.
+
+(** Now we can refer to the constants in [Bool] with their short names. *)
 Check andb_true_l.
 
-(** We have used the name [Bool] for the [Import] command, but we
-    could as well have written [Import Coq.Bool.Bool] or [Import Coq.Bool].
+(** Coq will also display short names in its messages: *)
+Search andb true.
+Search andb true inside Bool.
 
-    Most users prefer short names to fully qualified names so, in practice, one
-    usually [Require]s and [Import]s a file at the same time.
-    This is done with the syntax: [From Coq.Bool Require Import Bool] or any
-    of the other possibilities described above when we [Require]d the [Bool]
-    library file. *)
+(** In passing, we have [Import]ed [Bool] with a small unqualified name because
+    there was no confusion: *)
+Locate Bool.
 
-(** ** 2. Simple modules *)
+(** But we can refer to the [Bool] with a more qualified name too: *)
+About Bool.Bool.
+About Coq.Bool.Bool.
+
+(** In fact, most users prefer short names to fully qualified names so, in
+    practice, one usually [Require]s and [Import]s a file at the same time.
+    This is done, for instance, with the syntax:
+    [From Coq Require Import Bool.Bool.]
+
+    In passing, there are many more possibilities to [Require] (with or with
+    import) a library file.
+    The fully qualified name of this file is [Coq.Bool.Bool], and one can
+    factor any prefix in the [From] part of the command, so the following
+    command achieves the same goal:
+    [From Coq.Bool Require Import Bool.]
+    or, with an empty [From] part:
+    [Require Import Coq.Bool.Bool.]
+
+    In fact, the [From] part is mostly a convenience to require multiple parts
+    from a common library or sublibrary, for instance, if one uses the mathcomp
+    library, the single line
+    [From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.]
+    loads and imports 6 files from the mathcomp library.
+
+    If there is no confusion, it is even possible to omit the directory (or
+    directories) part. In our case there is only one file [Bool.vo] in all
+    Coq's standard library, so we could also have used
+    [From Coq Require Import Bool.]
+
+    What to choose is then mostly a matter of taste (and clearly depends on the
+    number of files in the library). *)
+
+(** *** 1.2. Basic modules and the [Import] command *)
 
 (** We will use modules here mostly because they will help us understand how
     to get what we want from library files (and reject, if possible, what we
@@ -221,7 +281,7 @@ Check bar.
       things we will see shortly)
     - _Library files are modules._ *)
 
-(** ** 3. Name clashes and disambiguation *)
+(** *** 1.3. Name clashes and disambiguation *)
 
 (** When we [Import]ed our [Foo] module before, there was no possible name
     clash since no constant in our context were named [foo], [bar] or [baz].
@@ -280,14 +340,15 @@ Print OtherFoo.foo.
 
 From Coq Require Import Arith.PeanoNat ZArith.BinInt.
 
-(** Most of the results and operations are actually contained in the
-    interactive modules [PeanoNat.Nat] and [BinInt.Z]: *)
+(** Most of the results and operations are actually contained in the interactive
+    (inner) modules [PeanoNat.Nat] and [BinInt.Z]. These inner modules are not
+    imported, yet. *)
 Check Nat.add_0_r.
 Check Z.add_0_r.
 
 (** Notice that the name [add_0_r] is used both for natural numbers and for
     integers, which seems right.
-    
+
     At this point, [add_0_r] does not refer to anything. *)
 Fail Check add_0_r.
 Locate add_0_r.
@@ -324,22 +385,22 @@ About Coq.Init.Nat.
 (** When two modules share the same name, there can be name clashes and
     shadowing if some of their constants have the same name. Let us illustrate
     it with nested modules.
-    
+
     The situation would be similar if we required two library files with the
     same name in different libraries or directories (but we cannot illustrate
     this case conveniently in a single-file tutorial). *)
 
 Module NestedABC1.
   Module ABC.
-    Definition alice := 23.
-    Definition bob := 10.
+    Definition alice := 1.
+    Definition bob := 1.
   End ABC.
 End NestedABC1.
 
 Module NestedABC2.
   Module ABC.
-    Definition alice := 12.
-    Definition charlie := 1.
+    Definition alice := 2.
+    Definition charlie := 2.
   End ABC.
 End NestedABC2.
 
@@ -376,7 +437,7 @@ Locate alice.
 Print NestedABC1.ABC.alice.
 
 (** What happens if we [Import] both [ABC] momdules?
-    Not much more than what we already saw: the order of the [Import] commands
+    Anything more than what we already saw: the order of the [Import] commands
     will determine the meaning of the short name [alice]. *)
 Import NestedABC1.ABC.
 
@@ -401,7 +462,9 @@ Print NestedABC1.ABC.alice.
     - it is possible to have two constants with the same name as long as they
       are in different modules (including library files) *)
 
-(** ** 4. Other content types in Modules *)
+(** *** 1.4 Guidelines about the order of [Require] and [Import] commands *)
+
+(** *** 1.5. Other content types in Modules *)
 
 (** So far, our module [Foo] contained only definitions and lemmas.
     In practice there are many more content types in a module:
@@ -478,7 +541,9 @@ Qed.
     - the same holds for coercions, hints and canonical structures (we omit the
       experiments for brevity). *)
 
-(** ** 5. Selective import *)
+(** ** 2. Fine control over module features *)
+
+(** *** 2.1. On the user's side: selective import *)
 
 (** Now is a good time to present a recent (8.17) addition: selective import of
     modules. Recall that importing a module has basically two effects:
@@ -637,78 +702,9 @@ Check UnaryZ.
 Check plus.
 Check UnaryZ_ind.
 
-(** Exporting a module *)
+(** ** 2.2. On the writer's side: locality attributes in modules *)
 
-(** Contrarily to [Require]d library files, module imports are not transitive.
-    Consider the following nested module: *)
-Module A.
-  Definition this_is_a := 0.
-  Module B.
-    Definition this_is_b := 42.
-  End B.
-  Fail Check this_is_b.
-  Import B.
-  Check this_is_b.
-End A.
-
-(** This situation may seem contrived, but imagine rather a library file, say
-    A.v which [Require]s and [Import]s another library file, say B.v.
-    At this point, we are in a situation similar to being in yet another file
-    C.v which has [Require]d the file A.v (but not yet [Import]ed it). *)
-
-(** We can access the content of [A] with qualified names. *)
-Print A.this_is_a.
-Print Module A.B.
-Fail Print Module B.
-Print A.B.this_is_b.
-Fail Check A.this_is_b.
-Fail Check this_is_b.
-
-(** If we [Import A], we get short names for its content. *)
-Import A.
-Print this_is_a.
-Print Module B.
-
-(** But, even though [B] is [Import]ed in [A], we cannot use a short name
-    for [this_is_b]: *)
-Fail Print this_is_b.
-Print B.this_is_b.
-
-(** This behaviour is actually very sane. Some programmers may have [Import]ed
-    modules in library files for convenience, this should not affect every
-    users of their library.
-
-    Still, there is a way (and sometimes good reason) to mark some inner modules
-    for importation whenever the current module is [Import]ed: we use the
-    [Export] command: *)
-Module A'.
-  Definition this_is_a' := 0.
-  Module B'.
-    Definition this_is_b' := 42.
-  End B'.
-  Fail Check this_is_b'.
-  Export B'.
-  Check this_is_b'.
-End A'.
-
-Fail Check this_is_b'.
-Import A'.
-Check this_is_b'.
-
-(** As this gives less control to the final user, [Export]ing modules should not
-    be done lightly.
-
-    A common usage is to write a library split in small library files and a
-    summary file [Export]ing all of them, so that requiring and importing it
-    makes all the library content available at once.
-
-    Another use case is when [Import]ing a module (say about real numbers)
-    would only really make sense when another one (say about integers) is also
-    imported. *)
-
-(** ** 6. Locality attributes in modules *)
-
-(** Let's end this tutorial with a last tool to give control over what should
+(** Let's now turn to a complementary tool to give control over what should
     remain local (if not hidden) and what should be exposed in a module (which
     can be a library file).
 
@@ -722,12 +718,11 @@ Check this_is_b'.
     There are 3 locality attributes: [#[local]], [#[export]] and [[#global]].
     
     The availability and effect of these attribute depends on each command (and
-    even which Coq version we use) but,
-    in short, when supported:
-    - the `#[local]` attribute makes some content unavailable for import
-    - the `#[export]` attribute makes some content available only if the module
+    even which Coq version we use) but, in short, when supported:
+    - the [#[local]] attribute makes some content unavailable for import
+    - the [#[export]] attribute makes some content available only if the module
       is [Import]ed
-    - the `#[global]` attribute, in some cases, makes some content available
+    - the [#[global]] attribute, in some cases, makes some content available
       outside the module even when not [Import]ed. *)
 
 (** We experiment with our useless module [Baz]: *)
@@ -818,19 +813,17 @@ Test Universe Polymorphism.
     it is, commands have the default behaviour, except when [Set]ting options or
     with the [Hint] command (and typeclass instances). *)
 
-(** Let us restore the state of the [Printing Parentheses] option: *)
+(** Let us restore the state of the [Universe Polymorphism] option: *)
 Unset Universe Polymorphism.
 Test Universe Polymorphism.
-
-Create HintDb foo.
 
 Module SetGlobalExported.
   #[global] Set Universe Polymorphism.
   Test Universe Polymorphism.
-  #[global] Hint Rewrite Nat.add_0_l Nat.add_0_r : foo.
+  #[global] Hint Rewrite Nat.add_0_l Nat.add_0_r : req_tut.
   Lemma this_is_a_cool_lemma (n : nat) : 0 + n + 0 + 0 = 0 + n.
   Proof.
-    autorewrite with foo.
+    autorewrite with req_tut.
     reflexivity.
   Qed.
 End SetGlobalExported.
@@ -845,7 +838,76 @@ Test Universe Polymorphism.
     this should also be used with caution. *)
 Lemma this_is_a_cool_lemma (n : nat) : 0 + n + 0 + 0 = 0 + n.
 Proof.
-  autorewrite with foo.
+  autorewrite with req_tut.
   reflexivity.
 Qed.
 (** **** Exercise: why could we use the same name in the two previous lemmas? *)
+
+(** 3. Exporting a module *)
+
+(** Contrarily to [Require]d library files, module imports are not transitive.
+    Consider the following nested module: *)
+Module A.
+  Definition this_is_a := 0.
+  Module B.
+    Definition this_is_b := 42.
+  End B.
+  Fail Check this_is_b.
+  Import B.
+  Check this_is_b.
+End A.
+
+(** This situation may seem contrived, but imagine rather a library file, say
+    A.v which [Require]s and [Import]s another library file, say B.v.
+    At this point, we are in a situation similar to being in yet another file
+    C.v which has [Require]d the file A.v (but not yet [Import]ed it). *)
+
+(** We can access the content of [A] with qualified names. *)
+Print A.this_is_a.
+Print Module A.B.
+Fail Print Module B.
+Print A.B.this_is_b.
+Fail Check A.this_is_b.
+Fail Check this_is_b.
+
+(** If we [Import A], we get short names for its content. *)
+Import A.
+Print this_is_a.
+Print Module B.
+
+(** But, even though [B] is [Import]ed in [A], we cannot use a short name
+    for [this_is_b]: *)
+Fail Print this_is_b.
+Print B.this_is_b.
+
+(** This behaviour is actually very sane. Some programmers may have [Import]ed
+    modules in library files for convenience, this should not affect every
+    users of their library.
+
+    Still, there is a way (and sometimes good reason) to mark some inner modules
+    for importation whenever the current module is [Import]ed: we use the
+    [Export] command: *)
+Module A'.
+  Definition this_is_a' := 0.
+  Module B'.
+    Definition this_is_b' := 42.
+  End B'.
+  Fail Check this_is_b'.
+  Export B'.
+  Check this_is_b'.
+End A'.
+
+Fail Check this_is_b'.
+Import A'.
+Check this_is_b'.
+
+(** As this gives less control to the final user, [Export]ing modules should not
+    be done lightly.
+
+    A common usage is to write a library split in small library files and a
+    summary file [Export]ing all of them, so that requiring and importing it
+    makes all the library content available at once.
+
+    Another use case is when [Import]ing a module (say about real numbers)
+    would only really make sense when another one (say about integers) is also
+    imported. *)
