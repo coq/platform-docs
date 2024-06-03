@@ -802,7 +802,7 @@ Test Universe Polymorphism.
     option whenever the module is [Import]ed.
 
     For our hint, [#[export]] is the default attribute since Coq 8.18, but if
-    you need to work older versions, you should add it to your Hints, if you
+    you need to work with older versions, you should add it to your Hints, if you
     want them to be available after import. *)
 
 (** Now, for the [#[global]] setting. Again, it is often not supported and when
