@@ -40,8 +40,8 @@
       - 1.1 The [Require] command and fully qualified names
       - 1.2. Basic modules and the [Import] command
       - 1.3. Name clashes and disambiguation
-      - 1.4. Guidelines about the order of [Require] and [Import] commands
-      - 1.5. Other content types in modules
+      - 1.4. Other content types in modules
+      - 1.5. Guidelines about the order of [Require] and [Import] commands
     - 2. Fine control over module features
       - 2.1. On the user's side: selective import
       - 2.2. On the writer's side: locality attributes in modules
@@ -187,7 +187,7 @@ About Coq.Bool.Bool.
     [From Coq Require Import Bool.Bool.]
 
     In passing, there are many more possibilities to [Require] (with or with
-    import) a library file.
+    [Import]) a library file.
     The fully qualified name of this file is [Coq.Bool.Bool], and one can
     factor any prefix in the [From] part of the command, so the following
     command achieves the same goal:
@@ -196,8 +196,8 @@ About Coq.Bool.Bool.
     [Require Import Coq.Bool.Bool.]
 
     In fact, the [From] part is mostly a convenience to require multiple parts
-    from a common library or sublibrary, for instance, if one uses the mathcomp
-    library, the single line
+    from a common library or sublibrary. For instance, if one uses the mathcomp
+    library, the single line:
     [From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.]
     loads and imports 6 files from the mathcomp library.
 
@@ -462,9 +462,7 @@ Print NestedABC1.ABC.alice.
     - it is possible to have two constants with the same name as long as they
       are in different modules (including library files) *)
 
-(** *** 1.4 Guidelines about the order of [Require] and [Import] commands *)
-
-(** *** 1.5. Other content types in Modules *)
+(** *** 1.4. Other content types in Modules *)
 
 (** So far, our module [Foo] contained only definitions and lemmas.
     In practice there are many more content types in a module:
@@ -540,6 +538,34 @@ Qed.
       imported to be available;
     - the same holds for coercions, hints and canonical structures (we omit the
       experiments for brevity). *)
+
+(** *** 1.5 Guidelines about the order of [Require] and [Import] commands *)
+
+(** We have seen that the order of [Require] and [Import] statements is
+    important. Some constants could be shadowed by others, which can break
+    definitions and proofs.
+
+    In general, we should try to respect the following guidelines:
+    - All [Require] commands should be at the beginning of a file, it makes it
+      easier to know on which theories the file is built.
+    - Usually, [Require] statements are actually [Require Import] statements:
+      we want shorter names, notations, etc about theories we explicitly
+      build on.
+    - Other constants which have been (implicitly) transitively [Require]d need
+      a longer name to be used, so it is easier not to use them by accident (or
+      to finally decide that we need to explicitly [Require Import] other
+      modules).
+    - We should [Require Import] only what is needed: it makes the global
+      environment smaller, reduces the risks of shadowing and saves compilation
+      time. In particular, breaking dependencies allows parallel compilation
+      with multithreaded processors.
+    - In general, we should [Require Import] files from external libraries first,
+      in a more or less specialization order (the most basic theories first).
+      Then, we should [Require Import] other internal library files at the end.
+      Doing so prevents an external project to break our file by shadowing
+      internal constants we use in that file.
+    - We should try to [Require Import] files in the same order everytime to
+      increase predictability of breakage due to shadowing. *)
 
 (** ** 2. Fine control over module features *)
 
@@ -806,8 +832,8 @@ Test Universe Polymorphism.
     option whenever the module is [Import]ed.
 
     For our hint, [#[export]] is the default attribute since Coq 8.18, but if
-    you need to work with older versions, you should add it to your Hints, if you
-    want them to be available after import. *)
+    you need to work with older versions, you should add it to your Hints,
+    if you want them to be available after import. *)
 
 (** Now, for the [#[global]] setting. Again, it is often not supported and when
     it is, commands have the default behaviour, except when [Set]ting options or
@@ -858,9 +884,9 @@ Module A.
 End A.
 
 (** This situation may seem contrived, but imagine rather a library file, say
-    A.v which [Require]s and [Import]s another library file, say B.v.
+    [A.v] which [Require]s and [Import]s another library file, say [B.v].
     At this point, we are in a situation similar to being in yet another file
-    C.v which has [Require]d the file A.v (but not yet [Import]ed it). *)
+    [C.v] which has [Require]d the file [A.v] (but not yet [Import]ed it). *)
 
 (** We can access the content of [A] with qualified names. *)
 Print A.this_is_a.
@@ -870,7 +896,8 @@ Print A.B.this_is_b.
 Fail Check A.this_is_b.
 Fail Check this_is_b.
 
-(** If we [Import A], we get short names for its content. *)
+(** If we [Import A], we get short names for its content, including the module
+    [B] itself. *)
 Import A.
 Print this_is_a.
 Print Module B.
@@ -884,21 +911,23 @@ Print B.this_is_b.
     modules in library files for convenience, this should not affect every
     users of their library.
 
-    Still, there is a way (and sometimes good reason) to mark some inner modules
-    for importation whenever the current module is [Import]ed: we use the
-    [Export] command: *)
+    Still, there is a way (and sometimes good reason) to both [Import] a module
+    (which could be a file) and mark it for importation whenever the current
+    module (or file) is [Import]ed: we use the [Export] command. *)
 Module A'.
   Definition this_is_a' := 0.
   Module B'.
     Definition this_is_b' := 42.
   End B'.
-  Fail Check this_is_b'.
+  Fail Check this_is_b'. (* The module [B'] has not been [Import]ed in [A']. *)
   Export B'.
-  Check this_is_b'.
+  Check this_is_b'. (* The module [B'] is now [Import]ed in A'. *)
 End A'.
 
 Fail Check this_is_b'.
 Import A'.
+
+(** Since [B'] was [Export]ed in [A'], [Import]ing [A'] also [Import]s [B']: *)
 Check this_is_b'.
 
 (** As this gives less control to the final user, [Export]ing modules should not
@@ -911,3 +940,18 @@ Check this_is_b'.
     Another use case is when [Import]ing a module (say about real numbers)
     would only really make sense when another one (say about integers) is also
     imported. *)
+
+(** Other than that, [Export] behaves much like [Import]: it allows us to use
+    short names for constants, activates module features such as [Hints],
+    [Notations], etc.
+
+    One can also use selective import with [Export], and locality attributes
+    behave the same.
+
+    Finally, it is possible to [Require] and [Export] a library file at the
+    same time with.
+    For instance, the following command in [Coq.Arith.Arith_base]:
+    [From Coq Require Export Arith.PeanoNat.]
+    imports [PeanoNat]'s content in [Coq.Arith.Arith_base] as well as in any
+    file which [Require]s and [Import]s (or [Export]s) [Coq.Arith.Arith_base].
+*)
