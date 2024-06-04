@@ -556,11 +556,10 @@ Qed.
       experiment in a separate file.
     - Usually, [Require] statements are actually [Require Import] statements:
       we want shorter names, notations, etc about theories we explicitly
-      build on.
-    - Other constants which have been (implicitly) transitively [Require]d need
-      a longer name to be used, so it is easier not to use them by accident (or
-      to finally decide that we need to explicitly [Require Import] other
-      modules).
+      build on. Other constants which have been (implicitly) recursively
+      [Require]d need a longer name to be used, so it is easier not to use them
+      by accident (or to finally decide that we need to explicitly [Require
+      Import] other modules).
     - We should [Require Import] only what is needed: it makes the global
       environment smaller, reduces the risks of shadowing and saves compilation
       time. In particular, breaking dependencies allows parallel compilation
