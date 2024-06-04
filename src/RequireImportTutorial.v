@@ -98,7 +98,7 @@ Print Libraries.
     The [Coq.Classes.DecidableClass] is itself required in [Coq.Bool.Bool].
 
     Now there are two very important message here:
-    1. When we [Require] a file, we [Require] transitively any file it has
+    1. When we [Require] a file, we [Require] recursively any file it has
        [Require]d (and any file [Require]d in the [Require]d files, and so on).
     2. There is **no way** to "unrequire" anything. Once a file has been
        required, its content will remain in the global environment of the user
@@ -130,9 +130,9 @@ About Bool.andb_true_l.
     describe this identifier. There are several parts separated by dots.
     - The first part is Coq: it is the _logical name_ of the library. Other
       mechanisms (for instance a [_CoqProject] file, or [-R] and [-Q] options
-      for [coqc], location which are known by [coqc], such as the output of
+      for [coqc], locations which are known by [coqc], such as the output of
       [coqc -where], ...) associate a logical name to a physical directory
-      containing the library files.
+      in the user's system which is the root directory of this library.
     - The second and third part correspond to the path of the file (relative to
       the root of the library) containing the identifier in the given library,
       in our case, on a Unix family system, it corresponds to [Bool/Bool.vo].
@@ -469,7 +469,7 @@ Print NestedABC1.ABC.alice.
     - parameters and axioms
     - tactics
     - notations, abbreviations, [Ltac] notations and [Ltac2] notations
-    - hints
+    - hints and type class instances
     - coercions
     - canonical structures
 
@@ -535,9 +535,11 @@ Qed.
       and abbreviations contained in a module are available even if we do not
       [Import] a module, with a qualified name;
     - notations, [Ltac] notations, [Ltac2] notations need the module to be
-      imported to be available;
-    - the same holds for coercions, hints and canonical structures (we omit the
-      experiments for brevity). *)
+      imported to be available (note that notations are also associated to
+      notation scopes we may have to [Open] or delimit with a key in order to
+      use them)
+    - the same holds for coercions, hints, type class instances and canonical
+      structures (we omit the experiments for brevity). *)
 
 (** *** 1.5 Guidelines about the order of [Require] and [Import] commands *)
 
