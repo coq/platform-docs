@@ -69,7 +69,9 @@
     available in the current file.
 
     If not stated otherwise (with the [-no-init] command-line flag), Coq's
-    initial state is populated by a dozen library files called the [Prelude].
+    initial state is populated by a dozen library files called the [Prelude]
+    (the interested reader can consult its
+    #<a href="https://github.com/coq/coq/blob/master/theories/Init/Prelude.v">source code</a>#).
 
     We can see these files with the [Print Libraries] command: *)
 Print Libraries.
@@ -89,7 +91,10 @@ From Coq Require Bool.Bool.
 
 (** The previous command told [Coq] to load all logical and computational
     content in the file [Bool.vo] contained in the directory [Bool] of the root
-    directory of Coq's standard library. *)
+    directory of Coq's standard library (the interested reader can browse its
+    current
+    #<a href="https://github.com/coq/coq/blob/master/theories/Bool/Bool.v">source code</a>#).
+*)
 
 (** Now let's see how our list of libraries has evolved: *)
 Print Libraries.
