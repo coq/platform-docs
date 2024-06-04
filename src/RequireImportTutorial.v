@@ -548,8 +548,12 @@ Qed.
     definitions and proofs.
 
     In general, we should try to respect the following guidelines:
-    - All [Require] commands should be at the beginning of a file, it makes it
-      easier to know on which theories the file is built.
+    - All [Require] commands should (ultimately) be at the beginning of a file,
+      it makes it easier to know on which theories the file is built.
+      It is fine during development to experiment temporarily with [Require]
+      commands in the middle of the file and in a final version, either
+      move the require statement at the beginning of a file, or the whole
+      experiment in a separate file.
     - Usually, [Require] statements are actually [Require Import] statements:
       we want shorter names, notations, etc about theories we explicitly
       build on.
@@ -940,7 +944,7 @@ Check this_is_b'.
     behave the same.
 
     Finally, it is possible to [Require] and [Export] a library file at the
-    same time with.
+    same time.
     For instance, the following command in [Coq.Arith.Arith_base]:
     [From Coq Require Export Arith.PeanoNat.]
     imports [PeanoNat]'s content in [Coq.Arith.Arith_base] as well as in any
