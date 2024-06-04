@@ -580,10 +580,8 @@ Qed.
 
     Selective import lets us precisely choose what we want to import. *)
 
-(** To illustrate this, we create a hint database and a [PointedType]
-    [Structure]: *)
+(** To illustrate this, we create a hint database: *)
 Create HintDb req_tut.
-Structure PointedType := {carrier :> Type; point : carrier}.
 
 (** Our next example contains almost every categories of content: *)
 Module Baz.
@@ -603,10 +601,6 @@ Module Baz.
      attribute, it is here for compatibility reasons and will be discussed
      in the next section) *)
   #[export] Hint Rewrite b_rel : req_tut.
-  (* A canonical structure giving [nat] a default [PointedType] structure: *)
-  Canonical nat_pointed_type := {|carrier := nat; point := 42|}.
-  (* The canonical structure works: *)
-  Compute (point _ + 3).
 End Baz.
 
 (** Let us import our notations first: *)
@@ -619,12 +613,13 @@ Fail Check almost_.
 Fail Check b_rel.
 Fail Compute (0%Z + 3). (* Our coercion is not there. *)
 Print HintDb req_tut. (* Our hint database is sadly empty. *)
-Fail Compute (point nat). (* Our [nat_pointed_type] structure is not canonical... *)
-Print Baz.nat_pointed_type. (* ... even though it does exists. *)
 
-(** Let us now import our coercions: *)
-Import (coercions) Baz.
+(** Let us now import our coercions and hints with one command: *)
+Import (coercions, hints) Baz.
 Compute (0%Z + 3).
+Print HintDb req_tut. (* Our hint is available *)
+Lemma b_42 : Baz.b = 42.
+Proof. autorewrite with req_tut. unfold Baz.almost_b. Baz.rfl. Qed.
 
 (** Our notation is still there: *)
 Compute 1 !!.
@@ -632,18 +627,11 @@ Compute 1 !!.
 (** In fact, it is important to understand that there is no way to "un-import"
     anything in the same module or section. Once a module feature has been
     activated, it remains so until the end of the current section or module (or
-    file), the only exception being shadowed short names.
+    file), the only exception being shadowed content.
 
     We call the [coercions] and [notations] seen before _import categories_.
     The other import categories correspond to what we mentioned before, namely:
-    [hints], [canonicals], [ltac.notations] and [ltac2.notations].
-
-    It is possible to select more than one import category at once with: *)
-Import (hints, canonicals) Baz.
-Print HintDb req_tut. (* Our hint is available *)
-Compute (point nat).
-Lemma b_42 : Baz.b = 42.
-Proof. autorewrite with req_tut. unfold Baz.almost_b. Baz.rfl. Qed.
+    [hints], [canonicals], [ltac.notations] and [ltac2.notations]. *)
 
 (** We can also select which constants, tactics and abbreviations are available
     by their short names: *)
@@ -663,25 +651,22 @@ Module OtherBaz.
   Definition almost_almost_other_b := 40.
   Notation "x ??" := (x * 42) (at level 2) : nat_scope.
   Coercion to_nat := fun (x : bool) => 42.
-  Canonical bool_pointed_type := {| carrier := bool; point := false |}.
 End OtherBaz.
 
-Import -(coercions, canonicals) OtherBaz.
+Import -(coercions) OtherBaz.
 Check almost_other_b.
 Compute 10 ??.
 Fail Check (true + 3).
-Fail Compute (negb (point _)).
 
 (** Notice that, when we import everything except some categories, it is not
     possible, at the time of writing, to choose which identifiers are imported
     to be available as short names: they all are.
 
     We can always change our mind and decide to import a category we did not: *)
-Import (canonicals) OtherBaz.
-Compute (negb (point _)).
+Import (coercions) OtherBaz.
+Compute (true + 3).
 
 (** To end this section, we turn to inductive types. *)
-
 Module Unary.
   Inductive UnaryPos := one | successor (n : UnaryPos).
   Inductive UnaryZ := zero | plus (n : UnaryPos) | minus (n : UnaryPos).
@@ -742,7 +727,7 @@ Check UnaryZ_ind.
     writer_ of a module control what should be imported or not.
 
     There are 3 locality attributes: [#[local]], [#[export]] and [[#global]].
-    
+
     The availability and effect of these attribute depends on each command (and
     even which Coq version we use) but, in short, when supported:
     - the [#[local]] attribute makes some content unavailable for import
@@ -773,7 +758,7 @@ Fail Compute (True + 2).
     You can try it by uncommenting: *)
 (** Compute 3 %%. *)
 
-(** As we see, using the [#[local]] attribute in a module marks some content
+(** As we see, using the [#[local]] attribute in a module makes some content
     unavailable for import, which means, for constants, to make them only
     available with qualified names and for other categories (hints, coercions,
     etc), to disable them outside the module.
@@ -784,8 +769,9 @@ Fail Compute (True + 2).
 
 (** The [#[export]] attribute is not as well supported as [#[local]].
     In fact, in a module, since Coq 8.18, it is either not supported, or the
-    default behavior, except when used with the [Set] command which is used to
-    change some Coq options.
+    default behavior (make a feature or short name available only when 
+    a module is [Import]ed), except when used with the [Set] command which is
+    used to change some Coq options.
 
     Prior to Coq 8.18, if one wants Hints to be available if (and only if) the
     module is [Import]ed, they should have the [#[export]] attribute and in
@@ -836,8 +822,11 @@ Test Universe Polymorphism.
     if you want them to be available after import. *)
 
 (** Now, for the [#[global]] setting. Again, it is often not supported and when
-    it is, commands have the default behaviour, except when [Set]ting options or
-    with the [Hint] command (and typeclass instances). *)
+    it is, commands have the default behaviour (short names and features
+    disabled except when the module is [Import]ed), except when [Set]ting
+    options or with the [Hint] command (and typeclass instances): hints and
+    settings with the [#[global]] attributes persist outside of the module,
+    even if it is not [Import]ed. *)
 
 (** Let us restore the state of the [Universe Polymorphism] option: *)
 Unset Universe Polymorphism.
