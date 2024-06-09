@@ -1,39 +1,25 @@
-(** * Well-founded Recursion using Equations
+(** * Equations and Obligations
 
   *** Summary
 
   [Equations] is a plugin for %\cite{Coq}% that offers a powerful support
   for writing functions by dependent pattern matching.
-  In this tutorial, we discuss how it interface with [Program] to help write programs.
+  In this tutorial, we discuss how it interface with [Program] to help write
+  programs using obligations.
 
-  In section 1, we explain the basic of defining and reasoning by
-  well-founded recursion using Equations.
-  - In section 1.1, we contextualise and recall the concept of
-    well-founded recursion.
-  - In section 1.2, we explain how to define and reason about basic
-    functions defined using well-founded recursion and Equations.
-  - In section 1.3, we explain how to define more complex examples using
-    obligations.
+  In section 1, we recall the concept of obligation and how they interface with [Equations].
+  In Section 2, we explain how [Equations]' obligation solving tactic.
 
-  In section 2, we discuss different techniques that can be useful when
-  attempting to define functions by well-founded recursion:
-  - When matching on terms, it can happen that we loose information relevant
-    to termination.
-    In Section 2.1, we show an example of that and discuss the inspect
-    method as a possible solution to this problem.
-  - When defining functions by well-founded recursion, it often happens
-    that we are left with easy theory-specific obligations to solve,
-    for instance basic arithmetic on lists.
-    In section 2.2, we explain how to locally adapt the tactic trying to
-    solve obligations to deal with such goals.
 
   *** Table of content
 
   - 1. Equations and Obligations
     - 1.1 Obligations
-    - 1.2 Proving obligations with Program
-    - 1.3 Using [Equations?]
-  - 2. Personalising the tactic solving Obligations
+    - 1.2 Solving obligations
+  - 2. Equations' solving tactic
+    - 2.1 Personalizing the tactic proving obligations
+    - 2.2 What to do if goals are oversimplified
+
 
   *** Prerequisites
 
@@ -43,8 +29,6 @@
     in the tutorial Equations: Basics
 
   Not needed:
-  - This tutorial discusses well-founded recursion but no prior knowledge
-    about it is required: we will explain the concept
 
   Installation:
   - Equations is available by default in the Coq Platform
@@ -81,10 +65,10 @@ Definition vec A n := { l : list A | length l = n }.
     function acts on lists, and to prove that the resulting list is of size
     [m] providing the original one is of size [n].
 
-    For instance, to define a concatation function on vectors
+    For instance, to define a concatenation function on vectors
     [vapp : vec A n -> vec A m -> vec A (n + m)], as done below, one has to:
     - specify that the concatenation of [l] and [l'] is [app l l'] and,
-    - prove that [legnth (ln ++ lm) = n + m] which is done below by the
+    - prove that [length (ln ++ lm) = n + m] which is done below by the
       term [eq_trans (app_length ln lm) (f_equal2 Nat.add Hn Hm)]
 *)
 
@@ -99,7 +83,7 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
       tedious if not impossible to write them down directly as a terms
     - even if we could, this can easily make the function completely illegible
     - in case of changes, it is not possible to replay a term proof as we can
-      replay a tactic script in order to adpat it, making functions harder
+      replay a tactic script in order to adapt it, making functions harder
       to modify and maintain
 
     Therefore, we would much rather like to build our terms using the proof mode.
@@ -113,7 +97,7 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
       the proof mode and tactics
 
     For instance, we can define a function [vmap f n : vec A n -> vec A n]
-    by using a whildcard `_` where a proof of [length (map f ln) = n]
+    by using a wildcard `_` where a proof of [length (map f ln) = n]
     is expected in order to prove it using the proof mode and tactics:
 *)
 
@@ -147,7 +131,8 @@ Qed.
 
 (** Using [Next Obligation] has the advantage that once an obligation has been
     solved, [Program] retries automatically to prove the remaining obligations.
-    It can be practical when TODO.
+    It can be practical when proofs are simple but requires for a evariable
+    to be solved to proceed first.
 
     Note, that it can be useful to add [Fail Next Obligation] once all
     obligations have been solved.
@@ -183,7 +168,7 @@ Defined.
 
 (** ** 2. Equations' solving tactic
 
-    As mentionned, [Equations] automatically tried to solve obligations.
+    As mentioned, [Equations] automatically tried to solve obligations.
     It does so using a custom strategy basically simplifying the goals and
     running a solver.
     It can be viewed with the following command:
@@ -191,20 +176,20 @@ Defined.
 
 Show Obligation Tactic.
 
-(** 2.1 Personalising the tactic proving obligations
+(** 2.1 Personalizing the tactic proving obligations
 
     When working, it is common to be dealing with a particular class of
     functions that shares a common theory, e.g, they involve basic arithmetic.
     This theory cannot not be guessed from the basic automation tactic,
-    so may be personalising a tactic to handle this particular theory.
+    so may be personalizing a tactic to handle this particular theory.
 
     This can be done using the command [ #[local] Obligation Tactic := tac ]
     to locally change the tactic solving obligation to a tactic [tac].
 
     For an example, consider a [gcd] function defined by well-founded recursion.
     There are two obligations left to prove corresponding proofs that recursive
-    call are indeed smaller. Each of them corresponds to basic reasonning about
-    aritmetics, and can hence be solved with the solver [lia].
+    call are indeed smaller. Each of them corresponds to basic reasoning about
+    arithmetics, and can hence be solved with the solver [lia].
 *)
 
 Require Import Arith Lia.
@@ -222,7 +207,7 @@ Abort.
 
 (** Therefore, we would like to locally change the tactic solving the
     obligations to take into account arithmetic, and try [lia].
-    We do so by simply trying it after the curreny solving tactic,
+    We do so by simply trying it after the current solving tactic,
     i.e. the one displayed by [Show Obligation Tactic].
     As we can see by running again [Show Obligation Tactic], it has indeed been
     added, and [gcd] is now accepted directly.
@@ -246,7 +231,7 @@ gcd x y with gt_eq_gt_dec x y := {
   | inright _           := gcd (x - y) y
   }.
 
-(** 2.2 Wha to do if goals are oversimplified
+(** 2.2 What to do if goals are oversimplified
 
     In some cases, it can happen that [Equations]' solving tactic is too abrut
     and oversimply goals and ended up getting us stuck.
@@ -255,7 +240,7 @@ gcd x y with gt_eq_gt_dec x y := {
     For an example, let's define a function
     [vzip :  vec A n -> vec B n -> vec (A * B) n] without using [list_prod].
     In all cases where a proof is expected we create an obligation, and uses
-    the proof mode to handle the reasonning on arithmetics.
+    the proof mode to handle the reasoning on arithmetics.
     We also use obligations to disregard the case [nil (b::lb)] and [(a::la) nil].
 
     As it can be seen below, [Equations] can automatically with the first three
