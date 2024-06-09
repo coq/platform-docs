@@ -21,7 +21,7 @@
     - 1.2 Well-founded recursion
     2. Well-founded recursion and Equations
       2.1 Using a size argument
-      2.2 Using a mesure
+      2.2 Using a measure
       2.3 Using a lexicographic order
       2.4 Using a custom well-founded relation
       2.5 Using the subterm relation ???
@@ -121,7 +121,7 @@ gcd x y H with Nat.eq_dec y 0 => {
 
     Informally, well-founded recursion bascially amounts to justifying termination by:
     - providing a "well-founded" relation [R : A -> A -> Prop], intuitively an
-      order like [<] on natural numbers for which it is impossible to deacrease infinitely
+      order like [<] on natural numbers for which it is impossible to decrease infinitely
     - proving that all the recursive calls are performed on smaller arguments according
       [R]
 
@@ -210,15 +210,30 @@ Definition gcd_Fix (x y : nat) : nat :=
     Moreover, it enables us to prove arguments directly in the proof mode using
     tactics.
 
+    In the following, we assume basic knowledge of obligations as discussed
+    in the (short) tutorial Equations: obligations.
+
     ** 2.1 Using a size argument
 
-    Given an equality test, [nubBy] recursively filters out the duplicates
-    of a list and only keeps the first occurrence of each element.
-    It is terminating as the recursive call is performed on
-    [filter (fun y => negb (eq x y)) xs] which is smaller than [xs] as
-    [filter] can only remove elements.
-    Consequently, to define [nubBy] by well-founded recursion, we need to
-    add [wf (length l) lt].
+    The most basic method to define a function by well-founded recursion is to
+    define a size function, and to prove that the size decrease with each
+    recursive call for the usual strict order [<] on natural numbers.
+
+    This method is already enough to define the function [nubBy], that
+    recursively filters out the duplicates of a list, by well-founded recursion.
+    Indeed, the size of a list is its length, and the only recursive call
+    performed by [nubBy] is on [filter (fun y => negb (eq x y)) l].
+    As [filter] can only remove elements, its length is indeed strictly smaller
+    than [l], and the function is terminating.
+
+    To define [nubBy] using [Equations] and well-founded recursion, it suffices to
+    add [wf (length l) lt] after typing to indicate on which term, here [length l], and
+    for which well-founded relation, here [< := lt], we are doing the well-founded recursion on.
+    An obligation corresponding to proving that the recursive call is smaller,
+    that is [length (filter (fun y => negb (eq x y)) l) < length l], is created.
+    As [Equations] can not solve on its own, it then left to us to solve.
+    Using the keyword [Equations?], it is automatically unshelved,
+    and we simply have to prove it using tactics.
 *)
 
 Equations? nubBy {A} (eq : A -> A -> bool) (l : list A) : list A by wf (length l) lt :=
@@ -231,13 +246,18 @@ Proof.
 Qed.
 
 
-(** Reasoning on functions defined by well-founded recursion with
-    obligations is no different than when there is none.
-    Using function elimination ([funelim]) we can prove our properties
-    without having to redo the well-founded recursion.
+(** Compared to other methods, reasoning on functions defined with well-founded
+    recursion with [Equations], is no different than on regular functions.
+    Using function elimination ([funelim]) we can prove our
+    properties directly according to the pattern of our definition.
+    In particular, we do not have to do proofs by reproducing the proof structure
+    used to prove that the function is well-founded.
+    It is particularly interresting as it enables to completely hide from the users
+    , actually you can see no trace of it in the defintion, and to reason about
+    functions following the recursive call, that is directly as we think about them?
 
-    As examples, we show how to prove in a few lines that [nubBy] do
-    remove all duplicates.
+    This is a very powerful technic that, for instance, enables us to prove in a
+    few lines that [nubBy] do remove all duplicates;
 *)
 
 Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
@@ -258,21 +278,35 @@ Proof.
   - specialize (H Heq). simp nubBy. constructor.
     -- intros Hi.
        apply In_nubBy in Hi.
-       apply filter_In in Hi as [_ Hneqx].
+       apply filter_In in Hi as [Hl Hneqx].
        specialize (Heq a a); destruct Heq as [_ Heqx].
        specialize (Heqx eq_refl); rewrite Heqx in Hneqx.
        inversion Hneqx.
     -- assumption.
 Qed.
 
-(** ** 2.2 Using a mesure
+(** ** 2.2 Using a measure
 
-    For an example, consider a [gcd] function that does not require the assumption that
-    [x > y] as below, by first checking if [x] or [y] is [0], and otherwise
+    The size method described above is particular case of a more general scheme
+    that consist in using a measure: that is a function depending on
+    the arguments to [nat], so that it decrease in each recursive call.
+
+    For an example, consider a [gcd] function that does not require the assumption
+    that [x > y], by first checking if [x] or [y] is [0], and otherwise
     compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
     which is the greater.
-    It is terminating as the sum [x + y] is decreasing for the usual
-    well-founded order on [nat], accounted for by [wf (x + y) lt]. *)
+    We can not prove it is terminating either by looking if [x] or [y] decrease
+    (the size of a number is the number itsefl) as we don't know upahead which
+    of [x] or [y] is bigger.
+    However, we can use that the measure [x + y] is decreasing for the usual
+    well-founded order on [nat], as if [x] and [y] are strictly greater than [0],
+    than [x + y > x + (y - x) = y] and [x + y > y + (x - y) = y].
+
+    We can define [gcd] by well-founded recursion by adding [wf (x + y) lt].
+    We then get two obligations corresponding to the recursive goals, which
+    are basic arithmetic goals and can be solved using [lia].
+
+*)
 
 Equations? gcd (x y : nat) : nat by wf (x + y) lt :=
 gcd 0 x := x ;
@@ -282,8 +316,8 @@ gcd x y with gt_eq_gt_dec x y := {
 | inleft (right refl) := x ;
 | inright _ := gcd (x - y) y }.
 Proof.
-lia. lia.
-Abort.
+  all: lia.
+Defined.
 
 (** For further examples of how functional elimination works on well-founded
     recursion and how useful it is on complex definitions, we will now show a
@@ -292,21 +326,17 @@ Abort.
 
 Lemma gcd_same x : gcd x x = x.
 Proof.
-  funelim (gcd x x); try lia. reflexivity.
+  funelim (gcd x x). all: try lia. reflexivity.
 Qed.
 
 Lemma gcd_spec0 a : gcd a 0 = a.
 Proof.
-  funelim (gcd a 0); reflexivity.
+  funelim (gcd a 0). all: reflexivity.
 Qed.
 
 Lemma mod_minus a b : b <> 0 -> b < a -> (a - b) mod b = a mod b.
 Proof.
-  intros.
-  replace a with ((a - b) + b) at 2 by lia.
-  rewrite <- Nat.Div0.add_mod_idemp_r; auto.
-  rewrite Nat.Div0.mod_same; auto.
-Qed.
+Admitted.
 
 Lemma gcd_spec1 a b: 0 <> b -> gcd a b = gcd (Nat.modulo a b) b.
 Proof.
@@ -314,82 +344,89 @@ Proof.
   - now rewrite Nat.Div0.mod_0_l.
   - reflexivity.
   - now rewrite (Nat.mod_small (S n) (S n0)).
-  - simp gcd; rewrite Heq; simp gcd.
+  - rewrite <- Heqcall.
     rewrite refl, Nat.Div0.mod_same.
     reflexivity.
-  - simp gcd; rewrite Heq; simp gcd.
-    rewrite H; auto. rewrite mod_minus; auto.
+  - rewrite <- Heqcall. rewrite H; auto.
+    rewrite mod_minus; auto.
 Qed.
-
 
 
 (** ** 2.3 Using a lexicographic order
 
-    Let's now consider the Ackerman function which is decreasing according to
-    the usual lexicographic order on [nat * nat], [(<,<)] which is accessible
-    as [<] is, and the lexicographic combination of well-founded relations is too.
-    You can define the lexicographic order and automatically derive a proof
-    it is well-founded using the function [Equations.Prop.Subterm.lexprod].
-    As we can see, with this order, once again no obligations are left to prove as
-    Coq can prove on its own that [(m, (ack (S m) n)) <lex (S m, S n)] and
-    [(S m, n) <lex (S m, S n)].
+    Not all definitions can be proven terminating using a measure and the strict order [<] on [nat].
+    In some cases, it is more practical to use a different well-founded order.
+    In particular, when a function involves recursion on different arguments but
+    not all recursive arguments are smaller at once, it can be pratical to use a
+    lexicographic order [<lex].
+    Given two order [<A : A -> A -> Prop] and [<B : B -> B -> Prop],
+    [(a,b) <lex (a',b')] iff [a <A a'] or [a = a'] and [b <B b'].
+    It is pratical, as it suffices for one argument to decrease for the recursive
+    call to be smaller.
+    Moreover, [<lex] is well-founded as soon as [<A] and [<B] are.
+
+    A classical example where it is useful, is to define the Ackerman function.
+    Indeed, is terminating as the recursive call are all smaller for the
+    lexicographic order, which is essential to deal with the last case:
+    - [(m,0) <lex (S m, 0)] as [m < S m]
+    - [(m, ack (S m) n) <lex (S m, S n)] as [m < S m]
+    - [(S m, n) <lex (S m, S n)] as [S m = S m] and [n < S n]
+
+    To define [ack] by well-founded recursion, it suffices to add [(lexprod _ _ lt lt)].
+    The function [lexprod] builds the lexicographic order and derive a proof
+    that it is well-founded provided that both order are.
+    As we can see, with this order, the obligations generated turns out to be
+    simple enough to be automatically dealt with by [Equations].
 *)
 
-Equations ack (m n : nat) : nat by wf (m, n) (Equations.Prop.Subterm.lexprod _ _ lt lt) :=
+Equations ack (m n : nat) : nat by wf (m, n) (lexprod _ _ lt lt) :=
 ack 0 n := S n;
 ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
 
 (** In principle, we should be able to reason about [ack] as usual using [funelim].
-    Unfortunately, in this case, [funelim] runs for very long if it terminates.
-    You can check it out by uncommenting the timed-out [funelim] below:
+    Unfortunately, in this particular case, [funelim] runs for ever wish you can
+    checkout by uncommenting the following code.
+    It is a known issue currently being fixed due to oversimplification done
+    by [funelim].
 *)
 
 Definition ack_min {m n} : n < ack m n.
 Proof.
-  (* timeout 5 (funelim (ack m n)). *)
+  Fail timeout 5 (funelim (ack m n)).
 Abort.
 
-(** The reason is that [funelim] does much more than just applying [ack_elim].
-    In particular, it does diverse generalisation and simplification that pose
-    problem here.
-    This a known issue and it is currently being investigated and fixed.
+(** There are two main solutions to go around similar issues depending on your case.
 
-    There are two main solutions to go around similar issue depending on your case.
-
-    If your pattern is fully generic, i.e. of the form [ack m n], you can
-    apply the [ack_elim] lemma directly.
+    If your pattern is fully generic, i.e. of the form [ack m n], you can apply
+    functional elimination directly by [apply ack_elim].
     Though note, that in this case you may need to generalise the goal by hand,
     in particular by equalities (e.g. using the remember tactic) if the function
     call being eliminated is not made of distinct variables.
 *)
 Definition ack_min {m n} : n < ack m n.
 Proof.
-  apply ack_elim; intros.
-  - constructor.
-  - auto with arith.
-  - eapply Nat.le_lt_trans; eassumption.
+  apply ack_elim; intros; eauto with arith.
 Qed.
 
 (** However, if your pattern is partially specialised like [ack 1 n],
-    it is better to finish reproducing the pattern using [induction].
-    Indeed, [ack_elim] "reproduces" the full pattern, that is, it generalise [1]
-    and tries to prove [ack m n = 2 + n] by induction, creating cases like
+    it can be better to finish reproducing the pattern using [induction].
+    Indeed, [ack_elim] "reproduces" the full pattern, that is, it generalises [1]
+    to [m] and tries to prove [ack m n = 2 + n] by induction, creating cases like
     [ack (S m) n] which clearly are not warranted here.
 *)
 
 Definition ack1 {n} : ack 1 n = 2 + n.
 Proof.
   (* If we apply [ack_elim], we get unwarranted cases *)
-  apply ack_elim.
+  apply ack_elim; intros.
   Restart.
   (* So we reproduce the pattern with induction *)
-  induction n. all: simp ack.
+  induction n; simp ack.
   - reflexivity.
   - rewrite IHn. reflexivity.
 Qed.
-
 
 
  (** ** 2.4 Using a custom well-founded relation *)
@@ -411,7 +448,7 @@ Qed.
 
     Working with a particular well-founded order [lt], it may happen that
     we have a choice function [f : A -> option A] that for any [(a :A)]
-    return a strictly smaller element if there is one.
+    returns [None] or a strictly smaller element.
     This situation is axiomatised by the following context :
 *)
 
@@ -420,13 +457,12 @@ Section Inspect.
   Context {A : Type} {lt : A -> A -> Prop} `{WellFounded A lt}
           (f : A -> option A) (decr_f : forall n p, f n = Some p -> lt p n).
 
-(** In this case, given an element (a : A), we may be interested in
-    computing the associated decreasing chain of elements starting from
-    [a].
+(** In this case, given an element (a : A), we may be interested in computing
+    the decreasing chain starting from [a] specified by [f].
     Naively, we would like to do so as below.
     That is check if there is an element smaller than [a] by matching [f a]
-    with a with clause, if there is one [Some p] then return [p] added to the
-    chain starting with [p], i.e., our recursive call [f_sequence p], and otherwise
+    with a [with] clause, if there is one [Some p] then return [p] added to the
+    chain starting with [p], i.e. added to [f_sequence p], and otherwise
     stop the computation.
 *)
 
