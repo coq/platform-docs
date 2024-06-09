@@ -22,11 +22,7 @@
     to termination.
     In Section 2.1, we show an example of that and discuss the inspect
     method as a possible solution to this problem.
-  - When defining functions by well-founded recursion, it often happens
-    that we are left with easy theory-specific obligations to solve,
-    for instance basic arithmetic on lists.
-    In section 2.2, we explain how to locally adapt the tactic trying to
-    solve obligations to deal with such goals.
+  -
 
   *** Table of content
 
@@ -36,7 +32,7 @@
     - 1.3 Well-founded recursion and Obligations
   - 2. Different methods to work with well-founded recursion
     - 2.1 The inspect method
-    - 2.2 Personalising the tactic proving obligations
+    - 2.2 ???
 
   *** Prerequisites
 
@@ -44,6 +40,7 @@
   - We assume basic knowledge of Coq, and of defining functions by recursion
   - We assume basic knowledge of the Equations plugin, e.g, as presented
     in the tutorial Equations: Basics
+  -
 
   Not needed:
   - This tutorial discusses well-founded recursion but no prior knowledge
@@ -651,90 +648,24 @@ Section Inspect.
 End Inspect.
 
 
-(** *** 2.2 Personalising the tactic proving obligations
-
-    When working, it is common to be dealing with a particular class of
-    functions that share a common theory, e.g, they involve basic
-    arithmetic.
-    Yet, without surprise, by default the tactic trying to prove obligations is not
-    aware of the particular theory at hand, and it will fail to solve
-    most of the obligations generated.
-    This is normal, as it would be very inefficient if Coq were trying to solve
-    a goal using all lemma ever defined, or even all lemma featuring
-    [+] in its definition.
-    Therefore, it can be interesting to define a local custom strategy for
-    solving obligations specific to our theory at hand.
-
-    In this section, we explain how to do so to for a [gcd] function,
-    and show how function elimination then enables to prove a few properties
-    efficiently.
-
-    We can define a [gcd] function that does not require the assumption that
-    [x > y] as below, by first checking if [x] or [y] is [0], and otherwise
-    compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
-    which is the greater.
-    It is terminating as the sum [x + y] is decreasing for the usual
-    well-founded order on [nat], accounted for by [wf (x + y) lt].
-*)
+(*
+For an example, consider a [gcd] function that does not require the assumption that
+[x > y] as below, by first checking if [x] or [y] is [0], and otherwise
+compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
+which is the greater.
+It is terminating as the sum [x + y] is decreasing for the usual
+well-founded order on [nat], accounted for by [wf (x + y) lt]. *)
 
 Equations? gcd (x y : nat) : nat by wf (x + y) lt :=
 gcd 0 x := x ;
 gcd x 0 := x ;
 gcd x y with gt_eq_gt_dec x y := {
-  | inleft (left _) := gcd x (y - x) ;
-  | inleft (right refl) := x ;
-  | inright _ := gcd (x - y) y }.
+| inleft (left _) := gcd x (y - x) ;
+| inleft (right refl) := x ;
+| inright _ := gcd (x - y) y }.
 Proof.
-  lia. lia.
+lia. lia.
 Abort.
-
-(** As we can see, Coq fails to prove the obligations on its own as they
-    involve basic reasoning on arithmetic, a theory that Coq is unaware of
-    by default.
-    This can be checked by using [Show Obligation Tactic] to print the
-    tactic currently used to solve obligations and inspecting it.
-*)
-
-Show Obligation Tactic.
-
-(** The obligations generated are not complicated to prove but tedious,
-    and they can actually be solved automatically via the arithmetic
-    solver [lia].
-    Therefore, we would like to locally change the tactic solving the
-    obligations to take into account arithmetic, and try lia.
-
-    To do so, we use the command [ #[local] Obligation Tactic := tac ]
-    to locally change the tactic solving obligation to a tactic [tac].
-
-    In our case, we choose for [tac] to be the previously used
-    tactic to which we have added a call to [lia] at the end:
-*)
-
-#[local] Obligation Tactic :=
-          simpl in *;
-          Tactics.program_simplify;
-          CoreTactics.equations_simpl;
-          try Tactics.program_solve_wf;
-          try lia.
-
-(** As we can see by running [Show Obligation Tactic] again, the tactic
-    has indeed been changed.
-*)
-
-Show Obligation Tactic.
-
-(** We can see our change was useful as [gcd] can now be defined by
-    well-founded recursion without us having to solve any obligations.
-*)
-
-Equations gcd (x y : nat) : nat by wf (x + y) lt :=
-gcd 0 x := x ;
-gcd x 0 := x ;
-gcd x y with gt_eq_gt_dec x y := {
-  | inleft (left _) := gcd x (y - x) ;
-  | inleft (right refl) := x ;
-  | inright _ := gcd (x - y) y }.
-
 
 (** For further examples of how functional elimination works on well-founded
     recursion and how useful it is on complex definitions, we will now show a
