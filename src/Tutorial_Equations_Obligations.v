@@ -111,23 +111,23 @@ Next Obligation.
   apply app_length.
 Qed.
 
-(** As you can see, this very pratical however, you should be aware of
-    three basic pitfalls that:
+(** As you can see, this is very practical, however, you should be aware of
+    three basic pitfalls:
 
     1. As you may have noticed the goal to prove was not [length (app ln lm) = n + m]
     as expected, but [length (app ln lm) = length ln + length lm].
-    It is because [Equations] custom solving tactic has already pre-simplified
+    This is because [Equations]' custom solving tactic has already pre-simplified
     the goal for us. In can be an issue in some cases, and we discuss it in
     section 2.1.
 
     2. Technically, you can use a wildcard [_] for any term, even for one
     relevant to the definition and computation like [app ln lm] .
-    Yet, it generally it is a bad idea as automation could then infer
+    Yet, it is generally a bad idea as automation could then infer
     something random that matches the type expected.
 
-    3. Be aware that a definition is not defined until the all its associated
+    3. Be aware that a definition is not defined until all its associated
     obligations have been solved. Trying to refer to it before that, we
-    consequently trigger the error the defintion was not found.
+    consequently trigger the error that the defintion was not found.
     For instance, consider the unfinished definition of [vmap] with a wildcar [_]
 *)
 
@@ -144,7 +144,7 @@ Fail Definition vmap_comp {A B C n} (g : B -> C) (f : A -> B) (v : vec A n)
 
     You can solve the obligations one by one using the command [Next Obligations].
     Doing so for [vmap] display the goal [length (map f ln) = length ln],
-    which we can then solve using tactics..
+    which we can then solve using tactics.
 *)
 
 Next Obligation.
@@ -153,7 +153,7 @@ Qed.
 
 (** Using [Next Obligation] has the advantage that once an obligation has been
     solved, [Program] retries automatically to prove the remaining obligations.
-    It can be practical when proofs are simple but requires for a evariable
+    It can be practical when proofs are simple but requires for a variable
     to be solved first to be able to proceed.
 
     Note, that it can be useful to add [Fail Next Obligation] once all
@@ -177,8 +177,8 @@ Defined.
 (** Though, note that [Equations?] triggers a warning when used on a definition
     that leaves no obligations unsolved.
     It is because for technical reasons, [Equations?] cannot check if there
-    is at least on obligation left to solve before opening the proof mode.
-    Hence, when there is no obligation proof mode is open for nothing, and
+    is at least one obligation left to solve before opening the proof mode.
+    Hence, when there is no obligation proof mode is opened for nothing, and
     has to be closed by hand using [Qed] or [Defined] as it can be seen below.
     As it is easy to forget, a warning is raised.
 *)
@@ -190,7 +190,7 @@ Defined.
 
 (** ** 2. Equations' solving tactic
 
-    As mentioned, [Equations] automatically tried to solve obligations.
+    As mentioned, [Equations] automatically tries to solve obligations.
     It does so using a custom strategy basically simplifying the goals and
     running a solver.
     It can be viewed with the following command:
@@ -202,13 +202,13 @@ Show Obligation Tactic.
 
     When working, it is common to be dealing with a particular class of
     functions that shares a common theory, e.g, they involve basic arithmetic.
-    This theory cannot not be guessed from the basic automation tactic,
-    so may be personalizing a tactic to handle this particular theory.
+    This theory cannot not be guessed by the basic automation tactic,
+    so one may want a personalized tactic to handle a particular theory.
 
     This can be done using the command [ #[local] Obligation Tactic := tac ]
-    that changes locally the tactic solving obligation to [tac].
+    that locally changes the tactic solving obligation to [tac].
 
-    For an example, consider a [gcd] function defined by well-founded recursion.
+    For example, consider a [gcd] function defined by well-founded recursion.
     There are two obligations left to prove corresponding to proofs that the recursive
     call are indeed performed on smaller instance.
     Each of them corresponds to basic reasoning about arithmetics, and can
@@ -229,7 +229,7 @@ Proof.
 Abort.
 
 (** Therefore, we would like to locally change the tactic solving the
-    obligations to take into account arithmetic, and try [lia].
+    obligations to take into account arithmetic, and try the [lia] tactic.
     We do so by simply trying it after the current solving tactic,
     i.e. the one displayed by [Show Obligation Tactic].
     As we can see by running again [Show Obligation Tactic], it has indeed been
@@ -257,10 +257,13 @@ gcd x y with gt_eq_gt_dec x y := {
 (** 2.2 What to do if goals are oversimplified
 
     In some cases, it can happen that [Equations]' solving tactic is too abrut
-    and oversimply goals, or mis-specialised  and ended up getting us stuck.
-    In this case, it can be useful to set the solving tactic to the identify.
+    and oversimplies goals, or mis-specialised  and ends up getting us stuck.
+    The automation can also become slow, and one might want to diagnose this.
+    In any of these cases, it can be useful to set the solving tactic to the identity.
+    That way, the obligation one gets is the raw one generated by [Equations]
+     without processing, which can then be "manually" explored.
 
-    For an example, let's define a function
+    For example, let us define a function
     [vzip :  vec A n -> vec B n -> vec (A * B) n] without using [list_prod].
     In all cases where a proof is expected we create an obligation, and uses
     the proof mode to handle the reasoning on arithmetics.

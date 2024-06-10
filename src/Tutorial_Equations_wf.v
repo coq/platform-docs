@@ -296,7 +296,7 @@ Qed.
     compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
     which is the greater.
     We can not prove it is terminating either by looking if [x] or [y] decrease
-    (the size of a number is the number itsefl) as we don't know upahead which
+    (the size of a number is the number itsefl) as we do not know upahead which
     of [x] or [y] is bigger.
     However, we can use that the measure [x + y] is decreasing for the usual
     well-founded order on [nat], as if [x] and [y] are strictly greater than [0],
