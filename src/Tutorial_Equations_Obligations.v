@@ -89,13 +89,13 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
 
     Therefore, we would much rather like to build our terms using the proof mode.
     This is exactly what [Program] and obligations enables us to do.
-    At every point in a definition, it enables us:
-    - 1. write down a wildcard [_] instead of a term
-    - 2. it will then create an obligation, intuitively a goal left to solve
+    At every point in a definition, it allows us to write down a wildcard [_] instead of a term,
+    it will then:
+    - 1. create an obligation, intuitively a goal left to solve
       to complete the definition
-    - 3. it will try to simplify the obligations and solve them using a tactic,
+    - 2. try to simplify the obligations and solve them using a tactic,
       in our case, using a tactic specific to [Equations]
-    - 4. if they are any obligations left to solve, we can prove them using
+    - 3. if they are any obligations left to solve, enable us to prove them using
       the proof mode and tactics using [Next Obligation] or [Equations?] that
       we discuss in section 1.2
 
@@ -127,7 +127,7 @@ Qed.
 
     3. Be aware that a definition is not defined until the all its associated
     obligations have been solved. Trying to refer to it before that, we
-    consequently return that the defintion was not found.
+    consequently trigger the error the defintion was not found.
     For instance, consider the unfinished definition of [vmap] with a wildcar [_]
 *)
 
