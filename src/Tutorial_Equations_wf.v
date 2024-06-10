@@ -429,9 +429,111 @@ Proof.
 Qed.
 
 
- (** ** 2.4 Using a custom well-founded relation *)
+(** ** 2.4 Using a custom well-founded relation
 
- (* ### TODO ### *)
+    In some cases, there is no basic order that easily enables to define a
+    function by well-founded recursion.
+    In this case, it can be interresting to:
+    - 1. Define your own relation [R : A -> A -> Prop]
+    - 2. Prove it is well-founded [wf_R : well_founded R]
+    - 3. Declare it as an instance so that Equations can find it with
+         [Instance name : WellFounded R := wf_R].
+
+    For instance, suppose we have an infinite sequence [f : nat -> bool] of booleans,
+    such that we know logically that there is at least one that is true
+    [h : exists n : nat, f n = true].
+    This is represented by this context:
+ *)
+
+ Section LinearSearch.
+
+ Context (f : nat -> bool).
+ Context (h : exists n : nat, f n = true).
+
+(** Knowing there is an [n : nat] such that [f n = true], we would like to
+    actually compute one.
+    Intuitively, we should be able to just try them one by one starting from 0
+    until we find one, and it should terminate as we know there exists one.
+    However, it is not clear which classical meseaure or order to use to
+    justify this idea. We will hence use a custom one.
+
+    We define a relation [R : nat -> nat -> nat] such that [n] is "smaller" than
+    "m" when [n = 1 + m] and that all booleans before [m] are [false],
+    i.e [forall k, k <= m -> f k = false].
+*)
+
+  Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
+
+(** Knowing that the previous booleans have been [false] enables us to prove
+    that [R] is well-founed when combined with [h].
+    We ommit the proof here because it is a bit long, and not very interresting
+    for our purpose.
+ *)
+
+  Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
+  Proof.
+  Admitted.
+
+(** Having proven it is well-founded, we declare it as an instance of the database
+    [WellFounded] so that [Equations] can find it automaticaly when using the
+    keyword [wf x R].
+*)
+
+  Instance wfR : WellFounded R := wf_R h.
+
+(** We are not ready to define our function by well-founded recursion.
+    Though, we want to start a computation, to define our function by well-founded
+    recursion we need to start at a generic point [m : nat], to actually have
+    an object to do a recursion on.
+
+    Here, for technical reason we use the [inspect] method to remember the value of [f m].
+    Here, it is not necessary to understand it for our purpose, and we refer to
+    section 2.1 for more details on the method.
+ *)
+
+  Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
+
+  Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+
+  Equations? exists_nat (m : nat) (H : forall n, n < m -> f n = false) :
+    {n : nat | f n = true} by wf m R :=
+  exists_nat m H with inspect (f m) :={
+    | true  eqn:p => (exist _ m p)
+    | false eqn:p => exists_nat (S m) _
+  }.
+  Proof.
+  - inversion H0; auto.
+  - unfold R. split. 2: reflexivity.
+    intros k ikm. inversion ikm. 1: assumption.
+    subst. apply H. auto with arith.
+  Qed.
+
+  Theorem linear_search : {n : nat | f n = true}.
+  Proof.
+    unshelve eapply (exists_nat 0).
+    intros n Hn0; inversion Hn0.
+  Qed.
+
+End LinearSearch.
+
+
+
+ (** EXERCISE
+
+   Deduce the theorem from it.
+
+ **)
+
+ Theorem linear_search :
+   (exists n : nat, f n = true) -> {n : nat | f n = true}.
+ Proof.
+   intros h.
+   eapply exists_nat with (m := 0).
+   - assumption.
+   - intuition lia.
+ Qed.
+
+End LinearSearch.
 
 (** ** 2.5 Using the subterm relation *)
 
