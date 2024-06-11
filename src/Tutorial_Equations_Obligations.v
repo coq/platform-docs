@@ -89,8 +89,8 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
 
     Therefore, we would much rather like to build our terms using the proof mode.
     This is exactly what [Program] and obligations enables us to do.
-    At every point in a definition, it allows us to write down a wildcard [_] instead of a term,
-    it will then:
+    At every point in a definition, it allows us to write down a wildcard [_]
+    instead of a term, it will then:
     - 1. create an obligation, intuitively a goal left to solve
       to complete the definition
     - 2. try to simplify the obligations and solve them using a tactic,
@@ -137,6 +137,12 @@ vmap f (exist _ ln Hn) := exist _ (map f ln) _ .
 Fail Definition vmap_comp {A B C n} (g : B -> C) (f : A -> B) (v : vec A n)
     : vmap g (vmap f n v) = vmap (fun x => g (f x)) v.
 
+(** Obligations are not well displayed by all IDE. If it the case, you can always
+    print them using [Obligations of name_obligations].
+    For instance, for [vmap]:
+*)
+Obligations of vmap_obligations.
+
 
 (** *** 1.2 Solving obligations
 
@@ -179,7 +185,7 @@ Defined.
     It is because for technical reasons, [Equations?] cannot check if there
     is at least one obligation left to solve before opening the proof mode.
     Hence, when there is no obligation proof mode is opened for nothing, and
-    has to be closed by hand using [Qed] or [Defined] as it can be seen below.
+    has to be closed by hand using [Qed] (for proof irrelevant content) as it can be seen below.
     As it is easy to forget, a warning is raised.
 *)
 
