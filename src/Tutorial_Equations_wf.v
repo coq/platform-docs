@@ -445,7 +445,7 @@ Qed.
     This is represented by this context:
  *)
 
- Section LinearSearch.
+ Module LinearSearch.
 
  Context (f : nat -> bool).
  Context (h : exists n : nat, f n = true).
@@ -482,9 +482,6 @@ Qed.
   Instance wfR : WellFounded R := wf_R h.
 
 (** We are not ready to define our function by well-founded recursion.
-    Though, we want to start a computation, to define our function by well-founded
-    recursion we need to start at a generic point [m : nat], to actually have
-    an object to do a recursion on.
 
     Here, for technical reason we use the [inspect] method to remember the value of [f m].
     Here, it is not necessary to understand it for our purpose, and we refer to
@@ -494,6 +491,11 @@ Qed.
   Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
 
   Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+
+(** Though, we want to start a computation at 0, to define our function
+    by well-founded recursion we need to start at a generic point [m : nat],
+    to actually have a term to do our recursion on:
+*)
 
   Equations? exists_nat (m : nat) (H : forall n, n < m -> f n = false) :
     {n : nat | f n = true} by wf m R :=
@@ -516,27 +518,9 @@ Qed.
 
 End LinearSearch.
 
-
-
- (** EXERCISE
-
-   Deduce the theorem from it.
-
- **)
-
- Theorem linear_search :
-   (exists n : nat, f n = true) -> {n : nat | f n = true}.
- Proof.
-   intros h.
-   eapply exists_nat with (m := 0).
-   - assumption.
-   - intuition lia.
- Qed.
-
-End LinearSearch.
-
 (** ** 2.5 Using the subterm relation *)
 
+(* TODO *)
 
 
 (** ** 3. Different methods to work with well-founded recursion
@@ -544,7 +528,9 @@ End LinearSearch.
     When defining a function, it can happen that we loose information
     relevant to termination when matching a value, and that we then get
     stuck trying to prove termination.
+
     In this section, we discuss two such example an methods to go around the issue.
+    Note, the inspect method was already used in section 2.4.
 
     *** 3.1 The inspect method
 
@@ -554,7 +540,7 @@ End LinearSearch.
     This situation is axiomatised by the following context :
 *)
 
-Section Inspect.
+Module Inspect.
 
   Context {A : Type} {lt : A -> A -> Prop} `{WellFounded A lt}
           (f : A -> option A) (decr_f : forall n p, f n = Some p -> lt p n).
@@ -608,14 +594,59 @@ Section Inspect.
     to fill.
 *)
 
-  Equations f_sequence (a : A) : list A by wf a lt :=
+  Equations? f_sequence (a : A) : list A by wf a lt :=
     f_sequence a with inspect (f a) := {
       | Some p eqn: eq1 => p :: f_sequence p;
       | None eqn:_ => List.nil
       }.
+  Proof.
+    apply decr_f. assumption.
+  Qed.
 
 End Inspect.
 
 
 (** 2.2 ### TODO ###
 *)
+
+Section Map_in.
+  Context {A : Type}.
+  (* Context (eq : A -> A -> bool). *)
+
+  Inductive RoseTree : Type :=
+  | leaf : A -> RoseTree
+  | node : list RoseTree -> RoseTree.
+
+  Equations sizeRT (t : RoseTree) : nat :=
+  sizeRT (leaf a) := 1;
+  sizeRT (node l) := 1 + list_sum (map sizeRT l).
+
+  Equations eqList {X} (l l' : list X) (eq : forall x : X, In x l -> X -> bool) : bool :=
+  eqList [] [] _ := true;
+  eqList (a::l) (a'::l') eq := andb (eq a _ a') (eqList l l' (fun x Inl y => eq x _ y));
+  eqList _ _ _ := false.
+
+
+  Definition list_sum_ine (x : nat) (l : list nat) : In x l -> x < 1 + list_sum l.
+  Admitted.
+
+  #[tactic="idtac"] Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
+  eqRT eq (leaf a) (leaf a') := eq a a';
+  eqRT eq (node l) (node l') := eqList l l' (fun l Inl l' => eqRT eq l l') ;
+  eqRT eq _ _ := false.
+  Proof.
+    simp sizeRT. apply list_sum_ine. apply in_map. assumption.
+  Qed.
+
+  Equations? filterRT (p : RoseTree -> bool) (t : RoseTree) : RoseTree :=
+  filterRT p (leaf a) with p (leaf a) := {
+    | true  => leaf a
+    | false => node []
+  };
+  filterRT p (node l) := node (filter p l).
+  Defined.
+
+  Equations? nubByRT (eq : A -> A -> bool) (t : RoseTree) : RoseTree :=
+  nubByRT eq (leaf a) := leaf a;
+  nubByRT eq (node l) := node (nubBy (fun x y => negb (eqRT eq x y)) l).
+  Defined.
