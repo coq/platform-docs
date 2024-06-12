@@ -517,10 +517,6 @@ Qed.
 
 End LinearSearch.
 
-(** ** 2.5 Using the subterm relation *)
-
-(* TODO *)
-
 
 (** ** 3. Different methods to work with well-founded recursion
 
@@ -605,7 +601,7 @@ Module Inspect.
 End Inspect.
 
 
-(** 2.2 Improving recursion hypotheses
+(** 3.2 Improving recursion hypotheses
 
     In some cases,  most particularly when using a size or measure,
     it can happen that when defining a function by well-founded recursion,
