@@ -7,12 +7,12 @@
   In this tutorial, we focus on the facilities provided by Equations to
   define function using well-founded recursion and reason about them.
 
-  In section 1, we explain the interrests and the principle of well-founded recursion.
+  In section 1, we explain the interests and the principle of well-founded recursion.
   We then explain in section 2, how to define functions and how to reason about
   them using well-founded recursion and [Equations].
   In some cases, applying well-founded recursion can fail because information
-  relevant to termination gets lost during recurion.
-  In section 3, we discuss two such cases an how to go around the issues.
+  relevant to termination gets lost during recursion.
+  In section 3, we discuss two such cases a how to go around the issues.
 
   *** Table of content
 
@@ -38,7 +38,7 @@
   Not needed:
   - This tutorial discusses well-founded recursion but no prior knowledge
     about it is required: we will explain the concept
-  - To simplify proofs involving arithmetics, we use the automation
+  - To simplify proofs involving arithmetic, we use the automation
     tactics [lia] and [auto with arith], but they can be used as black boxes
 
   Installation:
@@ -69,7 +69,7 @@ Arguments to_fill {_}.
 
     *** 1.1 The syntactic guard condition is limited
 
-    A commen pitfall is when a recursive call is ofuscated, that is when
+    A common pitfall is when a recursive call is obfuscated, that is when
     it is not performed directly on a subterm [x], but on a subterm to which a
     function has been applied [f x], preventing the syntactic guard
     from checking that it is still indeed smaller.
@@ -77,7 +77,7 @@ Arguments to_fill {_}.
     For instance, consider the function [nubBy] that given an equality
     test recursively filters out the duplicates of a list.
     The recursive call is not performed on the recursive argument [l] but
-    on the list [filter (fun y => negb (eq x y)) l]. This prevent the syntactic
+    on the list [filter (fun y => negb (eq x y)) l]. This prevents the syntactic
     from checking it is indeed smaller, and is hence rejected.
     Yet, we can prove that [filter] does not increase the size of a list, and hence
     that the recursive call is indeed performed on a "smaller" instance than [l]
@@ -118,7 +118,7 @@ gcd x y H with Nat.eq_dec y 0 => {
     ### TODO MAKE CLEAN ###
 
 
-    Informally, well-founded recursion bascially amounts to justifying termination by:
+    Informally, well-founded recursion basically amounts to justifying termination by:
     - providing a "well-founded" relation [R : A -> A -> Prop], intuitively an
       order like [<] on natural numbers for which it is impossible to decrease infinitely
     - proving that all the recursive calls are performed on smaller arguments according
@@ -251,8 +251,8 @@ Qed.
     properties directly according to the pattern of our definition.
     In particular, we do not have to do proofs by reproducing the proof structure
     used to prove that the function is well-founded.
-    It is particularly interresting as it enables to completely hide from the users
-    , actually you can see no trace of it in the defintion, and to reason about
+    It is particularly interesting as it enables to completely hide from the users
+    , actually you can see no trace of it in the definition, and to reason about
     functions following the recursive call, that is directly as we think about them?
 
     This is a very powerful technic that, for instance, enables us to prove in a
@@ -295,7 +295,7 @@ Qed.
     compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
     which is the greater.
     We can not prove it is terminating either by looking if [x] or [y] decrease
-    (the size of a number is the number itsefl) as we do not know upahead which
+    (the size of a number is the number itself) as we do not know up-ahead which
     of [x] or [y] is bigger.
     However, we can use that the measure [x + y] is decreasing for the usual
     well-founded order on [nat], as if [x] and [y] are strictly greater than [0],
@@ -356,11 +356,11 @@ Qed.
     Not all definitions can be proven terminating using a measure and the strict order [<] on [nat].
     In some cases, it is more practical to use a different well-founded order.
     In particular, when a function involves recursion on different arguments but
-    not all recursive arguments are smaller at once, it can be pratical to use a
+    not all recursive arguments are smaller at once, it can be practical to use a
     lexicographic order [<lex].
     Given two order [<A : A -> A -> Prop] and [<B : B -> B -> Prop],
     [(a,b) <lex (a',b')] iff [a <A a'] or [a = a'] and [b <B b'].
-    It is pratical, as it suffices for one argument to decrease for the recursive
+    It is practical, as it suffices for one argument to decrease for the recursive
     call to be smaller.
     Moreover, [<lex] is well-founded as soon as [<A] and [<B] are.
 
@@ -432,7 +432,7 @@ Qed.
 
     In some cases, there is no basic order that easily enables to define a
     function by well-founded recursion.
-    In this case, it can be interresting to:
+    In this case, it can be interesting to:
     - 1. Define your own relation [R : A -> A -> Prop]
     - 2. Prove it is well-founded [wf_R : well_founded R]
     - 3. Declare it as an instance so that Equations can find it with
@@ -453,7 +453,7 @@ Qed.
     actually compute one.
     Intuitively, we should be able to just try them one by one starting from 0
     until we find one, and it should terminate as we know there exists one.
-    However, it is not clear which classical meseaure or order to use to
+    However, it is not clear which classical measure or order to use to
     justify this idea. We will hence use a custom one.
 
     We define a relation [R : nat -> nat -> nat] such that [n] is "smaller" than
@@ -464,8 +464,8 @@ Qed.
   Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
 
 (** Knowing that the previous booleans have been [false] enables us to prove
-    that [R] is well-founed when combined with [h].
-    We ommit the proof here because it is a bit long, and not very interresting
+    that [R] is well-founded when combined with [h].
+    We omit the proof here because it is a bit long, and not very interesting
     for our purpose.
  *)
 
@@ -474,7 +474,7 @@ Qed.
   Admitted.
 
 (** Having proven it is well-founded, we declare it as an instance of the database
-    [WellFounded] so that [Equations] can find it automaticaly when using the
+    [WellFounded] so that [Equations] can find it automatically when using the
     keyword [wf x R].
 *)
 
@@ -634,7 +634,7 @@ Section Map_in.
 
 (** Having define an equality test on list, we would like to define an equality
     test on RoseTree.
-    For technical reasons, the straigthfoward definition is not accepted by Coq
+    For technical reasons, the straigthforward definition is not accepted by Coq
     before Coq v8.20, so we need well-founded recursion on the size of RoseTress
     to define the equality test.
     if you are using a subsequent version, assume you need it for pedagogical purposes.
@@ -658,11 +658,11 @@ Section Map_in.
 
 (** To go around this kind of issues, a general method is to strengthen the
     function that goes through the structure to remember that [x] in a subterm of [Y].
-    In our case, it means stengthening [eqList] so that to remember that [l] is
+    In our case, it means strengthening [eqList] so that to remember that [l] is
     a subterm of [lt0], i.e. that [l] is in [lt0].
     To do so, we ask for the input of the equality test [eq] of [eqList]
-    to adittionaly be in in [l], i.e. [eq : forall x : X, In x l -> X -> bool].
-    This way, in the case (lt0 := l :: _) we rememeber [In l lt0].
+    to additionally be in in [l], i.e. [eq : forall x : X, In x l -> X -> bool].
+    This way, in the case (lt0 := l :: _) we remember [In l lt0].
     Doing so, it is now possible to define [eqRT] by well-founded on the size:
 *)
 
