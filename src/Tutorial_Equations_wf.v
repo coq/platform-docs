@@ -20,10 +20,9 @@
     - 1.1 The syntactic guard condition is limited
     - 1.2 Well-founded recursion
     2. Well-founded recursion and Equations
-      2.1 Using a size argument
-      2.2 Using a measure
-      2.3 Using a lexicographic order
-      2.4 Using a custom well-founded relation
+      2.1 Using a measure
+      2.2 Using a lexicographic order
+      2.3 Using a custom well-founded relation
   - 3. Different tricks to work with well-founded recursion
     - 3.1 The inspect method
     - 3.2 Improving recursion hypotheses
@@ -242,17 +241,20 @@ Definition gcd_Fix (x y : nat) : nat :=
     call are smaller from the definition, making it easier to read and define
     while dealing automatically with trivial cases.
 
-    In the following, we assume basic knowledge of obligations as discussed
-    in the (short) tutorial Equations: Obligations.
+    In the following, we assume basic knowledge of obligations and [Equations]
+    works together as discussed in the (short) tutorial Equations: Obligations.
 
-    ** 2.1 Using a size argument
+    ** 2.1 Using a measure
 
-    The most basic method to define a function by well-founded recursion is to
-    define a size function, and to prove that the size decrease with each
-    recursive call for the usual strict order [<] on natural numbers.
+    The most basic (and actually very versatile) method to define a function by well-founded
+    recursion is to define a measure into [nat] to use the well-founded order [<],
+    that is a function [m : ... -> nat] depending on the arguments,
+    and to prove the measure deacreses in each recursive call.
 
-    This method is already enough to define the function [nubBy], that
-    recursively filters out the duplicates of a list, by well-founded recursion.
+    This simplest example is to use size function on the inductive type at hand,
+    for instance one counting the number of constructors.
+    Is already enough to define the function [nubBy], that recursively filters
+    out the duplicates of a list, by well-founded recursion.
     Indeed, the size of a list is its length, and the only recursive call
     performed by [nubBy] is on [filter (fun y => negb (eq x y)) l].
     As [filter] can only remove elements, its length is indeed strictly smaller
@@ -316,15 +318,9 @@ Proof.
     -- assumption.
 Qed.
 
-(** ** 2.2 Using a measure
-
-    The size method described above is particular case of a more general scheme
-    that consist in using a measure: that is a function depending on
-    the arguments to [nat], so that it decrease in each recursive call.
-
-    For an example, consider a [gcd] function that does not require the assumption
-    that [x > y], by first checking if [x] or [y] is [0], and otherwise
-    compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
+(** For a slighlty more involved consider a [gcd] function that does not require
+    the assumption that [x > y], by first checking if [x] or [y] is [0], and otherwise
+    compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending on
     which is the greater.
     We cannot prove it is terminating either by looking if [x] or [y] decrease
     (the size of a number is the number itself) as we do not know up-ahead which
@@ -336,7 +332,6 @@ Qed.
     We can define [gcd] by well-founded recursion by adding [wf (x + y) lt].
     We then get two obligations corresponding to the recursive goals, which
     are basic arithmetic goals and can be solved using [lia].
-
 *)
 
 Equations? gcd (x y : nat) : nat by wf (x + y) lt :=
@@ -383,7 +378,7 @@ Proof.
 Qed.
 
 
-(** ** 2.3 Using a lexicographic order
+(** ** 2.2 Using a lexicographic order
 
     Not all definitions can be proven terminating using a measure and the strict order [<] on [nat].
     In some cases, it is more practical to use a different well-founded order.
@@ -460,7 +455,7 @@ Proof.
 Qed.
 
 
-(** ** 2.4 Using a custom well-founded relation
+(** ** 2.3 Using a custom well-founded relation
 
     In some cases, there is no basic order that easily enables to define a
     function by well-founded recursion.
@@ -476,10 +471,10 @@ Qed.
     This is represented by this context:
  *)
 
- Module LinearSearch.
+Module LinearSearch.
 
- Context (f : nat -> bool).
- Context (h : exists n : nat, f n = true).
+Context (f : nat -> bool).
+Context (h : exists n : nat, f n = true).
 
 (** Knowing there is an [n : nat] such that [f n = true], we would like to
     actually compute one.
@@ -493,7 +488,7 @@ Qed.
     i.e [forall k, k <= m -> f k = false].
 *)
 
-  Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
+Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
 
 (** Knowing that the previous booleans have been [false] enables us to prove
     that [R] is well-founded when combined with [h].
@@ -501,16 +496,16 @@ Qed.
     for our purpose.
  *)
 
-  Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
-  Proof.
-  Admitted.
+Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
+Proof.
+Admitted.
 
 (** Having proven it is well-founded, we declare it as an instance of the database
     [WellFounded] so that [Equations] can find it automatically when using the
     keyword [wf x R].
 *)
 
-  Instance wfR : WellFounded R := wf_R h.
+Instance wfR : WellFounded R := wf_R h.
 
 (** We are not ready to define our function by well-founded recursion.
 
@@ -519,33 +514,33 @@ Qed.
     section 2.1 for more details on the method.
  *)
 
-  Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
+Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
 
-  Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
 
 (** Though, we want to start a computation at 0, to define our function
     by well-founded recursion we need to start at a generic point [m : nat],
     to actually have a term to do our recursion on:
 *)
 
-  Equations? exists_nat (m : nat) (H : forall n, n < m -> f n = false) :
-    {n : nat | f n = true} by wf m R :=
-  exists_nat m H with inspect (f m) :={
-    | true  eqn:p => (exist _ m p)
-    | false eqn:p => exists_nat (S m) _
-  }.
-  Proof.
-  - inversion H0; auto.
-  - unfold R. split. 2: reflexivity.
-    intros k ikm. inversion ikm. 1: assumption.
-    subst. apply H. auto with arith.
-  Qed.
+Equations? exists_nat (m : nat) (H : forall n, n < m -> f n = false) :
+  {n : nat | f n = true} by wf m R :=
+exists_nat m H with inspect (f m) :={
+  | true  eqn:p => (exist _ m p)
+  | false eqn:p => exists_nat (S m) _
+}.
+Proof.
+- inversion H0; auto.
+- unfold R. split. 2: reflexivity.
+  intros k ikm. inversion ikm. 1: assumption.
+  subst. apply H. auto with arith.
+Qed.
 
-  Theorem linear_search : {n : nat | f n = true}.
-  Proof.
-    unshelve eapply (exists_nat 0).
-    intros n Hn0; inversion Hn0.
-  Qed.
+Theorem linear_search : {n : nat | f n = true}.
+Proof.
+  unshelve eapply (exists_nat 0).
+  intros n Hn0; inversion Hn0.
+Qed.
 
 End LinearSearch.
 
@@ -567,10 +562,10 @@ End LinearSearch.
     This situation is axiomatised by the following context :
 *)
 
-Module Inspect.
+Section Inspect.
 
-  Context {A : Type} {lt : A -> A -> Prop} `{WellFounded A lt}
-          (f : A -> option A) (decr_f : forall n p, f n = Some p -> lt p n).
+Context {A : Type} {lt : A -> A -> Prop} `{WellFounded A lt}.
+Context (f : A -> option A) (decr_f : forall n p, f n = Some p -> lt p n).
 
 (** In this case, given an element (a : A), we may be interested in computing
     the decreasing chain starting from [a] specified by [f].
@@ -581,15 +576,15 @@ Module Inspect.
     stop the computation.
 *)
 
-  Equations? f_sequence (a : A) : list A by wf a lt :=
-  f_sequence a with (f a) := {
-    | Some p => p :: f_sequence p;
-    | None => nil
-    }.
-  Proof.
-    apply decr_f.
-    (* What to do now ? *)
-  Abort.
+Equations? f_sequence (a : A) : list A by wf a lt :=
+f_sequence a with (f a) := {
+  | Some p => p :: f_sequence p;
+  | None => nil
+  }.
+Proof.
+  apply decr_f.
+  (* What to do now ? *)
+Abort.
 
 (** Unfortunately, as we can see, by doing so we generate an unprovable
     obligation as we do not remember information about the call to [f n] being
@@ -602,9 +597,9 @@ Module Inspect.
     elements [(a, eq_refl) : {b : A | a = b}].
 *)
 
-  Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
+Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
 
-  Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
 
 (** In our case, wrapping with [inspect] means matching first on
     [inspect (f a)] then on the first component which is by definition [f a],
@@ -621,14 +616,14 @@ Module Inspect.
     to fill.
 *)
 
-  Equations? f_sequence (a : A) : list A by wf a lt :=
-    f_sequence a with inspect (f a) := {
-      | Some p eqn: eq1 => p :: f_sequence p;
-      | None eqn:_ => List.nil
-      }.
-  Proof.
-    apply decr_f. assumption.
-  Qed.
+Equations? f_sequence (a : A) : list A by wf a lt :=
+  f_sequence a with inspect (f a) := {
+    | Some p eqn: eq1 => p :: f_sequence p;
+    | None eqn:_ => List.nil
+    }.
+Proof.
+  apply decr_f. assumption.
+Qed.
 
 End Inspect.
 
@@ -648,21 +643,22 @@ End Inspect.
     Let's also define the usual size function on it, and an equality test on lists.
 *)
 
-Section Map_in.
-  Context {A : Type}.
+Section EqIn.
 
-  Inductive RoseTree : Type :=
-  | leaf : A -> RoseTree
-  | node : list RoseTree -> RoseTree.
+Context {A : Type}.
 
-  Equations sizeRT (t : RoseTree) : nat :=
-  sizeRT (leaf a) := 1;
-  sizeRT (node l) := 1 + list_sum (map sizeRT l).
+Inductive RoseTree : Type :=
+| leaf : A -> RoseTree
+| node : list RoseTree -> RoseTree.
 
-  Equations eqList {X} (l l' : list X) (eq : X -> X -> bool) : bool :=
-  eqList [] [] _ := true;
-  eqList (a::l) (a'::l') eq := andb (eq a a') (eqList l l' eq);
-  eqList _ _ _ := false.
+Equations sizeRT (t : RoseTree) : nat :=
+sizeRT (leaf a) := 1;
+sizeRT (node l) := 1 + list_sum (map sizeRT l).
+
+Equations eqList {X} (l l' : list X) (eq : X -> X -> bool) : bool :=
+eqList [] [] _ := true;
+eqList (a::l) (a'::l') eq := andb (eq a a') (eqList l l' eq);
+eqList _ _ _ := false.
 
 (** Having define an equality test on list, we would like to define an equality
     test on RoseTree.
@@ -678,15 +674,15 @@ Section Map_in.
     remember that [l] in in [lt]:
 *)
 
-  Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
-  eqRT eq (leaf a) (leaf a') := eq a a';
-  eqRT eq (node lt) (node lt') := eqList lt lt' (fun l l' => eqRT eq l l') ;
-  eqRT eq _ _ := false.
-  Proof.
-      simp sizeRT.
-      (* What to do know ? We have forgotten that x is in l,
-        and hence that sizeRT l < 1 + list_sum (map sizeRT l0)  *)
-  Abort.
+Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
+eqRT eq (leaf a) (leaf a') := eq a a';
+eqRT eq (node lt) (node lt') := eqList lt lt' (fun l l' => eqRT eq l l') ;
+eqRT eq _ _ := false.
+Proof.
+    simp sizeRT.
+    (* What to do know ? We have forgotten that x is in l,
+      and hence that sizeRT l < 1 + list_sum (map sizeRT l0)  *)
+Abort.
 
 (** To go around this kind of issues, a general method is to strengthen the
     function that goes through the structure to remember that [x] in a subterm of [Y].
@@ -698,18 +694,20 @@ Section Map_in.
     Doing so, it is now possible to define [eqRT] by well-founded on the size:
 *)
 
-  Equations eqList' {X} (l l' : list X) (eq : forall x : X, In x l -> X -> bool) : bool :=
-  eqList' [] [] _ := true;
-  eqList' (a::l) (a'::l') eq := andb (eq a _ a') (eqList' l l' (fun x Inl y => eq x _ y));
-  eqList' _ _ _ := false.
+Equations eqList' {X} (l l' : list X) (eq : forall x : X, In x l -> X -> bool) : bool :=
+eqList' [] [] _ := true;
+eqList' (a::l) (a'::l') eq := andb (eq a _ a') (eqList' l l' (fun x Inl y => eq x _ y));
+eqList' _ _ _ := false.
 
-  Definition list_sum_ine (x : nat) (l : list nat) : In x l -> x < 1 + list_sum l.
-  Admitted.
+Definition list_sum_ine (x : nat) (l : list nat) : In x l -> x < 1 + list_sum l.
+Admitted.
 
-  Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
-  eqRT eq (leaf a) (leaf a') := eq a a';
-  eqRT eq (node lt) (node lt') := eqList' lt lt' (fun l Inl l' => eqRT eq l l') ;
-  eqRT eq _ _ := false.
-  Proof.
-    simp sizeRT. apply list_sum_ine. apply in_map. assumption.
-  Qed.
+Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
+eqRT eq (leaf a) (leaf a') := eq a a';
+eqRT eq (node lt) (node lt') := eqList' lt lt' (fun l Inl l' => eqRT eq l l') ;
+eqRT eq _ _ := false.
+Proof.
+  simp sizeRT. apply list_sum_ine. apply in_map. assumption.
+Qed.
+
+End EqIn.
