@@ -24,10 +24,9 @@
       2.2 Using a measure
       2.3 Using a lexicographic order
       2.4 Using a custom well-founded relation
-      2.5 Using the subterm relation ???
   - 3. Different tricks to work with well-founded recursion
     - 3.1 The inspect method
-    - 3.2 map thing ???
+    - 3.2 Improving recursion hypotheses
 
   *** Prerequisites
 
@@ -606,12 +605,23 @@ Module Inspect.
 End Inspect.
 
 
-(** 2.2 ### TODO ###
+(** 2.2 Improving recursion hypotheses
+
+    In some cases,  most particularly when using a size or measure,
+    it can happen that when defining a function by well-founded recursion,
+    we forget that [x] is a subterm of a larger term [Y],
+    and then we get stuck proving that "[size x < size Y]".
+    In this case, a possible solution is to define a custom function to "carry"
+    the information that [x] is a subterm of [Y], so it is available when
+    trying to prove it is well-founded.
+
+    For an example, consider RoseTrees, trees with finite subtrees represented
+    by the constructor [node : list RoseTree -> RoseTree.]
+    Let's also define the usual size function on it, and an equality test on lists.
 *)
 
 Section Map_in.
   Context {A : Type}.
-  (* Context (eq : A -> A -> bool). *)
 
   Inductive RoseTree : Type :=
   | leaf : A -> RoseTree
@@ -621,32 +631,57 @@ Section Map_in.
   sizeRT (leaf a) := 1;
   sizeRT (node l) := 1 + list_sum (map sizeRT l).
 
-  Equations eqList {X} (l l' : list X) (eq : forall x : X, In x l -> X -> bool) : bool :=
+  Equations eqList {X} (l l' : list X) (eq : X -> X -> bool) : bool :=
   eqList [] [] _ := true;
-  eqList (a::l) (a'::l') eq := andb (eq a _ a') (eqList l l' (fun x Inl y => eq x _ y));
+  eqList (a::l) (a'::l') eq := andb (eq a a') (eqList l l' eq);
   eqList _ _ _ := false.
 
+(** Having define an equality test on list, we would like to define an equality
+    test on RoseTree.
+    For technical reasons, the straigthfoward definition is not accepted by Coq
+    before Coq v8.20, so we need well-founded recursion on the size of RoseTress
+    to define the equality test.
+    if you are using a subsequent version, assume you need it for pedagogical purposes.
+
+    If we try to define the equality test naively as below, [Equations] generates
+    the obligation [sizeRT l < 1 + list_sum (map sizeRT lt0)] corresponding to
+    the case where [lt := l :: _].
+    This is obviously true, but we are stuck trying to prove it as we do not
+    remember that [l] in in [lt]:
+*)
+
+  Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
+  eqRT eq (leaf a) (leaf a') := eq a a';
+  eqRT eq (node lt) (node lt') := eqList lt lt' (fun l l' => eqRT eq l l') ;
+  eqRT eq _ _ := false.
+  Proof.
+      simp sizeRT.
+      (* What to do know ? We have forgotten that x is in l,
+        and hence that sizeRT l < 1 + list_sum (map sizeRT l0)  *)
+  Abort.
+
+(** To go around this kind of issues, a general method is to strengthen the
+    function that goes through the structure to remember that [x] in a subterm of [Y].
+    In our case, it means stengthening [eqList] so that to remember that [l] is
+    a subterm of [lt0], i.e. that [l] is in [lt0].
+    To do so, we ask for the input of the equality test [eq] of [eqList]
+    to adittionaly be in in [l], i.e. [eq : forall x : X, In x l -> X -> bool].
+    This way, in the case (lt0 := l :: _) we rememeber [In l lt0].
+    Doing so, it is now possible to define [eqRT] by well-founded on the size:
+*)
+
+  Equations eqList' {X} (l l' : list X) (eq : forall x : X, In x l -> X -> bool) : bool :=
+  eqList' [] [] _ := true;
+  eqList' (a::l) (a'::l') eq := andb (eq a _ a') (eqList' l l' (fun x Inl y => eq x _ y));
+  eqList' _ _ _ := false.
 
   Definition list_sum_ine (x : nat) (l : list nat) : In x l -> x < 1 + list_sum l.
   Admitted.
 
-  #[tactic="idtac"] Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
+  Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
   eqRT eq (leaf a) (leaf a') := eq a a';
-  eqRT eq (node l) (node l') := eqList l l' (fun l Inl l' => eqRT eq l l') ;
+  eqRT eq (node lt) (node lt') := eqList' lt lt' (fun l Inl l' => eqRT eq l l') ;
   eqRT eq _ _ := false.
   Proof.
     simp sizeRT. apply list_sum_ine. apply in_map. assumption.
   Qed.
-
-  Equations? filterRT (p : RoseTree -> bool) (t : RoseTree) : RoseTree :=
-  filterRT p (leaf a) with p (leaf a) := {
-    | true  => leaf a
-    | false => node []
-  };
-  filterRT p (node l) := node (filter p l).
-  Defined.
-
-  Equations? nubByRT (eq : A -> A -> bool) (t : RoseTree) : RoseTree :=
-  nubByRT eq (leaf a) := leaf a;
-  nubByRT eq (node l) := node (nubBy (fun x y => negb (eqRT eq x y)) l).
-  Defined.
