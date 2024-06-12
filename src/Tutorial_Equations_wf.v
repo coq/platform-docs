@@ -58,7 +58,7 @@ Arguments to_fill {_}.
 (** ** 1. Introduction to well-founded recursion
 
     For Coq to be consistent, all functions must be terminating.
-    To ensure they are, Coq checks that they satisfy a complex syntactic
+    To ensure there are, Coq checks that they satisfy a complex syntactic
     criterion named the guard condition.
     Very roughly, the guard condition basically checks that all recursive call
     are performed on syntactically smaller instance.
@@ -230,7 +230,7 @@ Definition gcd_Fix (x y : nat) : nat :=
     for which well-founded relation, here [< := lt], we are doing the well-founded recursion on.
     An obligation corresponding to proving that the recursive call is smaller,
     that is [length (filter (fun y => negb (eq x y)) l) < length l], is created.
-    As [Equations] can not solve on its own, it then left to us to solve.
+    As [Equations] cannot solve on its own, it then left to us to solve.
     Using the keyword [Equations?], it is automatically unshelved,
     and we simply have to prove it using tactics.
 *)
@@ -256,7 +256,7 @@ Qed.
     functions following the recursive call, that is directly as we think about them?
 
     This is a very powerful technic that, for instance, enables us to prove in a
-    few lines that [nubBy] do remove all duplicates;
+    few lines that [nubBy] does remove all duplicates;
 *)
 
 Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
@@ -294,7 +294,7 @@ Qed.
     that [x > y], by first checking if [x] or [y] is [0], and otherwise
     compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending
     which is the greater.
-    We can not prove it is terminating either by looking if [x] or [y] decrease
+    We cannot prove it is terminating either by looking if [x] or [y] decrease
     (the size of a number is the number itself) as we do not know up-ahead which
     of [x] or [y] is bigger.
     However, we can use that the measure [x + y] is decreasing for the usual
@@ -544,8 +544,8 @@ Module Inspect.
     the decreasing chain starting from [a] specified by [f].
     Naively, we would like to do so as below.
     That is check if there is an element smaller than [a] by matching [f a]
-    with a [with] clause, if there is one [Some p] then return [p] added to the
-    chain starting with [p], i.e. added to [f_sequence p], and otherwise
+    with a [with] clause, if there is one [Some p] then returns [p] added to the
+    chain starting with [p], i.e., our recursive call [f_sequence p], and otherwise
     stop the computation.
 *)
 
@@ -559,7 +559,7 @@ Module Inspect.
     (* What to do now ? *)
   Abort.
 
-(** Unfortunately, as we can see, doing so we generate an unprovable
+(** Unfortunately, as we can see, by doing so we generate an unprovable
     obligation as we do not remember information about the call to [f n] being
     equal to [Some p] in the recursive call [f_sequence p].
 

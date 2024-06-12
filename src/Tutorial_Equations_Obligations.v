@@ -95,7 +95,7 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
       to complete the definition
     - 2. try to simplify the obligations and solve them using a tactic,
       in our case, using a tactic specific to [Equations]
-    - 3. if they are any obligations left to solve, enable us to prove them using
+    - 3. if there are any obligations left to solve, enable us to prove them using
       the proof mode and tactics using [Next Obligation] or [Equations?] that
       we discuss in section 1.2
 
@@ -120,10 +120,10 @@ Qed.
     the goal for us. In can be an issue in some cases, and we discuss it in
     section 2.2.
 
-    2. Technically, you can use a wildcard [_] for any term, even for one
-    relevant to the definition and computation like [app ln lm] .
+    2. Technically, you can use a wildcard [_] for any term, even for one that
+    is relevant (i.e. not a proof) to the definition and computation like [app ln lm].
     Yet, it is generally a bad idea as automation could then infer
-    something random that matches the type expected.
+    something random that by concidence happens to match the expected type.
 
     3. Be aware that a definition is not defined until all its associated
     obligations have been solved. Trying to refer to it before that, we
