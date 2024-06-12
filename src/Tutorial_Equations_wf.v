@@ -51,9 +51,6 @@ From Equations Require Import Equations.
 From Coq Require Import List Arith Lia.
 Import ListNotations.
 
-Axiom to_fill : forall A, A.
-Arguments to_fill {_}.
-
 
 (** ** 1. Introduction to well-founded recursion
 
@@ -112,27 +109,57 @@ gcd x y H with Nat.eq_dec y 0 => {
 
 (** *** 1.2 Well-founded recursion
 
+    **** Informally
+
     It would be limiting if this kind of functions could not be defined.
     Fortunately, they can be using well-founded recursion.
 
-    ### TODO MAKE CLEAN ###
+    Informally, defining a function [f] by well-founded recursion basically
+    amounts to a usual definition expect that we justify termination by:
+    - Providing a "well-founded" relation [R : A -> A -> Prop], informally a relation
+      for which there is no infinitely decreasing sequence.
+      For instance, the strict order on [nat], [< : nat : -> nat -> nat] is well-founded
+      as starting from [m] it impossible to decrease infinitely, there is a point
+      at which you must reach [0].
+    - Proving that all the recursive calls are performed on smaller arguments
+      according to [R]
+
+    This enables us to justify termination of our function [f] as it is impossible
+    to decrease forever and all recrusive call are smaller, so whatever the input [f]
+    must terminate at a point or another.
+
+  **** More Formally
+
+    Defining a well-founded relation by "no having infinitely decreasing sequence"
+    is not very useful as #TODO
+    Consequently, in type theory, we use a slighlty stronger notion, that is
+    "accessibility", to define a well-founded relations [R : A -> A -> Prop].
+    An element [a : A] is accessible for [R], denoted [Acc R a] when for
+    all [a' : A] smaller than [a], [a'] is itself accessible.
+    Intuitevely, it ensures constructively that they are no decreasing sequence
+    as the only ways for an element [a] to be accessible are that:
+    - 1. There are no elements smaller than [a], so you cannot decrease further
+    - 2. All elements smaller than [a] are accessible, so there are no infinitely
+         decreasing sequence from them, and hence from [a].
+*)
+Print Acc.
 
 
-    Informally, well-founded recursion basically amounts to justifying termination by:
-    - providing a "well-founded" relation [R : A -> A -> Prop], intuitively an
-      order like [<] on natural numbers for which it is impossible to decrease infinitely
-    - proving that all the recursive calls are performed on smaller arguments according
-      [R]
+(** We then say a relation is well-founded, when forall (a : A), [R] is
+    accessible at [a], i.e. [Acc R a].
+    It ensures that wherever we start at, we can not decrease forever.
+*)
 
-    More formally, a relation [R : A -> A -> Prop] is "well-founded" when
+Print well_founded.
 
-
-    Given a well-founded relation [R : A -> A -> Prop], defining a function
+(** Given a well-founded relation [R : A -> A -> Prop], defining a function
     [f] by well-founded recursion on [a : A] consists in defining [f] assuming that
     [f] is defined for all [a'] smaller than [a], that is such that [R a' a].
     When particularised to natural numbers and [<], this concept is sometimes
     known as "strong recursion / induction": when defining [f n] one assumes
     that [f] is defined/proven for all smaller natural numbers [n' < n].
+
+    **** In practice
 
     There are several methods to define functions by well-founded recursion using Coq.
     They all have their pros and cons, but as a general rules defining functions
@@ -163,22 +190,24 @@ Definition gcd_Fix (x y : nat) : nat :=
           end)
       y x.
 
-
 (** However, doing so has several disadvantages.
-    The function is much less transparent than a usual definition by [Fixpoint]
-    as:
+
+    The function is much less transparent than a usual definition by [Fixpoint] as:
     - there is an explicit fixpoint combinator [Fix] in the definition
     - it forced us to use curryfication and the order of the arguments has changed
-    - explicit proofs appear in the definition of the function,
-      here through [gcd_oblig], as we must prove that recursive calls
-      are indeed smaller.
-    It can also make it harder to reason about the function, as the recursion scheme is no
-    longer trivial.
-    Moreover, as we had to use curryfication in our definition, we may need
+    - explicit proofs appears directly in the definition of the function (though Program can help)
+
+    Moreover, behind the scene the function is defined by recursion on the
+    accessibility proof, which forces us in turn to do a recursion on the
+    accessibility proof to reason about the function.
+    It makes harder to reason about the function, as the recursion
+    scheme no longer follow the intuitive definition.
+    Furthermore, as we had to use curryfication in our definition, we may need
     the axiom of function extensionally to reason about [gcd_Fix].
 
-    Consequently, Equations provide a built-in mechanism to help us
-    write functions and reason by well-founded recursion.
+
+    Considering this different defaults, Equations provides a built-in mechanism
+    to help us write functions and reason by well-founded recursion.
 *)
 
 
@@ -186,14 +215,17 @@ Definition gcd_Fix (x y : nat) : nat :=
 
     To define a function by well-founded recursion with Equations, one must add
     after the type of the function [by wf x R], where [x] is the term
-    decreasing, and [R] the well-founded relation for which [x] decreases.
+    decreasing, and [R] the well-founded relation for which [x] decreases,
+    and then define the function as usual.
 
     For instance, the function [nubBy] terminates as the size of the list decrease
     in each recursive call according to the usual strict order [<] on [nat], [lt] in Coq.
     We hence, need to write [wf (size l) l] to define it by well-founded recursion:
 
     [[
-    Equations nubBy {A} (eq : A -> A -> bool) (l : list A) : list A by wf (size l) lt  :=
+    Equations nubBy {A} (eq : A -> A -> bool) (l : list A) : list A by wf (length l) lt :=
+    nubBy ... := usual_def;
+    nubBy ... := usual_def.
     ]]
 
     Equations will then automatically:
@@ -203,11 +235,10 @@ Definition gcd_Fix (x y : nat) : nat :=
          is performed on decreasing arguments, try to prove it automatically,
          and if it cannot do it on its own leave it to us to prove
 
-    This allows to separate the proofs that the recursive call are smaller
+    This allows to write our definition transparently and directly as we would like to.
+    In particular, it enables to separete the proofs that the recursive call are smaller
     from the definition of the function, making it easier to read and define
     while dealing automatically with trivial cases.
-    Moreover, it enables us to prove arguments directly in the proof mode using
-    tactics.
 
     In the following, we assume basic knowledge of obligations as discussed
     in the (short) tutorial Equations: obligations.
@@ -247,15 +278,14 @@ Qed.
 
 (** Compared to other methods, reasoning on functions defined with well-founded
     recursion with [Equations], is no different than on regular functions.
-    Using function elimination ([funelim]) we can prove our
-    properties directly according to the pattern of our definition.
-    In particular, we do not have to do proofs by reproducing the proof structure
-    used to prove that the function is well-founded.
-    It is particularly interesting as it enables to completely hide from the users
-    , actually you can see no trace of it in the definition, and to reason about
-    functions following the recursive call, that is directly as we think about them?
+    Using function elimination ([funelim]) we can prove our properties directly
+    according to the pattern of our definition.
+    In particular, we do not have to do proofs by recursion on the proof
+    that the relation is well-founded.
+    It is important as it enables to completely hide well-founded recursion
+    from the users and to reason about our function directly as we think about it.
 
-    This is a very powerful technic that, for instance, enables us to prove in a
+    This is a very powerful method that, for instance, enables us to prove in a
     few lines that [nubBy] does remove all duplicates;
 *)
 
@@ -385,9 +415,9 @@ ack (S m) (S n) := ack m (ack (S m) n).
 
 
 (** In principle, we should be able to reason about [ack] as usual using [funelim].
-    Unfortunately, in this particular case, [funelim] runs for ever wish you can
-    checkout by uncommenting the following code.
-    It is a known issue currently being fixed due to oversimplification done
+    Unfortunately, in this particular case, [funelim] runs forever which you can
+    check out below.
+    It is a known issue currently being fixed due to oversimplification being done
     by [funelim].
 *)
 
