@@ -5,14 +5,14 @@
   [Equations] is a plugin for %\cite{Coq}% that offers a powerful support
   for writing functions by dependent pattern matching.
   In this tutorial, we focus on the facilities provided by Equations to
-  define function using well-founded recursion and reason about them.
+  define function using well-founded recursion and to reason about them.
 
   In section 1, we explain the interests and the principle of well-founded recursion.
   We then explain in section 2, how to define functions and how to reason about
   them using well-founded recursion and [Equations].
   In some cases, applying well-founded recursion can fail because information
-  relevant to termination gets lost during recursion.
-  In section 3, we discuss two such cases a how to go around the issues.
+  relevant to termination get lost during recursion.
+  In section 3, we discuss two such cases a how to go around them.
 
   *** Table of content
 
@@ -48,20 +48,21 @@
 *)
 
 From Equations Require Import Equations.
-From Coq Require Import List Arith Lia.
+From Coq Require Import List Arith Nat Lia.
 Import ListNotations.
 
 
 (** ** 1. Introduction to well-founded recursion
 
     For Coq to be consistent, all functions must be terminating.
-    To ensure there are, Coq checks that they satisfy a complex syntactic
+    To ensure they are, Coq checks that they satisfy a complex syntactic
     criterion named the guard condition.
     Very roughly, the guard condition basically checks that all recursive call
-    are performed on syntactically smaller instance.
+    are performed on syntactically smaller instances.
     Though, while practical and powerful, this syntactic criterion is by nature
     limited and not complete: it can happen that functions can be proven terminating
-    using size and mathematical arguments even though the guard fails to them as such.
+    using size arguments and mathematical reasoning, even though the guard fails
+    to them as such.
 
 
     *** 1.1 The syntactic guard condition is limited
@@ -75,7 +76,7 @@ Import ListNotations.
     test recursively filters out the duplicates of a list.
     The recursive call is not performed on the recursive argument [l] but
     on the list [filter (fun y => negb (eq x y)) l]. This prevents the syntactic
-    from checking it is indeed smaller, and is hence rejected.
+    from checking it is indeed smaller, and it is hence rejected.
     Yet, we can prove that [filter] does not increase the size of a list, and hence
     that the recursive call is indeed performed on a "smaller" instance than [l]
     and that [nubBy] is terminating.
@@ -100,12 +101,11 @@ nubBy eq (a :: l) => a :: nubBy eq (filter (fun b => negb (eq a b)) l).
     its definition fully relies on theoretic reason to ensure termination.
 *)
 
-Fail Equations gcd (x y : nat) (H : x > y) : nat :=
-gcd x y H with Nat.eq_dec y 0 => {
+Fail Equations gcd (x y : nat) : nat :=
+gcd x y with eq_dec y 0 => {
   | left _ => x
   | right _ => gcd y (x mod y)
 }.
-
 
 (** *** 1.2 Well-founded recursion
 
@@ -119,7 +119,7 @@ gcd x y H with Nat.eq_dec y 0 => {
     - Providing a "well-founded" relation [R : A -> A -> Prop], informally a relation
       for which there is no infinitely decreasing sequence.
       For instance, the strict order on [nat], [< : nat : -> nat -> nat] is well-founded
-      as starting from [m] it impossible to decrease infinitely, there is a point
+      as starting from [m : nat], it impossible to decrease infinitely, there is a point
       at which you must reach [0].
     - Proving that all the recursive calls are performed on smaller arguments
       according to [R]
@@ -130,10 +130,11 @@ gcd x y H with Nat.eq_dec y 0 => {
 
   **** More Formally
 
-    Defining a well-founded relation by "no having infinitely decreasing sequence"
+    Defining a well-founded relation by "not having infinitely decreasing sequence"
     is not very useful as #TODO
-    Consequently, in type theory, we use a slighlty stronger notion, that is
-    "accessibility", to define a well-founded relations [R : A -> A -> Prop].
+    Consequently, in type theory, we use the slighlty stronger notion of
+    "accessibility" to define a well-founded relations [R : A -> A -> Prop].
+
     An element [a : A] is accessible for [R], denoted [Acc R a] when for
     all [a' : A] smaller than [a], [a'] is itself accessible.
     Intuitevely, it ensures constructively that they are no decreasing sequence
@@ -142,8 +143,8 @@ gcd x y H with Nat.eq_dec y 0 => {
     - 2. All elements smaller than [a] are accessible, so there are no infinitely
          decreasing sequence from them, and hence from [a].
 *)
-Print Acc.
 
+Print Acc.
 
 (** We then say a relation is well-founded, when forall (a : A), [R] is
     accessible at [a], i.e. [Acc R a].
@@ -184,29 +185,29 @@ Admitted.
 Definition gcd_Fix (x y : nat) : nat :=
   Fix lt_wf (fun _ => nat ->  nat)
       (fun (b: nat) (gcd_Fix: forall b', b' < b -> nat -> nat) (a: nat) =>
-          match Nat.eq_dec b 0 with
+          match eq_dec b 0 with
           | left EQ => a
           | right NE => gcd_Fix (a mod b) (gcd_oblig a b NE) b
           end)
       y x.
 
-(** However, doing so has several disadvantages.
+(** However, doing so has several disadvantages:
 
     The function is much less transparent than a usual definition by [Fixpoint] as:
     - there is an explicit fixpoint combinator [Fix] in the definition
     - it forced us to use curryfication and the order of the arguments has changed
-    - explicit proofs appears directly in the definition of the function (though Program can help)
+    - explicit proofs now appears directly in the definition of the function
+      (though [Program] can help for that)
 
-    Moreover, behind the scene the function is defined by recursion on the
-    accessibility proof, which forces us in turn to do a recursion on the
-    accessibility proof to reason about the function.
-    It makes harder to reason about the function, as the recursion
-    scheme no longer follow the intuitive definition.
-    Furthermore, as we had to use curryfication in our definition, we may need
+    It also makes it harder to reason about the function as the function is
+    defined behind the scene by recursion on the accessibility proof.
+    Indeed, in turn, it forces to do a recursion on the accessibility proof to
+    reason about the function, which no longer corresponds to the way we think about
+    our function.
+    Moreover, as we had to use curryfication in our definition, we may need
     the axiom of function extensionally to reason about [gcd_Fix].
 
-
-    Considering this different defaults, Equations provides a built-in mechanism
+    To go arounf this different issues, Equations provides a built-in mechanism
     to help us write functions and reason by well-founded recursion.
 *)
 
@@ -216,7 +217,7 @@ Definition gcd_Fix (x y : nat) : nat :=
     To define a function by well-founded recursion with Equations, one must add
     after the type of the function [by wf x R], where [x] is the term
     decreasing, and [R] the well-founded relation for which [x] decreases,
-    and then define the function as usual.
+    and then define the function **as usual**.
 
     For instance, the function [nubBy] terminates as the size of the list decrease
     in each recursive call according to the usual strict order [<] on [nat], [lt] in Coq.
@@ -236,12 +237,13 @@ Definition gcd_Fix (x y : nat) : nat :=
          and if it cannot do it on its own leave it to us to prove
 
     This allows to write our definition transparently and directly as we would like to.
-    In particular, it enables to separete the proofs that the recursive call are smaller
-    from the definition of the function, making it easier to read and define
+    In particular, we not need to alter the structure of the definition to
+    get it accepted, and it enables to separate the proofs that the recursive
+    call are smaller from the definition, making it easier to read and define
     while dealing automatically with trivial cases.
 
     In the following, we assume basic knowledge of obligations as discussed
-    in the (short) tutorial Equations: obligations.
+    in the (short) tutorial Equations: Obligations.
 
     ** 2.1 Using a size argument
 
@@ -367,7 +369,7 @@ Lemma mod_minus a b : b <> 0 -> b < a -> (a - b) mod b = a mod b.
 Proof.
 Admitted.
 
-Lemma gcd_spec1 a b: 0 <> b -> gcd a b = gcd (Nat.modulo a b) b.
+Lemma gcd_spec1 a b: 0 <> b -> gcd a b = gcd (a mod b) b.
 Proof.
   funelim (gcd a b); intros.
   - now rewrite Nat.Div0.mod_0_l.
