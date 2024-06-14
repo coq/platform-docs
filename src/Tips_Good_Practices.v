@@ -2,7 +2,8 @@
 
     *** Summary
 
-        This tutorial gathers tips and good practices
+        This how-to gathers tips and good practices for writing Coq code.
+        It adresses regular Coq users.
 
     *** Table of content
 
