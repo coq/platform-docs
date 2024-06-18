@@ -717,7 +717,7 @@ Admitted.
 Equations find_dictionary {A B} (eq : A -> A -> bool) (key : A)
           (l : list (A * B)) : option B :=
 find_dictionary eq key [] := to_fill;
-find_dictionary eq key _ with to_fill => {
+find_dictionary eq key _ with @to_fill bool => {
   | _ := to_fill
 }.
 
