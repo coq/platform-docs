@@ -54,14 +54,14 @@ Import ListNotations.
 (** ** 1. Introduction to well-founded recursion
 
     For Coq to be consistent, all functions must be terminating.
-    To ensure they are, Coq checks that they satisfy a complex syntactic
+    To ensure they are, Coq checks that they satisfy a syntactic
     criterion named the guard condition.
-    Very roughly, the guard condition basically checks that all recursive call
-    are performed on syntactically smaller instances.
-    Though, while practical and powerful, this syntactic criterion is by nature
+    Roughly, the guard condition checks that all recursive calls are performed
+    on arguments syntactically detected to be subterms of the original argument.
+    While practical and powerful, this syntactic criterion is by nature
     limited and not complete: it can happen that functions can be proven terminating
     using size arguments and mathematical reasoning, even though the guard fails
-    to them as such.
+    to see them as such.
 
 
     *** 1.1 The syntactic guard condition is limited
@@ -71,11 +71,11 @@ Import ListNotations.
     function has been applied [f x], preventing the syntactic guard
     from checking that it is still indeed smaller.
 
-    For instance, consider the function [nubBy] that given an equality
-    test recursively filters out the duplicates of a list.
+    For instance, consider the function [nubBy] below, that
+    filters out the duplicates of a list.
     The recursive call is not performed on the recursive argument [l] but
-    on the list [filter (fun y => negb (eq x y)) l]. This prevents the syntactic
-    from checking it is indeed smaller, and it is hence rejected.
+    on the list [filter (fun y => negb (eq x y)) l]. This is too much for the guard
+   and the function is hence rejected.
     Yet, we can prove that [filter] does not increase the size of a list, and hence
     that the recursive call is indeed performed on a "smaller" instance than [l]
     and that [nubBy] is terminating.
@@ -90,12 +90,11 @@ nubBy eq (a :: l) => a :: nubBy eq (filter (fun b => negb (eq a b)) l).
     fully rely on semantic arguments to decide which recursive call to
     perform, logically preventing the guard condition from checking it.
 
-    A prime example is the Euclidean algorithm computing the gcd of
-    [x] and [y] assuming that [x > y].
-    It performs recursion on [x mod y] which is not a subterm of
-    any recursively smaller arguments, as [gcd] does not match any inputs.
-    It is well-founded and terminating for [lt], as we have tested
-    that [y > 0] and we can prove that [x mod y < y].
+    A prime example is Euclide's algorithm computing the gcd of
+    [x] and [y].
+    It performs recursion on [x mod y], which is not a subterm of the inputs.
+    Yet, it is terminating, because the sum of the two arguments is a sequence
+    of natural numbers, which strictly decreases and thus cannot go forever.
     Consequently, there is no hope for a syntactic guard to accept [gcd] as
     its definition fully relies on theoretic reason to ensure termination.
 *)
@@ -113,8 +112,8 @@ gcd x y with eq_dec y 0 => {
     It would be limiting if this kind of functions could not be defined.
     Fortunately, they can be using well-founded recursion.
 
-    Informally, defining a function [f] by well-founded recursion basically
-    amounts to a usual definition expect that we justify termination by:
+    Informally, defining a function [f] by well-founded recursion
+    amounts to a usual definition, except that we justify termination by:
     - Providing a "well-founded" relation [R : A -> A -> Prop], informally a relation
       for which there is no infinitely decreasing sequence.
       For instance, the strict order on [nat], [< : nat : -> nat -> nat] is well-founded
@@ -123,20 +122,21 @@ gcd x y with eq_dec y 0 => {
     - Proving that all the recursive calls are performed on smaller arguments
       according to [R]
 
-    This enables us to justify termination of our function [f] as it is impossible
-    to decrease forever and all recrusive call are smaller, so whatever the input [f]
-    must terminate at a point or another.
+    This allows us to justify termination of our function [f]: since each recursive call
+    is on a smaller argument, an infinite sequence of recursive calls would give an
+    infinitely decreasing sequence according to [R], which by assumption cannot exist.
 
   **** More Formally
 
-    Defining a well-founded relation by "not having infinitely decreasing sequence"
-    is not very useful as #TODO
-    Consequently, in type theory, we use the slighlty stronger notion of
-    "accessibility" to define a well-founded relations [R : A -> A -> Prop].
+   In a type theory like Coq's, however, defining a well-founded relation as one
+   "not having infinitely decreasing sequence" is slightly too weak too use properly.
+   Instead, we use the stronger notion of "accessibility" to define
+   well-founded relations [R : A -> A -> Prop]. This is classically equivalent to having no
+   infinite decreasing sequence, but in an inductive definition which is much easier to use.
 
-    An element [a : A] is accessible for [R], denoted [Acc R a] when for
-    all [a' : A] smaller than [a], [a'] is itself accessible.
-    Intuitevely, it ensures constructively that they are no decreasing sequence
+    An element [a : A] is accessible for [R], denoted [Acc R a] when
+    all [a' : A] smaller than [a], [a'] are themselves accessible.
+    Intuitively, it constructively ensures that they are no decreasing sequence
     as the only ways for an element [a] to be accessible are that:
     - 1. There are no elements smaller than [a], so you cannot decrease further
     - 2. All elements smaller than [a] are accessible, so there are no infinitely
@@ -145,9 +145,9 @@ gcd x y with eq_dec y 0 => {
 
 Print Acc.
 
-(** We then say a relation is well-founded, when forall (a : A), [R] is
-    accessible at [a], i.e. [Acc R a].
-    It ensures that wherever we start at, we can not decrease forever.
+(** We then say a relation is well-founded, when [forall (a : A), Acc R a], that is
+       when all inhabitants of [A] are accessible.
+    It ensures that wherever we start at, we cannot decrease forever.
 *)
 
 Print well_founded.
@@ -155,14 +155,14 @@ Print well_founded.
 (** Given a well-founded relation [R : A -> A -> Prop], defining a function
     [f] by well-founded recursion on [a : A] consists in defining [f] assuming that
     [f] is defined for all [a'] smaller than [a], that is such that [R a' a].
-    When particularised to natural numbers and [<], this concept is sometimes
+    When specialized to natural numbers and [<], this concept is sometimes
     known as "strong recursion / induction": when defining [f n] one assumes
     that [f] is defined/proven for all smaller natural numbers [n' < n].
 
     **** In practice
 
     There are several methods to define functions by well-founded recursion using Coq.
-    They all have their pros and cons, but as a general rules defining functions
+    They all have their pros and cons, but as a general rule defining functions
     and reasoning using well-founded recursion can be tedious.
 
     For instance, consider the [Fix] construction of the standard library,
@@ -192,21 +192,19 @@ Definition gcd_Fix (x y : nat) : nat :=
 
 (** However, doing so has several disadvantages:
 
-    The function is much less transparent than a usual definition by [Fixpoint] as:
+    The function is much less readable than a usual definition by [Fixpoint] as:
     - there is an explicit fixpoint combinator [Fix] in the definition
-    - it forced us to use curryfication and the order of the arguments has changed
+    - we are forced to use curryfication and change the order of arguments
     - explicit proofs now appears directly in the definition of the function
       (though [Program] can help for that)
 
-    It also makes it harder to reason about the function as the function is
-    defined behind the scene by recursion on the accessibility proof.
-    Indeed, in turn, it forces to do a recursion on the accessibility proof to
-    reason about the function, which no longer corresponds to the way we think about
+    It also makes it harder to reason about the function as it forces to use recursion
+    on the accessibility proof, which no longer corresponds to the way we think about
     our function.
     Moreover, as we had to use curryfication in our definition, we may need
     the axiom of function extensionally to reason about [gcd_Fix].
 
-    To go arounf this different issues, Equations provides a built-in mechanism
+    To go around these different issues, Equations provides a built-in mechanism
     to help us write functions and reason by well-founded recursion.
 *)
 
@@ -214,13 +212,13 @@ Definition gcd_Fix (x y : nat) : nat :=
 (** ** 2. Well-founded recursion and Equations
 
     To define a function by well-founded recursion with Equations, one must add
-    after the type of the function [by wf x R], where [x] is the term
-    decreasing, and [R] the well-founded relation for which [x] decreases,
+    after the type of the function [by wf x R], where [x] is the decreasing
+    term, and [R] the well-founded relation for which [x] decreases,
     and then define the function **as usual**.
 
     For instance, the function [nubBy] terminates as the size of the list decrease
     in each recursive call according to the usual strict order [<] on [nat], [lt] in Coq.
-    We hence, need to write [wf (size l) l] to define it by well-founded recursion:
+    We hence need to write [wf (size l) l] to define it by well-founded recursion:
 
     [[
     Equations nubBy {A} (eq : A -> A -> bool) (l : list A) : list A by wf (length l) lt :=
@@ -231,15 +229,15 @@ Definition gcd_Fix (x y : nat) : nat :=
     Equations will then automatically:
     - 1. Search for a proof that [R] is well-founded, using type classes (a database)
          specific to [Equations] suitably named [WellFounded]
-    - 2. It will then create an obligation to prove that each recursive call
+    - 2. Create an obligation to prove that each recursive call
          is performed on decreasing arguments, try to prove it automatically,
-         and if it cannot do it on its own leave it to us to prove
+         and if it cannot do it on its own leave it for us to prove
 
     This allows to write our definition transparently and directly as we would like to.
-    In particular, we not need to alter the structure of the definition to
-    get it accepted, and it enables to separate the proofs that the recursive
+    In particular, we do not need to alter the structure of the definition to
+    get it accepted, and it allows us to separate the proofs that the recursive
     call are smaller from the definition, making it easier to read and define
-    while dealing automatically with trivial cases.
+    while automatically dealing with trivial cases.
 
     In the following, we assume basic knowledge of obligations and [Equations]
     works together as discussed in the (short) tutorial Equations: Obligations.
@@ -249,22 +247,22 @@ Definition gcd_Fix (x y : nat) : nat :=
     The most basic (and actually very versatile) method to define a function by well-founded
     recursion is to define a measure into [nat] to use the well-founded order [<],
     that is a function [m : ... -> nat] depending on the arguments,
-    and to prove the measure deacreses in each recursive call.
+    and to prove the measure decreases in each recursive call.
 
-    This simplest example is to use size function on the inductive type at hand,
-    for instance one counting the number of constructors.
+   A simple example is the size of an inductive value, i.e. the maximal number of nested constructors.
     Is already enough to define the function [nubBy], that recursively filters
     out the duplicates of a list, by well-founded recursion.
     Indeed, the size of a list is its length, and the only recursive call
     performed by [nubBy] is on [filter (fun y => negb (eq x y)) l].
-    As [filter] can only remove elements, its length is indeed strictly smaller
-    than [l], and the function is terminating.
+    As [filter] can only remove elements, its length is indeed smaller
+    than [l]'s, and the function is terminating.
 
     To define [nubBy] using [Equations] and well-founded recursion, it suffices to
     add [wf (length l) lt] after typing to indicate on which term, here [length l], and
-    for which well-founded relation, here [< := lt], we are doing the well-founded recursion on.
+    for which well-founded relation, here [lt] (the relation behind the notation [<]),
+    we wish to use well-founded recursion.
     An obligation corresponding to proving that the recursive call is smaller,
-    that is [length (filter (fun y => negb (eq x y)) l) < length l], is created.
+    that is [length (filter (fun y => negb (eq x y)) l) < length (a :: l)], is created.
     As [Equations] cannot solve on its own, it then left to us to solve.
     Using the keyword [Equations?], it is automatically unshelved,
     and we simply have to prove it using tactics.
@@ -280,17 +278,16 @@ Proof.
 Qed.
 
 
-(** Compared to other methods, reasoning on functions defined with well-founded
+(** Reasoning on functions defined with well-founded
     recursion with [Equations], is no different than on regular functions.
     Using function elimination ([funelim]) we can prove our properties directly
     according to the pattern of our definition.
-    In particular, we do not have to do proofs by recursion on the proof
-    that the relation is well-founded.
-    It is important as it enables to completely hide well-founded recursion
-    from the users and to reason about our function directly as we think about it.
+    In particular, we do not have to do proofs by well-founded induction.
+    This completely hides well-founded recursion and allows us to reason
+    about our function directly as we think about it.
 
     This is a very powerful method that, for instance, enables us to prove in a
-    few lines that [nubBy] does remove all duplicates;
+    few lines that [nubBy] does remove all duplicates.
 *)
 
 Lemma In_nubBy {A} (eq : A -> A -> bool) (l : list A) (a : A)
@@ -320,16 +317,16 @@ Qed.
 
 (** For a slighlty more involved consider a [gcd] function that does not require
     the assumption that [x > y], by first checking if [x] or [y] is [0], and otherwise
-    compare [x] and [y], and recall [gcd] with [x - y] or [y - x] depending on
-    which is the greater.
-    We cannot prove it is terminating either by looking if [x] or [y] decrease
-    (the size of a number is the number itself) as we do not know up-ahead which
+    compares [x] and [y], and recalls [gcd] with [x - y] or [y - x] depending on
+    which is greater.
+    We cannot prove it is terminating either by looking if [x] or [y] decreases
+    (the size of a number is the number itself) as we do not know upfront which
     of [x] or [y] is bigger.
     However, we can use that the measure [x + y] is decreasing for the usual
     well-founded order on [nat], as if [x] and [y] are strictly greater than [0],
-    than [x + y > x + (y - x) = y] and [x + y > y + (x - y) = y].
+    then [x + y > x + (y - x) = y] and [x + y > y + (x - y) = y].
 
-    We can define [gcd] by well-founded recursion by adding [wf (x + y) lt].
+    We can define [gcd] by well-founded recursion by annotating the definition with [wf (x + y) lt].
     We then get two obligations corresponding to the recursive goals, which
     are basic arithmetic goals and can be solved using [lia].
 *)
@@ -387,7 +384,7 @@ Qed.
     lexicographic order [<lex].
     Given two order [<A : A -> A -> Prop] and [<B : B -> B -> Prop],
     [(a,b) <lex (a',b')] iff [a <A a'] or [a = a'] and [b <B b'].
-    It is practical, as it suffices for one argument to decrease for the recursive
+    This is useful, as it suffices for one argument to decrease for the recursive
     call to be smaller.
     Moreover, [<lex] is well-founded as soon as [<A] and [<B] are.
 
@@ -457,7 +454,7 @@ Qed.
 
 (** ** 2.3 Using a custom well-founded relation
 
-    In some cases, there is no basic order that easily enables to define a
+    In some cases, there is no basic order that easily lets one define a
     function by well-founded recursion.
     In this case, it can be interesting to:
     - 1. Define your own relation [R : A -> A -> Prop]
@@ -507,7 +504,7 @@ Admitted.
 
 Instance wfR : WellFounded R := wf_R h.
 
-(** We are not ready to define our function by well-founded recursion.
+(** We are now ready to define our function by well-founded recursion.
 
     Here, for technical reason we use the [inspect] method to remember the value of [f m].
     Here, it is not necessary to understand it for our purpose, and we refer to
@@ -518,7 +515,7 @@ Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
 
 Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
 
-(** Though, we want to start a computation at 0, to define our function
+(** Even though we want to start a computation at 0, to define our function
     by well-founded recursion we need to start at a generic point [m : nat],
     to actually have a term to do our recursion on:
 *)
@@ -547,12 +544,12 @@ End LinearSearch.
 
 (** ** 3. Different methods to work with well-founded recursion
 
-    When defining a function, it can happen that we loose information
+    When defining a function, it can happen that we lose information
     relevant to termination when matching a value, and that we then get
     stuck trying to prove termination.
 
     In this section, we discuss two such example an methods to go around the issue.
-    Note, the inspect method was already used in section 2.4.
+    Note that the inspect method was already used in section 2.4.
 
     *** 3.1 The inspect method
 
@@ -569,11 +566,11 @@ Context (f : A -> option A) (decr_f : forall n p, f n = Some p -> lt p n).
 
 (** In this case, given an element (a : A), we may be interested in computing
     the decreasing chain starting from [a] specified by [f].
-    Naively, we would like to do so as below.
-    That is check if there is an element smaller than [a] by matching [f a]
-    with a [with] clause, if there is one [Some p] then returns [p] added to the
-    chain starting with [p], i.e., our recursive call [f_sequence p], and otherwise
-    stop the computation.
+    Naively, we would like to do it as follows:
+    first, we check if there is an element smaller than [a] by matching [f a]
+    with a [with] clause; if there is none, then we stop the computation, otherwise
+    we get [Some p] and we returns [p] added to the chain starting with [p],
+    i.e., our recursive call [f_sequence p].
 *)
 
 Equations? f_sequence (a : A) : list A by wf a lt :=
@@ -616,7 +613,7 @@ Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
     to fill.
 *)
 
-Equations? f_sequence (a : A) : list A by wf a lt :=
+#[tactic="idtac"] Equations f_sequence (a : A) : list A by wf a lt :=
   f_sequence a with inspect (f a) := {
     | Some p eqn: eq1 => p :: f_sequence p;
     | None eqn:_ => List.nil
@@ -668,10 +665,10 @@ eqList _ _ _ := false.
     if you are using a subsequent version, assume you need it for pedagogical purposes.
 
     If we try to define the equality test naively as below, [Equations] generates
-    the obligation [sizeRT l < 1 + list_sum (map sizeRT lt0)] corresponding to
+    the obligation [sizeRT l < 1 + list_sum (map sizeRT lt)] corresponding to
     the case where [lt := l :: _].
     This is obviously true, but we are stuck trying to prove it as we do not
-    remember that [l] in in [lt]:
+    remember that [l] is in [lt]:
 *)
 
 Equations? eqRT (eq : A -> A -> bool) (t t': RoseTree) : bool by wf (sizeRT t) lt :=
@@ -681,16 +678,16 @@ eqRT eq _ _ := false.
 Proof.
     simp sizeRT.
     (* What to do know ? We have forgotten that x is in l,
-      and hence that sizeRT l < 1 + list_sum (map sizeRT l0)  *)
+      and hence that sizeRT l < 1 + list_sum (map sizeRT lt)  *)
 Abort.
 
 (** To go around this kind of issues, a general method is to strengthen the
     function that goes through the structure to remember that [x] in a subterm of [Y].
     In our case, it means strengthening [eqList] so that to remember that [l] is
-    a subterm of [lt0], i.e. that [l] is in [lt0].
+    in [lt].
     To do so, we ask for the input of the equality test [eq] of [eqList]
     to additionally be in in [l], i.e. [eq : forall x : X, In x l -> X -> bool].
-    This way, in the case (lt0 := l :: _) we remember [In l lt0].
+    This way, in the case (lt := l :: _) we remember [In l lt].
     Doing so, it is now possible to define [eqRT] by well-founded on the size:
 *)
 
