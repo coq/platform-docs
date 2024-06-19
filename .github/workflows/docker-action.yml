@@ -1,0 +1,41 @@
+name: Docker CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    # the OS must be GNU/Linux to be able to use the docker-coq-action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: coq-community/docker-coq-action@v1
+        with:
+          opam_file: 'coq-platform-docs.opam'
+          before_script: |
+            startGroup "Workaround permission issue"
+              sudo chown -R coq:coq .  # <--
+            endGroup
+            startGroup "Install APT dependencies"
+              cat /etc/os-release  # Print the Debian OS version
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends \
+                nodejs
+            endGroup
+          script: |
+            startGroup "Build"
+              cd src
+              make node_modules
+              make
+            endGroup
+          uninstall: ""
+
+
+# See also:
+# https://github.com/coq-community/docker-coq-action#readme
+# https://github.com/erikmd/docker-coq-github-action-demo
