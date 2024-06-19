@@ -398,7 +398,7 @@ Qed.
     To define [ack] by well-founded recursion, it suffices to add [(lexprod _ _ lt lt)].
     The function [lexprod] builds the lexicographic order and derive a proof
     that it is well-founded provided that both order are.
-    As we can see, with this order, the obligations generated turns out to be
+    As we can see, with this order, the obligations generated turn out to be
     simple enough to be automatically dealt with by [Equations].
 *)
 
