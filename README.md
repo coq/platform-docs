@@ -30,6 +30,8 @@ by going through (simple) predetermined examples, and introducing notions gradua
 In contrast, how-to guides are use-case-oriented and guides users through real life problems and their inherent complexity,
 like "How to define functions by well-founded recursion and reason about them".
 
+For a complete description of the project, you can check out the associated [Coq Enhancement Proposal](https://github.com/coq/ceps/pull/91).
+
 > [!TIP]
 > To gain useful insights about what documentation should be, we recommend
 > checking out the website [diataxis](https://diataxis.fr/) that discusses the
