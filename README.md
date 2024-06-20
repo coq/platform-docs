@@ -1,13 +1,19 @@
 # Platform-docs
 
+[![Web_Interface][Web_Interface-shield]][Web_Interface-link]
 [![Contributing][contributing-shield]][contributing-link]
 [![Zulip][zulip-shield]][zulip-link]
+
+[Web_Interface-shield]: https://img.shields.io/badge/Web_Interface-purple
+[Web_Interface-link]: https://www.theozimmermann.net/platform-docs/
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-Green
 [contributing-link]: CONTRIBUTING.md
 
 [zulip-shield]: https://img.shields.io/badge/chat-on%20Zulip-blue
 [zulip-link]: https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs
+
+
 
 ## A Compilation of Short Interactive Tutorials and How-To Guides for Coq
 
@@ -16,6 +22,7 @@ This project aims to create an online compilation of short and interactive tutor
 Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or
 how-to guides demonstrating how to use the functionality, with practical examples.
 They should further be available online through an interactive interface, most likely using JSCoq.
+There is now a prototype [web interface](https://www.theozimmermann.net/platform-docs/) to check out.
 
 Tutorials and how-to guides serve different purposes and are complementary.
 Tutorials guide a user during learning in discovering specific aspects of a feature like "Notations in Coq",
