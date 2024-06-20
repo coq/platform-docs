@@ -388,8 +388,15 @@ Qed.
     call to be smaller.
     Moreover, [<lex] is well-founded as soon as [<A] and [<B] are.
 
-    A classical example where it is useful, is to define the Ackerman function.
-    Indeed, is terminating as the recursive call are all smaller for the
+    A classical example where it is useful, is to define the Ackerman:
+*)
+
+Fail Equations ack (m n : nat) : nat :=
+ack 0 n := S n;
+ack (S m) 0     := ack m 1;
+ack (S m) (S n) := ack m (ack (S m) n).
+
+(** Indeed, is terminating as the recursive call are all smaller for the
     lexicographic order, which is essential to deal with the last case:
     - [(m,0) <lex (S m, 0)] as [m < S m]
     - [(m, ack (S m) n) <lex (S m, S n)] as [m < S m]
@@ -471,31 +478,53 @@ Qed.
 Module LinearSearch.
 
 Context (f : nat -> bool).
-Context (h : exists n : nat, f n = true).
+Context (h : exists m : nat, f m = true).
 
-(** Knowing there is an [n : nat] such that [f n = true], we would like to
+(** Knowing there exists an [m : nat] such that [f m = true], we would like to
     actually compute one.
     Intuitively, we should be able to just try them one by one starting from 0
-    until we find one, and it should terminate as we know there exists one.
-    However, it is not clear which classical measure or order to use to
-    justify this idea. We will hence use a custom one.
+    until we find one, and it should terminate as we know there exists a [m] such
+    that [f m = true].
+    However, it is not clear which classical measure or relation to use to
+    formalise this intuition. We will hence use a custom relation [R n m].
 
-    We define a relation [R : nat -> nat -> nat] such that [n] is "smaller" than
-    "m" when [n = 1 + m] and that all booleans before [m] are [false],
-    i.e [forall k, k <= m -> f k = false].
+    We want to distinguish whether [n < m] or [m <= n]:
+    - When [m <= n], we do not care about [Acc n] as we are supposed to have already found [m].
+      As we know that [f m = true], to discard these cases automatically, we add
+      [forall k, k <= m -> f k = false] to the relation to get [f m = false].
+    - By the previous point, we know that [Acc m].
+      Consequently, to prove [Acc n] when [n < m], we want to reason by induction
+      on [k := m - n]. To do so, we add [n = S m] to the relation.
+
+    This gives us the following relation and proof of our intuition:
 *)
 
 Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
 
-(** Knowing that the previous booleans have been [false] enables us to prove
-    that [R] is well-founded when combined with [h].
-    We omit the proof here because it is a bit long, and not very interesting
-    for our purpose.
- *)
+Lemma wf_R_m_le m (h : f m = true) : forall n, m <= n -> Acc R n.
+Proof.
+  intros n H. constructor. intros ? [h' ?].
+  specialize (h' m ltac:(auto)).
+  congruence.
+Qed.
 
+Lemma wf_R_lt_m m (h : f m = true) : forall n, n < m -> Acc R n.
+Proof.
+  intros n H. assert (Acc R m) by (eapply wf_R_m_le; eauto).
+  rewrite <- (Nat.sub_add n m ltac:(lia)) in *.
+  set (k := m - n) in *; clearbody k. clear h H.
+  induction k.
+  - easy.
+  - apply IHk. constructor. intros ? [? ->]. assumption.
+Qed.
+
+(** We can now prove that the realtion is well-founded: *)
 Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
 Proof.
-Admitted.
+    intros [m h] n. destruct (le_lt_dec m n).
+    - eapply wf_R_m_le; eassumption.
+    - eapply wf_R_lt_m; eassumption.
+Qed.
 
 (** Having proven it is well-founded, we declare it as an instance of the database
     [WellFounded] so that [Equations] can find it automatically when using the
@@ -613,7 +642,7 @@ Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
     to fill.
 *)
 
-#[tactic="idtac"] Equations f_sequence (a : A) : list A by wf a lt :=
+#[tactic="idtac"] Equations? f_sequence (a : A) : list A by wf a lt :=
   f_sequence a with inspect (f a) := {
     | Some p eqn: eq1 => p :: f_sequence p;
     | None eqn:_ => List.nil
@@ -657,12 +686,8 @@ eqList [] [] _ := true;
 eqList (a::l) (a'::l') eq := andb (eq a a') (eqList l l' eq);
 eqList _ _ _ := false.
 
-(** Having define an equality test on list, we would like to define an equality
-    test on RoseTree.
-    For technical reasons, the straigthforward definition is not accepted by Coq
-    before Coq v8.20, so we need well-founded recursion on the size of RoseTress
-    to define the equality test.
-    if you are using a subsequent version, assume you need it for pedagogical purposes.
+(** For pedagogical purposes, having define an equality test on list, we would
+    like to define an equality test on RoseTree using well-founded recursion.
 
     If we try to define the equality test naively as below, [Equations] generates
     the obligation [sizeRT l < 1 + list_sum (map sizeRT lt)] corresponding to
