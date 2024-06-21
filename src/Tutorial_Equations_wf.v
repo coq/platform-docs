@@ -396,7 +396,7 @@ ack 0 n := S n;
 ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
-(** Indeed, is terminating as the recursive call are all smaller for the
+(** Indeed, it is terminating as the recursive call are all smaller for the
     lexicographic order, which is essential to deal with the last case:
     - [(m,0) <lex (S m, 0)] as [m < S m]
     - [(m, ack (S m) n) <lex (S m, S n)] as [m < S m]
