@@ -1,10 +1,3 @@
-(* begin hide *)
-Axiom to_fill : forall A, A.
-Arguments to_fill {_}.
-(* end hide *)
-
-
-
 (** * Tutorial Equations : Basic Definitions and Reasoning with Equations
 
   *** Summary
@@ -51,7 +44,7 @@ Arguments to_fill {_}.
 
 
 
-(** * 1. Basic definitions and reasoning
+(** ** 1. Basic definitions and reasoning
 
   Let us start by importing the package:
 *)
@@ -59,7 +52,10 @@ Arguments to_fill {_}.
 From Coq Require Import Arith.
 From Equations Require Import Equations.
 
-(** ** 1.1 Defining functions by dependent pattern matching
+Axiom to_fill : forall A, A.
+Arguments to_fill {_}.
+
+(** *** 1.1 Defining functions by dependent pattern matching
 
     In its simplest form, [Equations] provides a practical interface to
     define functions on inductive types by pattern matching and recursion
@@ -227,7 +223,7 @@ Succeed Example testing : fold_right Nat.mul 1 (1::2::3::4::[]) = 24 := eq_refl.
 *)
 
 
-(** ** 1.2 Reasoning with Equations  *)
+(** *** 1.2 Reasoning with Equations  *)
 
 (** Now that we have seen how to define basic functions, we need to
     understand how to reason about them.
@@ -588,7 +584,7 @@ Admitted.
 
 
 
-(** * 2. With clauses
+(** ** 2. With clauses
 
     The structure of real programs is generally richer than a simple case tree on the
     original arguments.
@@ -731,7 +727,7 @@ Succeed Example testing :
 
 
 
-(** * 3. Where Clauses
+(** ** 3. Where Clauses
 
     As discussed, it often happens that we need to compute intermediate terms
     which is the purpose of the [with] clause.

@@ -12,6 +12,11 @@ There are different possible ways to contribute depending on your time and techn
 - There is a lot of tutorials and how-tos to write, both about Coq and plugins in its Platform
 - There is technical work to be done on the (interactive) web interface side
 
+> [!TIP]
+> Before starting to work on something and invest time into it, check if it is not already existing,
+> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
+
+
 ## Building the documentation
 
 We generate interactive documents using jsCoq from the `.v` files in the `src` directory.
@@ -30,6 +35,7 @@ The last step will start a local server that you can access at `http://localhost
 To extend the list of packages that are available in jsCoq, you should add them both in `src/package.json` and in `src/jscoq-agent.js`.
 
 ## Writing Tutorials and How-tos
+
 If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 to get feedback on your idea, through the writing and to reach others that may be interested.
 If there is a stream dedicated to the topic or package that you are covering in your tutorial, you can also create a discussion there.
@@ -38,10 +44,6 @@ Equation, you can create a discussion in the associated stream.
 
 Once you have a plan and some content, you can create a draft pull request to make your code accessible
 and get feedback on it while you (and others) progress on it.
-
-> [!WARNING]
-> Before starting to work on a tutorial or a how-to and invest time into it, check if it is not already existing,
-> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
 > [!WARNING]
 > Lots of stuff have already be written about Coq, it can make sense to reuse some of the content.
@@ -98,7 +100,7 @@ As examples, we have been working on new tutorials for the package Equations.
 The first one is complete and can be checked out [here](src/Tutorial_Equations_basics.v).
 
 
-### Horizontality
+### Writing Horizontal Tutorials
 
 Tutorials do not necessarily need to be long, nor should aim to present
 all the aspects of a feature in one unique tutorial.
@@ -120,8 +122,33 @@ Doing so only takes a bit more time when writing a tutorial but saves a lot of t
 that will not have to chase information in different other tutorials, tutorials which could in turn refer to other tutorials.
 It also eases maintenance as one does not need to worry about potential modifications to other tutorials.
 
+### Discussing Recurring Issues
+
+When writing a tutorial, it often happens to be confronted to something that
+does not work as easily as expected due to limitations of a feature or genuine bugs.
+In this case, often people decide not to mention the problem as they plan /
+it is planned to fix the problem.
+The issue is that most times, it turns out that it is actually not that easy to fix
+nor that fast, and meanwhile users are left with a solution.
+Worse, not only they are not told how to go around the problem,
+but they are not even warned that a problem may rise up.
+This can be particularly limiting for non expert users, that may not be able
+to identify the problem and manage to go around it on their own.
+
+This issue is particularly relevant in our case, as the documentation is aimed
+at the general public, and is indexed on the versions of Coq platform
+that do not change everyday.
+
+> [!NOTE]
+> Consequently, it is really important to mention in tutorials issues that
+> often come up with a feature, and to provide as reasonable solution as possible.
+> The tutorials can always be modified once the fix are effective, but meanwhile
+> users have solutions.
+
+
 ### Adding Exercises
-As tutorials are meant for studying, do not hesitate to add some exercises for the users to try, e.g. functions or properties to prove or finish.
+As tutorials are meant for studying, do not hesitate to add some exercises
+for the users to try, e.g. functions or properties to prove or finish.
 In general, we recommend to provide at least definitions prefilled with typing information like:
 
 ```
@@ -131,13 +158,11 @@ Lemma map_app {A B} (f : A -> B) (l l' : list A) : map f (l ++ l') = map f l + m
 Proof. Admitted.
 ```
 
-To do so, you can add the following code at the beginning of the tutorial.
-It creates an axiom `to_fill` and hides it so that it is does not appear in the body of the tutorial.
+To do so, you can add the following code at the beginning of the tutorial,
+that creates an axiom that can fill any goal.
 ```
-(* begin hide *)
 Axiom to_fill : forall A, A.
 Arguments to_fill {_}.
-(* end hide *)
 ```
 
 You can also provides tests for the users to be able to check if their definition works.
