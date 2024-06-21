@@ -388,7 +388,7 @@ Qed.
     call to be smaller.
     Moreover, [<lex] is well-founded as soon as [<A] and [<B] are.
 
-    A classical example where it is useful, is to define the Ackerman:
+    A classical example where it is useful, is to define the Ackerman function:
 *)
 
 Fail Equations ack (m n : nat) : nat :=
