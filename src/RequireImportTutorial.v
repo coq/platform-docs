@@ -266,7 +266,7 @@ Qed.
 (** This dot syntax is reminiscent of what we used for library files, and it is
     no accident. In fact,
 
-    __library files are modules.__
+    _library files are modules._
 
     This is the most important fact to take home from this tutorial, and the
     main reason to study a part of Coq's module system.
@@ -581,7 +581,7 @@ Qed.
 
 (** *** 2.1. On the user's side: selective import *)
 
-(** Now is a good time to present a recent (8.17) addition: selective import of
+(** Now is a good time to present a recent addition: selective import of
     modules. Recall that importing a module has basically two effects:
     - make the short names of constants (lemmas, definitions, ...),
       abbreviations and tactics available
@@ -619,7 +619,7 @@ Compute 10 !!.
 
 (** Everything else has not been imported. *)
 Fail Check b.
-Fail Check almost_.
+Fail Check almost_b.
 Fail Check b_rel.
 Fail Compute (0%Z + 3). (* Our coercion is not there. *)
 Print HintDb req_tut. (* Our hint database is sadly empty. *)
