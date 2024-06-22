@@ -266,7 +266,7 @@ Qed.
 (** This dot syntax is reminiscent of what we used for library files, and it is
     no accident. In fact,
 
-    _library files are modules._
+    _library files are modules_.
 
     This is the most important fact to take home from this tutorial, and the
     main reason to study a part of Coq's module system.
