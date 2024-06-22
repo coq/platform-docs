@@ -284,7 +284,7 @@ Check bar.
     - We _[Require] library files_ to load their content.
     - We _[Import] modules_ to use short names for their content (among other
       things we will see shortly)
-    - _Library files are modules._ *)
+    - _Library files are modules_. *)
 
 (** *** 1.3. Name clashes and disambiguation *)
 
@@ -330,7 +330,7 @@ Locate foo.
     This changing short name resolution may look innocuous but it has a very
     important consequence:
 
-    _The order of the [Import] commands matters, changing it can break things._
+    _The order of the [Import] commands matters, changing it can break things_.
 *)
 
 (** Notice that one can always use more qualified names, so that the resulting
