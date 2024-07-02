@@ -518,7 +518,7 @@ Proof.
   - apply IHk. constructor. intros ? [? ->]. assumption.
 Qed.
 
-(** We can now prove that the realtion is well-founded: *)
+   (** We can now prove that the relation is well-founded: *)
 Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
 Proof.
     intros [m h] n. destruct (le_lt_dec m n).
