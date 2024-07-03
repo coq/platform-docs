@@ -643,7 +643,7 @@ Compute 1 !!.
     The other import categories correspond to what we mentioned before, namely:
     [hints], [canonicals], [ltac.notations] and [ltac2.notations]. *)
 
-(** We can also select which constants, tactics and abbreviations are available
+(** We can also select which constants and abbreviations are available
     by their short names: *)
 Import Baz(almost_b, b_rel, add_two).
 Check almost_b.
