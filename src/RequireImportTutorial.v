@@ -868,7 +868,7 @@ Proof.
 Qed.
 (** **** Exercise: why could we use the same name in the two previous lemmas? *)
 
-(** 3. Exporting a module *)
+(** ** 3. Exporting a module *)
 
 (** Contrarily to [Require]d library files, module imports are not transitive.
     Consider the following nested module: *)
