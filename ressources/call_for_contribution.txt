@@ -1,32 +1,36 @@
 Dear Coq users and developpers,
 
 We would like to shed some light on our new project "Coq Platform Doc".
-Our goal is to provide tutorials and how-to guides for Coq and the Coq Platform,
-to be included in the next Rocq website.
+Our goal is to provide an online compilation of short, practical and interactive
+tutorials and how-to guides about Coq and the Coq Platform. We wish this content
+to be part of the next Rocq website. A detailed description of the project can
+be found in our Coq Enhancement Proposal (CEP) here:
+https://github.com/coq/ceps/pull/91
 
-Our first (very preliminary) prototype is available on
+The first few tutorials are available as well as  a (very preliminary) online
+interface here:
 https://www.theozimmermann.net/platform-docs/
-
-It contains:
+At this moment, it contains:
 - a Search tutorial
 - a Basic library file and module management tutorial
 - 3 tutorials about the Equation plugin
+More will follow, especially with your help!
 
-The preliminary git repository is https://github.com/Zimmi48/platform-docs
-and there is a dedicated zulip channel:
+There is a dedicated zulip channel to discuss and participate:
 https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs
+The preliminary git repository is https://github.com/Zimmi48/platform-docs
 
-A Coq Enhancement Proposal (CEP) has been proposed here:
-https://github.com/coq/ceps/pull/91
-
-Any contribution would be greatly appreciated and we welcome:
-- reviews of our CEP
-- comments or criticism about existing tutorials
+Any contribution would be greatly appreciated and we welcome in particular:
+- help to improve or write tutorials or how-to guides
+- comments or feedback on the project or existing tutorials or your needs
 - new tutorials about your favorite feature/plugin
-- demands for specific tutorials
-- propositions to enhance interactive and non-interactive interfaces for the
-  tutorials
+- help to turn folklore or secret powers into common knowledge
+- propositions to enhance interactive and non-interactive interfaces
+- reviews of our CEP
 
+Do not hesitate to contact us, if you are interested in this project!
+
+Formally yours,
 -- 
 Thomas Lamiaux (@thomas-lamiaux),
 Pierre Rousselin (@Villetaneuse),
