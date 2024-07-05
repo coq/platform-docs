@@ -1,0 +1,33 @@
+Dear Coq users and developpers,
+
+We would like to shed some light on our new project "Coq Platform Doc".
+Our goal is to provide tutorials and how-to guides for Coq and the Coq Platform,
+to be included in the next Rocq website.
+
+Our first (very preliminary) prototype is available on
+https://www.theozimmermann.net/platform-docs/
+
+It contains:
+- a Search tutorial
+- a Basic library file and module management tutorial
+- 3 tutorials about the Equation plugin
+
+The preliminary git repository is https://github.com/Zimmi48/platform-docs
+and there is a dedicated zulip channel:
+https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs
+
+A Coq Enhancement Proposal (CEP) has been proposed here:
+https://github.com/coq/ceps/pull/91
+
+Any contribution would be greatly appreciated and we welcome:
+- reviews of our CEP
+- comments or criticism about existing tutorials
+- new tutorials about your favorite feature/plugin
+- demands for specific tutorials
+- propositions to enhance interactive and non-interactive interfaces for the
+  tutorials
+
+-- 
+Thomas Lamiaux (@thomas-lamiaux),
+Pierre Rousselin (@Villetaneuse),
+Théo Zimmermann (@Zimmi48)
