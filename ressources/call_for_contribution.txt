@@ -3,11 +3,11 @@ Dear Coq users and developpers,
 We would like to shed some light on our new project "Coq Platform Doc".
 Our goal is to provide an online compilation of short, practical and interactive
 tutorials and how-to guides about Coq and the Coq Platform. We wish this content
-to be part of the next Rocq website. A detailed description of the project can
+to be part of the upcoming Rocq website. A detailed description of the project can
 be found in our Coq Enhancement Proposal (CEP) here:
 https://github.com/coq/ceps/pull/91
 
-The first few tutorials are available as well as  a (very preliminary) online
+The first few tutorials are available as well as a (very preliminary) online
 interface here:
 https://www.theozimmermann.net/platform-docs/
 At this moment, it contains:
@@ -16,7 +16,7 @@ At this moment, it contains:
 - 3 tutorials about the Equation plugin
 More will follow, especially with your help!
 
-There is a dedicated zulip channel to discuss and participate:
+There is a dedicated Zulip channel to discuss and participate:
 https://coq.zulipchat.com/#narrow/stream/437203-Coq-Platform-docs
 The preliminary git repository is https://github.com/Zimmi48/platform-docs
 
