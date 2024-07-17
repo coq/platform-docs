@@ -37,6 +37,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: |
+            src/images
             src/node_modules
             src/*.html
             src/*.css
