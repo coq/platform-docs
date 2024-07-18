@@ -10,6 +10,8 @@ https://github.com/coq/ceps/pull/91
 The first few tutorials are available as well as a (very preliminary) online
 interface here:
 https://www.theozimmermann.net/platform-docs/
+(note that this is a temporary URL that will cease to be available
+once the tutorials are migrated to the official Coq organization)
 At this moment, it contains:
 - a Search tutorial
 - a Basic library file and module management tutorial
