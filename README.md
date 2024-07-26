@@ -15,7 +15,7 @@
 
 
 
-## A Compilation of Short Interactive Tutorials and How-To Guides for Coq
+## A Collection of Short Interactive Tutorials and How-To Guides for Coq
 
 This project aims to create an online compilation of short and interactive tutorials and how-to guides for Coq and the Coq Platform.
 
