@@ -119,8 +119,8 @@ About mprod.
 (** uprod is a fixed universe, and so the basic rule applies: we can use it with
     any type that lives in a lower universe, but we can't use it with a type
     that lives in a higher universe. *)
-Type (fun (T: Type@{uprod}) => mprod T T).
-Fail Type (fun (T: Type@{uprod+1}) => mprod T T).
+Check (fun (T: Type@{uprod}) => mprod T T).
+Fail Check (fun (T: Type@{uprod+1}) => mprod T T).
 
 (** You might think that [uprod] has to be a specific concrete integer so that
     universe consistency checks can be performed during typing. However, we can
@@ -151,10 +151,10 @@ Check Type@{max(uprod, uprod+1)}.
     otherwise a universe inconsistency error is raised. *)
 
 (** For instance if we instantiate mprod with a [Set], we get [Set <= uprod]. *)
-Type (mprod (nat: Set)).
+Check (mprod (nat: Set)).
 
 (** If we instantiate with a Type at level 1, we get [Set < uprod]. *)
-Type (fun (T: Type@{Set+1}) => mprod T).
+Check (fun (T: Type@{Set+1}) => mprod T).
 
 (** What we have to accept now is that we're never getting a concrete value out
     of that universe [uprod]: it's always going to remain a variable, and it
