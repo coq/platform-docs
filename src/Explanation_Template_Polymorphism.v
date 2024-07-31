@@ -60,9 +60,10 @@
     datatypes such as natural numbers or strings have as type the bottom
     element in the hierarchy, [Type@{0}]. The type of [Type@{0}] is the next
     element [Type@{1}]; the type of [Type@{1}] is [Type@{2}], and so on, with
-    the typing rule [Type@{i}: Type@{i+1}]. The hierarchy is infinite, which
-    salvages consistency. The integer associated with each element of the
-    hierarchy is called a _universe level_ or _universe_ for short.
+    the typing rule [Type@{i}: Type@{i+1}] (infinitely). The type-to-element
+    relation is well-founded, which salvages consistency. The integer
+    associated with each element of the hierarchy is called a _universe level_
+    or _universe_ for short.
 
     In Coq, [Type@{0}] is written [Set] for historical reasons. The word [Type]
     on its own doesn't refer to any particular universe level; instead, it
