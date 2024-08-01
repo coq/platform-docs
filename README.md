@@ -119,5 +119,10 @@ There are different possible ways to contribute depending on your time and techn
 > [!IMPORTANT]
 > For more information on how to contribute, please check the [Contribution Guidelines](CONTRIBUTING.md).
 
+### License
 
+The Coq Platform Docs (in particular, all the text in tutorials and how-to guides) by *The Coq Platform Docs authors* are licensed under Creative Commons Attribution 4.0 International.
+> [!NOTE]
+> Code snippets from tutorials and how-to guides can be reused unencumbered.
 
+See [LICENSE.md](LICENSE.md) for details.
