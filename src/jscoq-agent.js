@@ -36,7 +36,7 @@ var jscoq_opts = {
     // editor:    { mode: { 'company-coq': true }, className: 'jscoq code-tight' },
     editor:    { className: 'jscoq code-tight' },
     init_pkgs: ['init'],
-    all_pkgs:  { '+': ['coq', 'equations'] },
+    all_pkgs:  { '+': ['coq', 'equations', 'elpi', 'mathcomp'] }, 
     init_import: ['utf8'],
     implicit_libs: true
 };
