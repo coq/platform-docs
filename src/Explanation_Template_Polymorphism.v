@@ -1,5 +1,9 @@
 (** * Template vs. “full” universe polymorphism
 
+    *** Main contributors
+
+    Sébastien Michelland, Yannick Zakowski.
+
     *** Summary
 
     Universe polymorphism in Coq is a thorny subject in general, in the sense
