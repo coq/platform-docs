@@ -5,10 +5,10 @@
   with which one can do most reasoning steps.
   After mastering this rather small set of tactics,
   one should be able to write large parts of proof scripts and many complete proof scripts
-  from the proof scripts one is already able to write with vanilla Coq.
+  from the scripts one is already able to write with vanilla Coq.
   The main take-away is to understand intuitively what is the effect of each tactic on the proof state,
-  so that one have an overview of possible logical reasoning steps when in the proof mode
-  (within the kewwords [Proof] and [Qed]).
+  so that one has an overview of possible logical reasoning steps when in the proof mode
+  (within the keywords [Proof] and [Qed]).
   Small insecable steps are emphasised, however the examples can seem artificial
   and the shown scripts do not necessarly meet coding conventions.
   The code examples in this page serve only as memo-snippets 
@@ -42,6 +42,16 @@
   since one can achieve most proof steps with a relatively small set of tactics
   (even without using this methodology or the Mathematical Components Library).
 
+  Isolated basic reasoning steps are illustrated with examples. 
+  It is about beeing aware of some basic valid reasoning steps that are available.
+  Performing a reasoning step
+  Technically, if there is no more goal remaining (just before [Qed]), 
+  it might be still possible that the proof term 
+  created by the proof script does not have the desired type.
+  The proof is definitively checked by the proof assistant after the command [Qed] has succeeded.  
+
+  In the section 3. More SSReflect tactics, one will find tactics that are not strictly necessary to know.
+
   Let us start by importing SSReflect.
 *)
 
@@ -58,12 +68,45 @@ Unset Printing Implicit Defensive.
 (** *** Some terminology
 
   During an interactive session with Coq, one should see three panels:
-  _ the source code, a .v file
-  _ the goal panel, which displays proof states (focused goals and local context of the current goal)
-  _ the answer panel.
-  
-
+  1 the source code, a .v file
+  2 the goal panel, which displays proof states. 
+  A proof state consists in a collection of goals where a local context is attached to each goal.
+  The current goal is one of the goals of the collection (there may be only one).
+  The goal panel displays the focused goals (among which is the current goal) 
+  and the local context of the current goal.
+  3 the answer panel.
+ 
 *)
+
+Goal forall (P Q R S : Prop), P -> (P -> Q) -> (Q -> R) -> (R -> S) -> S.
+Proof.
+move=> P Q R S HP impl_PQ.
+(* now, the local context consists of P, Q, R, S, HP and impl_PQ *)
+(* other things are available in the global context, for instance imp_iff_compat_r *)
+Check imp_iff_compat_r.
+(* the top assumption is Q -> R *)
+(* the second and last assumption is R -> S *)
+(* the conclusion is S *)
+move=> impl_QR impl_RS.
+apply: impl_RS.
+apply: impl_QR.
+exact: impl_PQ.
+Qed.
+
+(**
+  The following code snippet provides an alternate proof script
+  for the same goal,
+  to illustrate chaining tactics with ';'.
+*)
+
+Goal forall (P Q R S : Prop), P -> (P -> Q) -> (Q -> R) -> (R -> S) -> S.
+Proof.
+move=> P Q R S HP impl_PQ impl_QR impl_RS.
+apply: impl_RS; apply: impl_QR. (* tactics can be chained with ; *)
+exact: impl_PQ.
+Qed.
+
+
 
 (** ** 2. SSReflect tactics
   The two main tactics are [rewrite] and [apply:]. 
@@ -81,11 +124,12 @@ https://www.youtube.com/watch?v=m1543Y2Em_k&pp=ygU6QnVybmluZyBMaWdodHMgLSBKb2UgU
 
 We start by showing how to [move] things between the current goal and the context.
 With [move=>] one can move the first assumption of the goal to the local context.
-With [move:] one can move something from the local or global context to the first assumption
+In the opposite direction,
+with [move:] one can move something from the local or global context to the first assumption
 (also called "top").
 You are invited to execute the following example step-by-step 
 while looking at the goal panel.
-Please not that the code showed below does not meet coding conventions.
+Please note that the code showed below does not meet coding conventions.
 
 *)
 
@@ -94,7 +138,7 @@ Proof.
 move=> P.
 move=> Q.
 move=> p.
-Fail move: P. (* The command "move: P" should fail. *)
+Fail move: P. (* The command "move: P" should fail here. *)
 move: p.
 move: Q.
 move: P.
@@ -117,7 +161,7 @@ Abort.
 Module Destructing.
 
 From mathcomp Require Import ssrbool ssrnat.
-(* Tt is better to place all import commands at the beginning of the file,
+(* It is better to place all import commands at the beginning of the file,
    contrary to what is done here. 
    Yeah, do what I say, not as I do xD *)
 
@@ -187,12 +231,12 @@ End Destructing.
   The tactic [rewrite /=] does not fail, even if no simplification could be done.
 
   It is possible that simplifying does actually something but leads to a less readable term.
-  In this case, you would rather step back in order to keep the goal (and local context) readable.
+  In this case, you would rather step back in order to keep the goal (or the local context) readable.
   It is also possible that it simplifies too much, 
   because simplification applies undesirably at several parts of the goal.
   In this case, you may consider using patterns to guide the tactic 
   to simplify only some specific parts of the goal.
-  See *** for the use of patterns.
+  See the section 'Rewriting pattern' for the use of patterns.
   We will see that it is possible to combine moving with simplification attempt.
     
 *)
@@ -210,9 +254,20 @@ Qed.
 
 (**
 
-  The tactic [by []] tries to kill the goal, otherwise it fails.
+  The tactic [by []] tries to kill the goal - which is expected to be trivial for Coq -  otherwise it fails. 
 
 *)
+
+Module NonTrivialCase.
+
+From mathcomp Require Import ssrbool ssrnat.
+
+Goal 2 * 3 = 3 + 3.
+Proof.
+by [].
+Qed.
+
+End NonTrivialCase.
 
 (** *** Rewriting 
 
@@ -223,14 +278,14 @@ Qed.
 
 (** **** Rewriting with equalities
 
-One of the use cases of the [rewrite] tactic is to rewrite the goal with a given an equality from the context.
+One of the use cases of the [rewrite] tactic is to rewrite the goal with a given equality from the context.
 Let's look at the following example.
 
 *)
 
 Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
 Proof.
-move=> T a b c H. (* it is possible to combine several [move] into one *)
+move=> T a b c H. (* it is possible to combine several [move] into a single one *)
 rewrite H. (* rewrites with the equality H from left to right *)
 by [].
 Qed.
@@ -271,11 +326,11 @@ Variable (R : numDomainType).
 Lemma add_leq_right (z x y : R) : (x <= y) = (x + z <= y + z).
 Proof.
 (* we are going to use this admitted lemma *)
-(* proving this lemma can be left as an exercice once you are emore familiar with SSReflect tactics *)
+(* proving this lemma can be left as an exercice once you are more familiar with SSReflect tactics *)
 (* and have started exploring the Mathematical Components Library. *)
 Admitted.
 
-(** In the lemma [add_leq_right], please note that the argument [z] is in the first position.
+(** In the lemma [add_leq_right] just above, please note that the argument [z] is in the first position.
 *)
 
 Goal forall (x : R), x <= x.
@@ -328,7 +383,7 @@ Abort.
 
 It is usually a valid logical step to strengthen the goal.
 This is the case in the logic of Coq. 
-In other words, if one can prove more, then one can prove less.
+In other words, if one can prove more, then one can prove less (the current goal).
 Generalisation is a way to strengthen a statement by introducing one universal quantification.
 Generalisation can be an essential step to prepare inductive reasoning, in order to get strong enough
 inductive hypotheses (but not too strong, otherwise one gets stuck with unprovable base cases in the inductive reasoning).
@@ -354,13 +409,13 @@ Abort.
 
 Goal 1 + 1 = 1 * 1 :> R.
 Proof.
-move: {2}1. (* generalises the second occurrence of 1 *)
+move: {2}1. (* generalises over the second occurrence of 1 *)
 move=> x. 
 Abort.
 
 Goal 1 + 1 = 1 * 1 :> R.
 Proof.
-move: {2 4}1. (* generalises the second and the forth occurrence of 1 *)
+move: {2 4}1. (* generalises over the second and the forth occurrence of 1 *)
 move=> x. 
 Abort.
 
@@ -388,16 +443,25 @@ End Generalisation.
   and where the induction hypotheses are not used.
 
   For a given inductive type, there may be several induction principles.
-  For instance, there are two induction principles for sequences in Mathematical Component Library.
+  For instance, there are two induction principles for sequences in Mathematical Component Library
+  (sequences are the same as lists from the standard library).
+
+  The default principle is based on the constructors. 
+  There is one base case, when the sequence is empty.
+  There is one induction case, when the sequence is contructed with [cons].
+  In this case, the induction hypothesis holds for the sequence-argument of [cons].
+  An alternate induction principle for sequences is [last_ind].
+  The base case is the same, and the inductive case 
+  considers appending an element at the end of a sequence
+  (instead of the beginning).
+
   Picking the induction principle impacts the proof effort.
-  
 
   Induction principles' names often contain the substring
-  "elim" in the Standard Library ("elim" which stands for "elimination") or
-  "ind" in the Mathematical Components Library.
+  "elim" (as in "elimination") in the Standard Library
+  or "ind" (as in "induction") in the Mathematical Components Library.
 
-  In the following examples, sequences from the Mathematical Components Library are used 
-  instead of lists from the standard library. *)
+*)
 
 Module Range.
 
@@ -439,9 +503,9 @@ move: a; elim: n => // n IHn b /=.
 by rewrite IHn.
 Qed.
 
-(* The syntax [//] after [=>] in a [move] means: please rmove trivial goal. *)
+(* The syntax [//] after [=>] in a [move] means: please remove trivial goals. *)
 (* In this example, Coq is able to kill the base case as a trivial goal. *)
-(* As a result, only one goal remain after [//] and no pipe symbol is required. *)
+(* As a result, only one goal (out of two) remains after [//] and thus no pipe symbol is required. *)
 (* Simplification and removing trivial goals can be combined with the syntax [//=]. *)
 
 End Range.
@@ -463,9 +527,9 @@ Check last_ind.
 
 (* The result [last_ind] is an alternative induction principle *)
 (* that can be applied at the elimination step in the previous example. *)
-(* Instead of using constructors *)
+(* Instead of using the default induction principle. *)
 (* The syntax [elim/last_ind:] combines elimination with view application. *)
-(* Starting from the same goal and applying the [last_ind] view: *)
+(* Starting again from the same goal and applying the [last_ind] view: *)
 
 Goal size (l++m) = size l + size m.
 Proof.
@@ -508,21 +572,58 @@ congr op.
 - exact: eq_xz.
 Qed.
 
+(**
+  If one does not know the [congr] tactic, 
+  it is possible to go around by using forward reasoning.
+  However, it leads to a more cumbersome script.
+  In the example above, it is also possible to use the [rewrite] tactic, like this:
+*)
+
+Goal w = y -> x = z -> op w x = op y z. 
+Proof.
+move=> eq_wy eq_xz.
+by rewrite eq_wy eq_xz.
+Qed.
+
+(**
+  If an introduced assumption is used to rewrite and then no more used,
+  it is possible to use the [->] syntax:
+*)
+
+Goal w = y -> x = z -> op w x = op y z. 
+Proof.
+move => ->.
+move => ->.
+by [].
+Qed.
+
+Goal w = y -> x = z -> op w x = op y z. 
+Proof. by move => -> ->. Qed. (* the best rewrite script for this proof *)
+
+Goal w = y -> x = z -> op w x = op y z. 
+Proof. 
+move->. 
+by move ->. 
+Qed.
+
 End Congruence.
 
 (** *** Forward reasoning
   
   From the point of view of proof engineering with Coq, 
   one generally prefers to work on the goal over working on the local context.
-  This proof style is used in the Mathematical Components Library and is orthogonal to SSReflect tactics.
+  This proof style is used in the Mathematical Components Library and is orthogonal to using SSReflect tactics.
   One benefit of this style is to get failure earlier when the script gets broken, 
   and thus it is easier to fix it. Instead of working on the local context 
   (for instance by using [rewrite in] on an hypothesis in the local context)
   it is preferable to work on it while it is still in the goal and before it is introduced to the local context.
   This way, one avoids relying on the names of the introduced assumptions.
+  It may also possible to factor some treatments and remove some subgoals right away,
+  which let one keep lower number of subgoals and sometimes avoid relying on the order of introduction of subgoals.
   Pushing something to top might be changed without creating an error immediately,
   leading to more difficulties to maintain the script.
-  This difficulty can be more apparent when reusing old code or code written by others.
+  This difficulty can be more apparent when reusing old code or code written by others
+  (and even more if one is just a user of the code and needs to fix a proof script).
 
   Still, one may want to use forward reasoning occasionally.
   The main SSReflect forward reasoning tactic is [have:].
@@ -543,17 +644,56 @@ have H : 0 = 0. (* syntax to give a name to the introduced intermediate result *
 - 
 Abort.
 
+(** 
+  The [have:] tactic can be combined with destructing [[]] and with rewriting [->].
+  Below are some examples:
+*)
+
+Module MoreHave.
+
+(* From HB Require Import structures. *)
+
+From mathcomp Require Import ssrbool eqtype ssrnat.
+
+Local Open Scope nat_scope.
+
+Variables (P : nat -> nat -> bool) (m n : nat).
+
+Goal P m n.
+Proof.
+move: (eqVneq m n).
+Print eq_xor_neq.
+move=> [eq_mn|neq_mn].
+- rewrite eq_mn.
+  admit.
+-
+Abort.
+
+(**
+  The above code can be simplified into:
+*)
+
+Goal P m n.
+Proof.
+move: (eqVneq m n) => [->|neq_mn].
+- admit.
+-
+Abort.
+
+End MoreHave.
+
+
 (** *** Changing view
   
-  Changing view is performed on the first assumption with the tactic [move/]
+  Changing view - also called view application - is performed on the first assumption with the tactic [move/]
   or on the conclusion with the tactic [apply/].
   It replaces it with a "different view".
-  The first asumption can be replaced by a weaker asumption 
-  and the conclusion can be replaced by a stronger conclusion.
+  The first asumption can be replaced with a weaker asumption 
+  and the conclusion can be replaced with a stronger conclusion.
 
   With reflection results (with the [reflect] keyword) a proposition 
-  can be replaced with an equivalent boolean and a boolean 
-  can be replaced with an equivalent proposition.
+  can be replaced with an equivalent boolean 
+  and conversely a boolean can be relpaced with an equivalent proposition.
   This is part of the Small Scale Reflection methodology.
 
   Let's look at some examples.
@@ -642,7 +782,7 @@ End BooleanReflection.
 (** 
   SSReflect offers rewrite patterns to guide Coq to select specific matches for a rewrite.
   Otherwise the first match is selected, which is not necessarly the desired effect.
-  Please not that the match and the occurence are two different things.
+  Please not that match and occurence are two different things.
   A pattern has several matches - eventually none - and each match has one or multiple occurrences.
   Let's look at examples. 
 *)
@@ -732,10 +872,10 @@ End SomeMorePatterns.
 
 (** *** Case analysis
 
-  Let's say there is a value [v] of type [T] where [T] is an inductive type
-  (an inductive type has a finite number of constructors).
+  Let's say there is a value [v] of type [T] where [T] is an inductive type.
   Case analysis on [v] consists in examining how [v] is constructed, 
-  which leads to one subgoal for each constructor.
+  which leads to one subgoal for each constructor
+  (an inductive type has a finite number of constructors).
 
 *)
 
@@ -743,8 +883,8 @@ Goal forall (n : nat), n + n = n.
 Proof.
 move=> n.
 case: n.
-(* the goals is splitted into two goals *)
-- rewrite /=. 
+(* the goal is splitted into two goals *)
+- rewrite /=.
   by [].
 - move=> n.
   (* we get stuck here, because we are trying to prove something false *)  
@@ -762,10 +902,10 @@ case: n=> [|n]. (* the pipe symbol '|' separates each subgoal *)
 - (* we get stuck here, because we are trying to prove something false *)  
 Abort.
 
-(** It is possible to combine moving (with [move =>]) 
-    with simplification [/=] and removing trivial goals [//].
+(** It is possible to combine moving ([move =>]) 
+    with simplification [/=] and with removing trivial goals [//].
     In the following script, after the case analysis, the first goal is trivial and removed by [//].
-    Thus, only one goal is remaining and [n] can be introduced without using the pipe symbol.
+    Thus, only one goal remains and [n] can be introduced without using the pipe symbol.
 *)
 
 Goal forall (n : nat), n + n = n.
@@ -778,10 +918,10 @@ Abort.
 (** *** Specialising 
 
   Conversely to strengthening the goal, one can always weaken assumptions.
-  In other words, if one can do with less then one can do with more.
+  In other words, if one can achieve (the proof requirement) with less then one can do it with more (what is currenly available).
   One way to weaken an assumption is by specialising it.
-  In the following example, the assumption [forall y, P y] is specialised to [x],
-  which results in the asumption [P x].
+  In the following example, the assumption [forall y, P y] is specialised with [x],
+  which results in the asumption [P x]. Specialising can be seen as a special case of view application.
 
 *)
 
@@ -805,7 +945,7 @@ Abort.
 
 We remind here the [pose] tactic (that does not come from SSReflect)
 which let one add a local definition to the current context.
-It can be useful to see more clearly the goal and the local context.
+It can be useful - as temporary code - to see more clearly the goal and the local context.
 
 *)
 
@@ -814,6 +954,63 @@ Proof.
 pose a := 1 + 2.
 rewrite -/a. (* can see more clearly now *)
 Abort.
+
+(** *** Discarding top
+
+  Still according to the principle 
+  that if one can achieve (the proof requirement) with less then one can do it with more (what is currenly available),
+  it is a valid reasoning step to discard the top assumption. 
+  It can be seen as an extreme case of weakening top.
+  Consider the following simple proof.
+
+*)
+
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+move=> P Q HP HQ.
+exact: HP.
+Qed.
+
+(**
+  The assumption that [Q] is inhabitated (proved)
+  is introduced with the name [HQ] and it is never used to achieve the proof.
+  Instead of moving it to the local context, it is better to discard it as follows:
+*)
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+move=> P Q HP _.
+exact: HP.
+Qed.
+
+(**
+  Sometimes, a variable from the local context is used in the proof of the current goal
+  and then is not used anymore.
+  In this scenario, it is possible to discard it as follows.
+*)
+
+Module DiscardFromLocalContext.
+
+(* From HB Require Import structures. *)
+
+From mathcomp Require Import ssrbool eqtype ssralg ssrnum.
+Import GRing.Theory Num.Theory.
+Local Open Scope ring_scope.
+
+Variable (R : fieldType).
+Variable (x : R).
+
+Goal x != 0 -> (x ^+ 2) / x = x.
+Proof.
+move=> x_neq_0.
+rewrite -mulrA.
+rewrite mulfV.
+- move=> {x_neq_0}. (* we can discard x_neq_0 here *)
+                    (* it may be interesting to do so in a longer script *)
+  by rewrite mulr1.
+- exact: x_neq_0.
+Qed.
+
+End DiscardFromLocalContext.
 
 (** ** 4. Exercices
 *)
@@ -865,7 +1062,7 @@ End Exercice3.
 
   Finally, one may get inspiration from the Mathematical Component Library for their own formalisation.
   This includes Small Scale Reflection methodology and SSReflect coding conventions. 
-  Some ingredients are boolean reflection, decidable structures 
+  Some ingredients are boolean reflection, structures with decidable equality 
   and hierarchy of structures (with Hierarchy Builder).
 
 *)
