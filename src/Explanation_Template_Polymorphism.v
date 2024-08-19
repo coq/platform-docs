@@ -22,17 +22,23 @@
     troubles: in this tutorial, we illustrate when and where things can go
     wrong.
 
-    We'll first go through examples of monomorphic universes to explain the
-    initial problem. From there, showing what template universe polymorphism
-    does and why it's not enough is actually fairly straightforward. This
-    eventually leads to universe polymorphism as the proper solution.
+    We'll first go through examples of monomorphic (i.e., fixed) universes to
+    explain the initial problem. From there, showing what template universe
+    polymorphism does and why it's not enough is actually fairly
+    straightforward. This eventually leads to universe polymorphism as a more
+    general solution.
 
     *** Contents
 
     - 1. Quick reminder about universes
     - 2. Some issues with monomorphic universes
     - 3. What template universe polymorphism does and doesn't do
+      - 3.1. Principle
+      - 3.2. Breaking cycles with template polymorphisms
+      - 3.3. Template polymorphism doesn't go through intermediate definitions
     - 4. A taste of “full” universe polymorphism
+      - 4.1. Principle
+      - 4.2. Universe polymorphic definitions
 
     *** Prerequisites
 
@@ -91,29 +97,19 @@
 
     All of this results in the following basic rule: wherever a type in universe
     [Type@{j}] is expected, you can provide a type from any universe smaller
-    than [j], i.e. that lives in [Type@{i}] with [i <= j].
+    than [j], i.e. that lives in [Type@{i}] with [i <= j]. This is the main
+    criterion that one has to care about when testing and debugging universes.
 
-    Let's see this in action.
-*)
-
-(** ** 2. Some issues with monomorphic universes *)
-
-(** The core limitations of template universe polymorphism will be related to
-    when it _isn't_ polymorphic. So in order to understand these best, let's
-    first look at a completely monomorphic definition of a product type.
-
-    As mentioned before, Coq tries pretty hard to hide universes from you. One
-    of the consequences is that we need [Set Printing Universes] to see
-    anything we're doing. *)
+    Let's see this in action by looking at a completely monomorphic definition
+    of a product type, i.e., one that lives in a single fixed universe. As
+    mentioned before, Coq tries pretty hard to hide universes from you. One of
+    the consequences is that we need [Set Printing Universes] to see anything
+    we're doing. *)
 Open Scope type_scope.
 Set Printing Universes.
 
-(** Also, as we'll see later, Coq doesn't allow you to
-    name universes directly with a number (e.g. [Type@{42}]). So in order to
-    name a specific universe we have to create a variable [uprod] that
-    represents a universe level.
-
-    Here is the product of two types living in universe [uprod]. *)
+(** Let us create a variable [uprod] representing a universe level, and then
+    the product of two types living in universe [uprod]. *)
 Universe uprod.
 Inductive mprod (A B: Type@{uprod}) := mpair (a: A) (b: B).
 
@@ -136,7 +132,7 @@ Fail Check (fun (T: Type@{uprod+1}) => mprod T T).
    Coq uses these so-called “algebraic” universes: a universe number is either
    a symbol (e.g. [uprod]), the successor of a symbol (e.g. [uprod+1]), or the
    max of two levels (e.g. [max(uprod, uprod+1)]). Counter-intuitively, we
-   cannot name a specific universe by number. *)
+   actually cannot specify universes directly by numbers. *)
 
 Check Type@{uprod}.
 Check Type@{uprod+1}.
@@ -155,20 +151,32 @@ Check Type@{max(uprod, uprod+1)}.
     realizable: if it is, the constraint is recorded and the term is well-typed;
     otherwise a universe inconsistency error is raised. *)
 
-(** For instance if we instantiate mprod with a [Set], we get [Set <= uprod]. *)
+(** For instance if we instantiate mprod with a [Set], we get [Set <= uprod],
+    because a type at level [uprod] was expected and we provided one at level
+    [Set]. The constraint is realizable so the definition is accepted. *)
 Check (mprod (nat: Set)).
 
-(** If we instantiate with a Type at level 1, we get [Set < uprod]. *)
+(** If we instantiate with a Type at level 1, we get the stronger constraint
+    [Set < uprod]. It's still realizable, so the definition typechecks again;
+    however, all future definitions must be compatible with the constraint,
+    otherwise there will be a universe inconsistency. *)
 Check (fun (T: Type@{Set+1}) => mprod T).
 
 (** What we have to accept now is that we're never getting a concrete value out
     of that universe [uprod]: it's always going to remain a variable, and it
     will only evolve in its relations with other universe variables, i.e.
-    through constraints. We can see these constraints recorded in the universe
-    subgraph. *)
+    through constraints. *)
 
-(** Let's introduce a new universe [u]. Initially [u] and [uprod] are
-    unrelated (we don't care about the [Set < x] constraints in the graph). **)
+(** ** 2. Some issues with monomorphic universes *)
+
+(** The core limitations of template universe polymorphism are related to when
+    it _isn't_ polymorphic, so we can first demonstrate these issues on
+    monomorphic universes.
+
+    Let's introduce a new universe [u]. Initially [u] and [uprod] are
+    unrelated, which we can see by printing the section of the constraint graph
+    that mentions these two universes. (Note that we don't care about the
+    [Set < x] constraints; all global universes have it.) **)
 Universe u.
 Print Universes Subgraph (u uprod).
 
@@ -178,7 +186,7 @@ Print Universes Subgraph (u uprod).
 Definition mprod_u (T: Type@{u}) := mprod T T.
 Print Universes Subgraph (u uprod).
 
-(** (This is one of the reasons why universes can be annoying to debug in Coq:
+(** (This is one of the reasons why universes can be difficult to debug in Coq:
     any _use_ of a definition might impact universe constraints, so importing
     certain combinations of modules, adding debug lemmas, or any other change in
     global scope can affect whether code ten files over typechecks.) *)
@@ -228,14 +236,15 @@ Print Universes Subgraph (lazy_pure.u0 lazyT.u0 lazyT.u1).
 Print Universes Subgraph (lazyT.u1 uprod).
 
 (** If we were now to use [mprod] in a [lazyT], we'd get [uprod <= lazyT.u1]. *)
-Definition lazy_pure_mprod {A B: Type} (a: A) (b: B) :=
+Definition lazy_pure_mprod {A B: Type} (a: A) (b: B): lazyT (mprod A B) :=
   lazy_pure (mpair _ _ a b).
 Print Universes Subgraph (lazyT.u1 uprod).
 
 (** Conversely, if we used [lazyT] in [mprod], we'd get [lazyT.u1 < uprod].
     Because we've defined [lazy_pure_mprod], this is inconsistent with existing
     constraints, so the definition doesn't typecheck! *)
-Fail Definition mprod_lazy {A B: Type} (a: A) (b: B) :=
+Fail Definition mprod_lazy {A B: Type} (a: A) (b: B):
+    mprod (layzT A) (lazyT B) :=
   mpair _ _ (lazy_pure a) (lazy_pure b).
 
 (** This definition would have been accepted had we not defined
@@ -245,6 +254,8 @@ Fail Definition mprod_lazy {A B: Type} (a: A) (b: B) :=
       and in what order, a.k.a., everyone's favorite. *)
 
 (** ** 3. What template universe polymorphism does and doesn't do *)
+
+(** *** Principle *)
 
 (** Template universe polymorphism is a middle-ground between monomorphic
     universes and proper polymorphic universes that allow for some degree of
@@ -263,8 +274,9 @@ Check (fun (T: Type) => T * T).
 (** Ignoring the fact that prod has two separate universes for its arguments,
    the real difference is that [T * T] lives in the same universe as [T] (which
    is called [Type@{Top.N}] or [Type@{JsCoq.N}] for some [N], depending on the
-   environment in which you're running this file). We could also instantiate
-   [prod] with propositions or sets and have it live in [Prop] or [Set]. *)
+   environment in which you're running this file), not in a fixed universe like
+   [uprod]. We could also instantiate [prod] with propositions or sets and the
+   resulting product would correspondingly live in [Prop] or [Set]. *)
 Check (fun (P: Prop) => P * P).
 Check (fun (S: Set) => S * S).
 
@@ -273,11 +285,13 @@ Check (fun (S: Set) => S * S).
     sense. There are restrictions, which we'll see soon enough, and these
     restrictions are why we call that “template universe polymorphism”. *)
 
+(** *** Breaking cycles with template polymorphisms *)
+
 (** It looks like we've solved our universe problem now because we can have both
     definitions of [prod] within [lazyT] and [lazyT] within [prod]. *)
-Definition lazy_pure_prod {A B: Type} (a: A) (b: B) :=
+Definition lazy_pure_prod {A B: Type} (a: A) (b: B): lazyT (A * B) :=
   lazy_pure (pair a b).
-Definition prod_lazy {A B: Type} (a: A) (b: B) :=
+Definition prod_lazy {A B: Type} (a: A) (b: B): lazyT A * lazyT B :=
   pair (lazy_pure a) (lazy_pure b).
 
 (** The constraints are not gone: it's just that now the two instances of [prod]
@@ -296,20 +310,22 @@ Print Universes Subgraph (
 (** There are other constraints here but they're unrelated to the inconsistency
     that we had with the monomorphic version. *)
 
-(** So, problem solved, right? Nope! Because this only works with inductive
-    types (here, [prod]), not with any other definition that's derived from it.
-    So if we define the state monad for example, it will not itself be universe
-    polymorphic at all, and thus it will have all the shortcomings of our
-    previous monomorphic implementation of products, [mprod]. *)
+(** *** Template polymorphism doesn't go through intermediate definitions *)
+
+(** And thus, that's the problem solved... but only when the universe at fault
+    comes from an inductive type directly (here, [prod]). Template polymoprhic
+    universes don't propagate to any other derived definition. So if we define
+    the state monad for example, it will not itself be universe polymorphic at
+    all, and thus it will exhibit the same behavior as [mprod]. *)
 Definition state (S: Type) := fun (T: Type) => S -> (S * T).
 About state.
 
-(** [state.{u0,u1}] are our new [uprod]: the type of [T] is monomorphic. And of
-    course the previous problem is thus very much back. *)
+(** [state.{u0,u1}] correspond to the old [uprod]: the type of [T] is
+    monomorphic. So the earlier issue still comes up. *)
 Definition state_pure {S T: Type} (t: T): state S T := fun s => (s, t).
-Definition lazy_pure_state {S T: Type} (t: T) :=
+Definition lazy_pure_state {S T: Type} (t: T): lazyT (state S T) :=
   lazy_pure (state_pure (S := S) t).
-Fail Definition state_lazy {S T: Type} (t: T) :=
+Fail Definition state_lazy {S T: Type} (t: T): state S (lazyT T) :=
   state_pure (S := S) (lazy_pure t).
 
 (** Tricks to bypass the limitations of template universe polymorphism generally
@@ -334,6 +350,8 @@ About list.
 
 (** ** 4. A taste of “full” universe polymorphism ***)
 
+(** *** Principle *)
+
 (** Template universe polymorphism is limited in that it only applies to
     inductives and any indirect uses of such a type are just monomorphic. The
     proper way to have universe polymorphism is to allow it on any definition so
@@ -355,19 +373,23 @@ About pprod.
 Check pprod@{Set Set}.
 Check pprod@{uprod uprod}.
 
-(** So far, this is the same as template universe polymorphism, but now the real
-    magic is that definitions derived from [pprod] can retain the polymorphism
-    by having their own universe parameters. *)
+(** So far, this is the same as template universe polymorphism. *)
+
+(** *** Universe polymorphic definitions *)
+
+(** The new trick is that definitions derived from [pprod] can retain the
+    polymorphism by having their own universe parameters. *)
 Definition pstate (S: Type) := fun (T: Type) => S -> (pprod S T).
 About pstate.
 
 (** Now [pstate] also has universe parameters and the expressiveness of [pprod]
     is no longer lost. *)
 Definition pstate_pure {S T: Type} (t: T): pstate S T := fun s => ppair _ _ s t.
-Definition lazy_pure_pstate {S T: Type} (t: T) :=
+Definition lazy_pure_pstate {S T: Type} (t: T): lazyT (pstate S T) :=
   lazy_pure (pstate_pure (S := S) t).
-Definition pstate_lazy {S T: Type} (t: T) :=
+Definition pstate_lazy {S T: Type} (t: T): pstate S (lazyT T) :=
   pstate_pure (S := S) (lazy_pure t).
 
-(** Problem solved! ... well, assuming you are ready and able to re-define your
-    own product type and every definition that depends on it! *)
+(** This solution completely solves the state issue from our running example...
+    with the drawback of redefining the product type, which creates friction
+    with the standard library. *)
