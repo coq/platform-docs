@@ -1,51 +1,61 @@
-(** * Tutorial about SSReflect tactics
+(** * Tutorial about Rcoq (Coq) tactics
 
   *** Summary
-  In this tutorial, we introduce the main [SSReflect] tactics for the Rocq (Coq) user
-  with which one can do most reasoning steps.
-  After mastering this rather small set of tactics,
-  one should be able to write large parts of proof scripts and many complete proof scripts
-  from the scripts one is already able to write with vanilla Coq.
+  In this tutorial, we briefly introduce some main Rocq (Coq) tactics,
+  that are shipped with the standard distribution of Rocq.
+  Both vanilla tactics and SSReflect tactics are dealt with.
+  One can work either with vanilla tactics or with SSReflect tactics,
+  and short examples are provided for both sets of tactics.
+  One can do most reasoning steps with the introduced tactics.
   The main take-away is to understand intuitively what is the effect of each tactic on the proof state,
   so that one has an overview of possible logical reasoning steps when in the proof mode.
-  Small insecable steps are emphasised, however the examples can seem artificial
-  and the shown scripts do not necessarly meet coding conventions.
-  The code examples in this page serve only as memo-snippets 
-  to remember how to achieve the main basic logical steps with SSReflect tactics.
+  Small insecable steps are emphasised.
+  The code examples in this page can serve as memo-snippets 
+  to remember how to achieve some main basic logical steps within proofs in Rocq.
   
-  [SSReflect] tactics are shipped with the standard Coq distribution.
+  [SSReflect] tactics are shipped with the standard Rocq distribution.
   They are made available after loading the SSReflect plugin.
 
   *** Table of content
 
   - 1. Introduction
-  - 2. SSReflect tactics
-  - 3. More SSReflect tactics
+  - 2. Main tactics
+  - 3. Some more tactics
   - 4. Exercices
 
   *** Prerequisites
-  - We assume basic knowledge of Coq
+  - We assume basic knowledge of Rocq
 
-  Installation: the SSReflect set of tactics is shipped with the Coq distribution.
 *)
-
-
 
 (** ** 1. Introduction
 
-  This tutorial covers SSRfeflect tactics, not Small Scale Reflection methodology neither Mathematical Components Library.
-  There is a benefit to using this set of tactics
-  since one can achieve most proof steps with a relatively small set of tactics
+  One typically uses Rocq tactics in one of the two following ways: one exclusively uses vanilla tactics,
+  or else one uses SSReflect tactics with some vanilla tactics.
+  This tutorial covers some main tactics. Many tactics are twins (a vanilla one and a SSReflect one)
+  that behaves similarly.
+  When dealing with an SSReflect tactic, the two following aspects are not covered int his tutorial: 
+  Small Scale Reflection methodology and Mathematical Components Library.
+  There are some benefits to using the SSReflect set of tactics. For instance,
+  they are equipped with a rewrite pattern language, 
+  and fewer tactics are necessary to kill trivial goals
   (even without using this methodology or the Mathematical Components Library).
-
+  
   Isolated basic reasoning steps are illustrated with examples. 
-  It is about beeing aware of some basic valid reasoning steps that are available.
+  The objective is to be aware of some main valid reasoning steps that are available.
 
-  In the section 3. More SSReflect tactics, 
-  one will find tactics that can technically be got around with previous tactics.
+  In the section 3. More tactics, 
+  one will find tactics that can technically be got around with previous tactics from section 2.
 
-  Let us start by importing SSReflect.
+  Let us start by showing how to load SSReflect tactics.
 *)
+
+(**
+  To work with SSReflect tactics, one typically runs the following commands
+  as is done in the following module:
+*)
+
+Module LoadSSReflect.
 
 From Coq Require Import ssreflect.
 
@@ -57,60 +67,135 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(** ** 2. SSReflect tactics
-  The two main tactics are [rewrite] and [apply:]. 
-  The colon punctuation mark at the end of [apply:] distinguishes it 
-  from the [apply] tactic from vanilla Coq.
+End LoadSSReflect.
+
+(** ** 2. Main tactics
+  Overall, there are two main tactics, [rewrite] and [apply]/[apply:].
+  The syntax for the [rewrite] tactic is the same for SSReflect and vanilla Rocq.
+  The colon punctuation mark at the end of the SSReflect tactic [apply:] 
+  distinguishes it from the vanilla Rocq tactic [apply].
   After loading SSReflect, the default behaviour of [rewrite] is changed.
 *)
 
 (** *** Moving things
 
-(a completely unrelated link, just a song in a movie:
-https://www.youtube.com/watch?v=m1543Y2Em_k&pp=ygU6QnVybmluZyBMaWdodHMgLSBKb2UgU3RydW1tZXIgaW4gSSBIaXJlZCBhIENvbnRyYWN0IEtpbGxlcg%3D%3D )
+  (a completely unrelated link, just a song in a movie:
+  https://www.youtube.com/watch?v=m1543Y2Em_k&pp=ygU6QnVybmluZyBMaWdodHMgLSBKb2UgU3RydW1tZXIgaW4gSSBIaXJlZCBhIENvbnRyYWN0IEtpbGxlcg%3D%3D )
 
-We start by showing how to [move] things between the current goal and the context.
-With [move=>] one can move the first assumption of the goal to the local context.
-In the opposite direction,
-with [move:] one can move something from the local or global context to the first assumption
-(also called "top").
-Some baby steps with the [move] tactic
-(the code showed below does not meet coding conventions):
+  We start by showing how to move things between the current goal and the context.
+  SSReflect has a simplier syntax to move things.
+  With SSReflect, with [move=>] (which can sometimes be shortened to just [=>] when combined with other tactics) 
+  one can move the first assumption of the goal to the local context.
+  In the opposite direction,
+  with [move:], one can move something from the local or global context to the first assumption
+  (also called top assumption or just "top").
+  Some basic steps with the [move] tactic
+  (the proof script shown below does not meet coding conventions):
 
 *)
 
-Goal forall (P Q : Prop), P -> Q.
+Module MoveWithSSReflect.
+
+From Coq Require Import ssreflect.
+
+(* For other uses of SSReflect, one may also need to uncomment the following two lines. *)
+(* From Coq Require Import ssreflect ssrfun ssrbool. *)
+(* Import ssreflect.SsrSyntax. *)
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+Goal forall (P Q : Prop), P -> Q -> P.
 Proof.
 move=> P.
 move=> Q.
-move=> p.
-Fail move: P. (* The command "move: P" should fail here. *)
-move: p.
+move=> HP.
+move=> HQ.
+Fail move: P. (* As expected, the command "move: P" should fail here. *)
+move: HQ. (* please note that HP is removed from the local context *)
+move: HP.
 move: Q.
-move: P.
+move: P. (* one can keep P in the local context with: move: (P). *)
 move: or_comm. (* moving something from the global context *)
 Abort.
 
-(** *** Destructing
+(* Several moves can be combined into one, as follows. *)
 
-  The [move] tactic can be used in combination with destructing, whose syntax is [[]].
-  Destructing can let one access values of a record, do a case analysis on an inductive type, 
-  split a disjunction into subgoals. 
-  If new goals are introduced just after destructing, they are separated by the pipe symbols [|]
-  within the brackets.
-  As a result, the number of pipe symbols is the number of subgoals minus one.
-  It is possible to use destructing within subgoals, subsubgoals and so on, 
-  as is done with [[move=> [HQ | [HR | HS]]]].
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+move=> P Q HP HQ.
+move: or_comm P Q HP HQ. 
+Abort.
+
+End MoveWithSSReflect.
+
+(* With vanilla Rocq, one can move the top assumption to the local context with [intros]. *)
+(* To move something from the context, one has to consider whether it comes from the local or the global context. *)
+(* One can move something from the local context to top with [revert]. *)
+(* One can move something from the global context to top with [generalize]. *)
+
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+intros P.
+intros Q.
+intros HP.
+intros HQ.
+revert HQ.
+revert HP.
+(* Here, the command revert P would succeed and generalise over P. *)
+revert Q.
+revert P.
+generalize or_comm. (* moving something from the global context *)
+                    (* alternatively: specialize or_comm. *)
+(* assert ( H_or_comm := or_comm). *)
+Abort.
+
+(* It can be simplified to: *)
+
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+intros P Q HP HQ.
+revert P Q HP HQ.
+generalize or_comm.
+Abort.
+
+(*
+  One goes from a goal of the form [P] to [T -> P] where [T] is a result from the global context.
+  If one look at the goal only, it seems that it has been weakened.
+  However, it is indeed a generalisation and here follows an explanation why.
+
+  One should look at the whole information that consists of both the context and the goal.
+  Initially, there is a goal [P] with some term [pr : T] in the global context.
+  The goal is generalised over [pr] and one gets the new goal [forall ( _ : T), P]
+  also written as [T -> P]. Instead of completing the goal with the specific proof [pr]
+  one aims at proving a universal quantification over that proof.
+  One should thus prefer to use the tactic [generalize] over [specialize].
 
 *)
 
-Module Destructing.
+(** *** Destructing
 
-From mathcomp Require Import ssrbool ssrnat.
+  The syntax for destructing is [[]].
+  Destructing can let one access values of a record, do a case analysis on an inductive type, 
+  split a disjunction into subgoals. 
+  If new goals are introduced just after destructing, they are separated with the pipe symbols [|]
+  within the brackets.
+  As a result, the number of pipe symbols is the number of subgoals minus one.
+  It is possible to use destructing within subgoals, subsubgoals and so on, 
+  as is done with [[[HQ | [HR | HS]]]].
+  With SSReflect, the [move] tactic can be used in combination with destructing.
+
+*)
+
+Module SSRReflectDestructing.
+
+From Coq Require Import ssreflect.
 (* It is better to place all import commands at the beginning of the file,
    contrary to what is done here. 
    Yeah, do what I say, not as I do xD *)
 
+Section S.
 Variables (T : Type) (P : T -> Prop) (y z : T).
 
 Goal (exists u : T, P u) -> y = z.
@@ -127,28 +212,91 @@ Record Pair : Set := mkPair
  { n : nat
  ; b : bool}.
 
-Lemma PairP (x : Pair) : n x <= n x + (b x).
+Definition incr_pair (x : Pair) := mkPair (S (n x)) (negb (b x)).
+
+Lemma PairP (x : Pair) : incr_pair (incr_pair x) = mkPair (S (S (n x))) (b x).
 Proof.
 move: x.
-move=> [n b].
-rewrite /=.
-(* proof to be finished *)
-Abort.
+move=> [n b]. 
+by rewrite /incr_pair Bool.negb_involutive.
+Qed.
 
-Goal forall (Q R S : Prop), Q \/ R -> S.
+Goal forall (Q R : Prop), Q \/ R -> R \/ Q.
+Proof.
+move=> Q R. 
+move=> [HQ | HR].
+- right.
+  exact: HQ.  
+- left.
+  exact: HR.
+Qed.
+
+Goal forall (Q R S : Prop), Q \/ R \/ S -> S \/ R \/ Q.
 Proof.
 move=> Q R S. 
-move=> [HQ | HR].
-- admit.
--
+move=> [HQ | HRS].
+- admit. (* a proof is given in the next Goal *)
+- move: HRS => [HR | HS].
+  + admit.
+  +
 Abort.
 
-Goal forall (Q R S U : Prop), Q \/ R \/ S -> U.
+(** 
+  The previous introductions can be shortened, as follows:
+*)
+
+Goal forall (Q R S : Prop), Q \/ R \/ S -> S \/ R \/ Q.
 Proof.
-move=> Q R S U. 
-move=> [HQ | HRS].
+move=> Q R S. 
+move=> [HQ | [HR | HS]].
+- by right; right.
+- by right; left. 
+- by left.
+Qed.
+
+End S.
+End SSRReflectDestructing.
+
+Module Destructing.
+
+Section S.
+Variables (T : Type) (P : T -> Prop) (y z : T).
+
+Goal (exists u : T, P u) -> y = z.
+Proof.
+intros [x Px].
+Abort.
+
+Record Pair : Set := mkPair
+ { n : nat
+ ; b : bool}.
+
+Definition incr_pair (x : Pair) := mkPair (S (n x)) (negb (b x)).
+
+Lemma PairP (x : Pair) : incr_pair (incr_pair x) = mkPair (S (S (n x))) (b x).
+Proof.
+case x.
+intros n b.
+unfold incr_pair.
+simpl.
+now rewrite Bool.negb_involutive.
+Qed.
+
+Goal forall (Q R : Prop), Q \/ R -> R \/ Q.
+Proof.
+intros Q R.
+intros [HQ | HR].
+- now right.
+- now left.
+Qed.
+
+Goal forall (Q R S : Prop), Q \/ R \/ S -> S \/ R \/ Q.
+Proof.
+intros Q R S. 
+intros [HQ | HRS].
 - admit.
-- move: HRS => [HR | HS].
+- revert HRS. 
+  intros [HR | HS].
   + admit.
   +
 Abort.
@@ -157,32 +305,66 @@ Abort.
   The previous script can be shortened into:
 *)
 
-Goal forall (Q R S U : Prop), Q \/ R \/ S -> U.
+Goal forall (Q R S : Prop), Q \/ R \/ S -> S \/ R \/ Q.
 Proof.
-move=> Q R S U. 
-move=> [HQ | [HR | HS]].
-- admit.
-- admit. 
--
-Abort.
+intros Q R S. 
+intros [HQ | [HR | HS]].
+- now right; right.
+- now right; left. 
+- now left.
+Qed.
 
-
+End S.
 End Destructing.
+
 
 (** *** Simplifying
 
-  At any stage within a proof attempt, one may want to try to simplify the goal
-  with the tactic [rewrite /=],
-  which is a special case for the [rewrite] tactic.
-  It is similar to the [simpl] tactic from vanilla Coq.
-  The tactic [rewrite /=] does not fail, even if no simplification could be done.
+  At any stage within a proof script, one can try to simplify the goal.
+  The simplification does not fail, even if no simplification could be done.
+  The syntax for simplification is [rewrite /=] with the SSReflect tactic and [simpl] with vanilla Rocq
+  (with similar but slighlty different behaviours).
+  The SSReflect simplification tactic is a special case for the [rewrite] tactic.
 
-  It is possible to use patterns to guide the tactic 
+  It is possible to use patterns to guide the SSReflect tactic 
   to simplify only some specific parts of the goal.
   See the section 'Rewriting pattern' for the use of patterns.
-  We will see that it is possible to combine moving with simplification attempt.
+  We will see that it is possible to combine SSReflect moving with simplification attempt.
     
 *)
+
+(**
+
+  At any proof step, one can start with ask to try to kill the current goal 
+  which should be trivial for Rocq.
+  The SSReflect tactic [by []] tries to kill the goal - which is expected to be trivial for Rocq - otherwise it fails.
+  This SSReflect tactic can cover cases that require a few tactics with vanilla Rocq, 
+  such as [reflexivity], [assumption] and [now trivial].
+
+  One can require a proof line to succeed in killing the current goal.
+  With vanilla Rocq, this is achieved by beginning the line with [now]
+  ([now trivial] is preferred over just [trivial], because the latter can silently fail).
+
+*)
+
+Module Simplification.
+
+Definition foo (b : bool) := match b with
+| true => false
+| false => true
+end.
+
+Goal foo true = false.
+Proof.
+simpl.
+reflexivity.
+Qed.
+
+End Simplification.
+
+Module SSRSimplification.
+
+From Coq Require Import ssreflect.
 
 Definition foo (b : bool) := match b with
 | true => false
@@ -195,20 +377,24 @@ rewrite /=.
 by [].
 Qed.
 
-(**
+End SSRSimplification.
 
-  The tactic [by []] tries to kill the goal - which is expected to be trivial for Coq - otherwise it fails. 
-  Some vanilla Coq tactics that cover similar cases are [reflexivity] and [assumption].
+Module SSRNonTrivialCase.
 
-*)
-
-Module NonTrivialCase.
-
-From mathcomp Require Import ssrbool ssrnat.
+From Coq Require Import ssreflect.
 
 Goal 2 * 3 = 3 + 3.
 Proof.
 by [].
+Qed.
+
+End SSRNonTrivialCase.
+
+Module NonTrivialCase.
+
+Goal 2 * 3 = 3 + 3.
+Proof.
+now simpl.
 Qed.
 
 End NonTrivialCase.
@@ -216,28 +402,64 @@ End NonTrivialCase.
 (** *** Rewriting 
 
   Rewriting is performed with the [rewrite] tactic.
+  The vanilla Rocq version of [rewrite] is loaded by default.
+  After having loaded SSReflect, the behaviour of [rewrite] is the one from SSReflect.
   Some use cases are presented below.
 
 *)
 
 (** **** Rewriting with equalities
 
-  As with the vanilla [rewrite] tactic, 
-  one of the use cases of the [rewrite] tactic is to rewrite the goal with a given equality from the context.
+  The [rewrite] tactic let one rewrite the goal with a given equality from the context.
   Let's look at the following example.
 
 *)
 
 Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
 Proof.
-move=> T a b c H. (* it is possible to combine several [move] into a single one *)
+intros T a b c H. (* it is possible to combine several [intros] into a single one *)
+rewrite H.
+now trivial.
+Qed.
+
+(** 
+  In this proof, the last two steps can be combined into a single one with: [now rewrite H]. 
+  One can also rewrite from right to left instead.
+*)
+
+Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
+Proof.
+intros T a b c H. (* it is possible to combine several move into one *)
+rewrite <-H. (* rewrites with the equality H from right to left *)
+now trivial.
+Qed.
+
+(**
+  A shorter version of the proof script:
+*)
+Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
+Proof. now intros T a b c H; rewrite H. Qed.
+
+(**
+
+  A similar script with the SSReflect [rewrite] tactic can be:
+
+*)
+
+Module SSRRewrite.
+
+From Coq Require Import ssreflect.
+
+Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
+Proof.
+move=> T a b c H. (* it is possible to combine several [intros] into a single one *)
 rewrite H.
 by [].
 Qed.
 
 (** 
   In this proof, the last two steps can be combined into a single one with: [by rewrite H]. 
-  If you want, you can try to rewrite from right to left instead.
+  One can also rewrite from right to left instead.
 *)
 
 Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
@@ -253,35 +475,27 @@ Qed.
 Goal forall (T : Type) (a b c : T) (H : a = b), a = c -> b = c.
 Proof. by move=> T a b c H; rewrite H. Qed.
 
-Module AnotherRewrite.
-
-From mathcomp Require Import ssrbool ssralg ssrnum.
-
-(* Import GRing.Theory Num.Theory. *)
-Local Open Scope ring_scope.
-
-Variable (R : numDomainType).
-
-Lemma add_leq_right (z x y : R) : (x <= y) = (x + z <= y + z).
-Proof.
-(* we are going to use this admitted lemma *)
-(* proving this lemma can be left as an exercice once you are more familiar with SSReflect tactics *)
-(* and if you want to explore the Mathematical Components Library. *)
-Admitted.
-
-Goal forall (x : R), x <= x.
-Proof.
-move=> x.
-rewrite (add_leq_right x). 
-Abort.
-
-End AnotherRewrite.
+End SSRRewrite.
 
 (** *** Unfolding a definition.
 
-  Unfolding a definition is done with [rewrite /the_definition_to_be_unfolded].
+  Unfolding a definition is done with [rewrite /the_definition_to_be_unfolded] with SSReflect
+  and [unfold] with vanilla Rocq.
 
 *)
+
+Definition secret : nat := 42.
+
+Goal secret = 41 + 1.
+Proof.
+unfold secret.
+fold secret. (* folding back *)
+now trivial.
+Qed.
+
+Module SSRUnfolding.
+
+From Coq Require Import ssreflect.
 
 Definition secret : nat := 42.
 
@@ -292,182 +506,235 @@ rewrite -/secret. (* folding back *)
 by [].
 Qed.
 
-(** *** The [apply:] tactic 
+End SSRUnfolding.
 
-The [apply:] tactic is similar to the vanilla Coq [apply] tactic.
-It tries to match the conclusion (and eventually some premisses) of the lemma 
-with the goal.
-It lets one do backward reasoning.
+(** *** The [apply] tactic 
+
+The [apply] tactic tries to match the conclusion (and eventually some premisses) 
+of the lemma being applied with the goal. It lets one do backward reasoning.
+The syntax with SSReflect is [apply:] and
+one can require that it should kill the goal with [exact:].
 Let's look at some examples.
 
 *)
 
-Goal forall (A B : Prop) (H : A-> B), B.
+Goal forall (A B : Prop) (HA : A) (H : A-> B), B.
 Proof.
-move=> A B H.
-apply: H.
-Abort.
+intros A B HA H.
+apply H.
+assumption.
+Qed.
 
-Goal forall (A B C : Prop) (H : A -> B -> C), B -> C.
+Goal forall (A B C : Prop) (HA : A) (H : A -> B -> C), B -> C.
 Proof.
-move=> A B C H.
+intros A B C HA H.
+apply H. (* the premise B has been included *)
+assumption.
+Qed.
+
+Module SSReflectApply.
+
+From Coq Require Import ssreflect.
+
+Goal forall (A B : Prop) (HA : A) (H : A-> B), B.
+Proof.
+move=> A B HA H.
+apply: H. (* or better: exact: H *)
+by [].
+Qed.
+
+Goal forall (A B C : Prop) (HA : A) (H : A -> B -> C), B -> C.
+Proof.
+move=> A B C HA H.
 apply: H. (* the premise B has been included *)
-Abort.
+by [].
+Qed.
 
-(** *** Generalisation *)
+End SSReflectApply.
 
-Module Generalisation.
+(** *** Generalisation 
+The SSReflect syntax for generalising is the same as for moving things to top. *)
 
-From mathcomp Require Import ssrbool ssralg ssrnum.
-Local Open Scope ring_scope.
 
-Variable (R : numDomainType).
+Module SSRGeneralisation.
 
-Goal (4 + 1) ^+ 2 = 4 ^+ 2 + 4 *+ 2 + 1 :> R.
+Require Import Nat.
+From Coq Require Import ssreflect.
+
+Goal (4 + 1) ^ 2 = 4 ^ 2 + 4 * 2 + 1 .
 Proof.
 move: 4. (* generalises over the term 4 *)
+move=> n.
 Abort.
 
-Goal 1 + 1 = 1 * 1 :> R.
+Goal 1 + 1 = 1 * 1.
 Proof.
-move: 1. (* generalises over all occurrences of 1 *)
+move: 1 => n. (* generalises over all occurrences of 1 *)
 Abort.
 
-Goal 1 + 1 = 1 * 1 :> R.
+Goal 1 + 1 = 1 * 1.
 Proof.
-move: {2}1. (* generalises over the second occurrence of 1 *)
-move=> x. 
+move: {2}1 => n. (* generalises over the second occurrence of 1 *)
 Abort.
 
-Goal 1 + 1 = 1 * 1 :> R.
+Goal 1 + 1 = 1 * 1.
 Proof.
-move: {2 4}1. (* generalises over the second and the forth occurrence of 1 *)
-move=> x. 
+move: {2 4}1 => x. (* generalises over the second and the forth occurrence of 1 *)
 Abort.
-
-Check list.
 
 Goal forall (T : Type) (l : list T) (C : Prop), C.
 Proof.
 move=> T l C.
 move: (eq_refl (length l)). (* this illustrates moving something from the global context to top *)
-move: {2}(length l). (* generalises over the second occurrence only *)
-move=> n.
+move: {2}(length l) => n. (* generalises over the second occurrence only *)
+Abort.
+
+End SSRGeneralisation.
+
+Module Generalisation.
+
+Require Import Nat.
+
+Goal (4 + 1) ^ 2 = 4 ^ 2 + 4 * 2 + 1 .
+Proof.
+generalize 4. (* generalises over the term 4 *)
+intros n. 
+Abort.
+
+Goal 1 + 1 = 1 * 1.
+Proof.
+generalize 1. (* generalises over all occurrences of 1 *)
+intros n. 
+Abort.
+
+Goal 1 + 1 = 1 * 1.
+Proof.
+generalize 1 at 2. (* generalises over the second occurrence of 1 *)
+intros n.
+Abort.
+
+Goal 1 + 1 = 1 * 1.
+Proof.
+generalize 1 at 2 4. (* generalises over the second and the forth occurrence of 1 *)
+intros n. 
+Abort.
+
+Goal forall (T : Type) (l : list T) (C : Prop), C.
+Proof.
+intros T l C.
+generalize (eq_refl (length l)). (* this illustrates moving something from the global context to top *)
+generalize (length l) at 2. (* generalises over the second occurrence only *)
+intros n.
 Abort.
 
 End Generalisation.
 
-
 (** *** Inductive reasoning
 
-  The [induction] tactic from vanilla Coq is replaced by the [elim:] tactic.
+  Inductive reasoning is initiated with the [induction] tactic in vanilla Rocq 
+  and the [elim:] tactic with SSReflect.
   
 *)
 
-Module InductionExample.
+Module Induction.
+
+Require Import Lists.List.
 
 Variable (T : Type).
 
-Goal forall (l : list T), False.
+Goal forall (l m : list T), length (l ++ m) = length l + length m.
+Proof.
+intros l.
+induction l.
+- intros m.
+  now simpl.
+- intros m.
+  rewrite <-app_comm_cons.
+  simpl.
+  now rewrite IHl.
+Qed.
+
+End Induction.
+
+Module SSRInduction.
+
+From Coq Require Import ssreflect.
+
+Section S.
+Variable (T : Type).
+
+Goal forall (l m : list T), length (l ++ m) = length l + length m.
 Proof.
 move=> l.
-elim: l.
-- admit.
-- move=> a l IH.
-Abort.
-
-End InductionExample.
-
-Module Range.
-
-From mathcomp Require Import ssrnat seq.
-
-Fixpoint range (a : nat) (n : nat) := match n with
-| 0 => [::]
-| m.+1 => a::(range (a.+1) m)
-end.
-
-(* The following code is presented with more lines than necessary *)
-(* to ease playing it step-by-step. *)
-Goal forall (a : nat) (n : nat), size (range a n) = n.
-Proof.
-move=> a n.
-move: a.
-elim: n. (* starts induction on n *)
-- (* base case *)
-  move=> n.
-  rewrite /=.
-  by [].
-- (* inductive step *)
-  move=> n.
-  move=> IH.
-  move=> b.
-  rewrite /=.
-  rewrite IH.
-  by [].
-Qed.
-(* Les preuves n'ont pas d'odeur. *)
-
-
-(* The previous script can be shortened to: *)
-
-Lemma size_range (a : nat) (n : nat) : size (range a n) = n.
-Proof.
-move: a; elim: n => // n IHn b /=.
-by rewrite IHn.
-Qed.
-
-(* The syntax [//] after [=>] in a [move] means: please remove trivial goals. *)
-(* In this example, Coq is able to kill the base case as a trivial goal. *)
-(* As a result, only one goal (out of two) remains after [//] and thus no pipe symbol is required. *)
-(* Simplification and removing trivial goals can be combined into the syntax [//=]. *)
-
-End Range.
-
-Module InductionSequence.
-
-From mathcomp Require Import ssrnat seq.
-
-Variables (l m : seq nat).
-
-Goal size (l++m) = size l + size m.
-Proof.
-move: m.
-elim: l=> // a l IH m /=.
+elim: l => //= a l IH m.
 by rewrite IH.
 Qed.
 
-Check last_ind.
+End S.
+End SSRInduction.
 
-(* The result [last_ind] is an alternative induction principle *)
-(* that can be applied at the elimination step in the previous example. *)
-(* Instead of using the default induction principle, *)
-(* the syntax [elim/last_ind:] combines elimination with view application. *)
-(* Starting again from the same goal and applying the [last_ind] view: *)
+Module OtherInduction.
 
-Goal size (l++m) = size l + size m.
+Require Import Lists.List.
+
+Section S.
+Variable (T : Type).
+
+Goal forall (l m : list T), length (l ++ m) = length l + length m.
 Proof.
-move: m.
-elim/last_ind: l. (* elimination is done with the inductive principle last_ind *)
-- by move=> m.
-- move=> m a IH l.
-  rewrite size_rcons.
-  rewrite cat_rcons.  
-  rewrite IH.
-  rewrite /=.
-  by rewrite addnS.
+intros l m.
+revert m.
+induction l using rev_ind. (* induction is done with the inductive principle last_ind *)
+- now intros m'.
+- intros m'.
+  rewrite IHl; simpl.
+  rewrite <-app_assoc.
+  rewrite IHl; simpl.
+  rewrite <-PeanoNat.Nat.add_assoc.
+  now rewrite <-PeanoNat.Nat.add_1_l.
 Qed.
 
+End S.
+End OtherInduction.
 
-End InductionSequence.
+Module SSROtherInduction.
 
+Require Import Lists.List.
+From Coq Require Import ssreflect.
+
+(* The result [rev_ind] is an alternative induction principle *)
+(* that can be applied at the elimination step in the previous example. *)
+(* Instead of using the default induction principle, *)
+(* the syntax [elim/rev_ind:] combines elimination with view application. *)
+(* Starting again from the same goal and applying the [rev_ind] view: *)
+
+Section S.
+Variable (T : Type).
+
+Goal forall (l m : list T), length (l ++ m) = length l + length m.
+Proof.
+move=> l m.
+move: m.
+elim/rev_ind: l. (* elimination is done with the inductive principle last_ind *)
+- by move=> m'.
+- move=> m' a IH l'.
+  rewrite IH /=.
+  rewrite <-app_assoc.
+  rewrite IH.
+  rewrite /=.
+  rewrite -PeanoNat.Nat.add_assoc.
+  by rewrite PeanoNat.Nat.add_1_l.
+Qed.
+
+End S.
+End SSROtherInduction.
 
 (** *** Congruence
 
-  When it is required to prove an equality between two applications of the same function, 
+  When an equality is required between two applications of the same function, 
   it suffices to prove that the corresponding arguments of both applications are equal.
-  As a Coq user, you may already uses the [congruence] tactic. 
-  With SSReflect, the [congr] tactic is used.
+  With vanilla Rocq, this is achieved with the [congruence] tactic.
+  With SSReflect, this is achieved with the [congr] tactic.
 
   For instance, in the following examples it is required to prove [op w x = op y z].
   This goal has the form of an equality with the same function applied in each member.
@@ -477,8 +744,11 @@ End InductionSequence.
 
 *)
 
-Section Congruence.
+Module SSRCongruence.
 
+From Coq Require Import ssreflect.
+
+Section S.
 Variables (T : Type) (op : T -> T -> T) (w x y z : T).
 
 Goal w = y -> x = z -> op w x = op y z. 
@@ -489,21 +759,39 @@ congr op.
 - exact: eq_xz.
 Qed.
 
-(**
-  In the example above, it is also possible to use the [rewrite] tactic 
-  and get around the use of congruence, this way:
-*)
+End S.
+End SSRCongruence.
+
+Module Congruence.
+
+Section S.
+Variables (T : Type) (op : T -> T -> T) (w x y z : T).
 
 Goal w = y -> x = z -> op w x = op y z. 
 Proof.
-move=> eq_wy eq_xz.
-by rewrite eq_wy eq_xz.
+intros eq_wy eq_xz.
+congruence.
 Qed.
 
+End S.
+End Congruence.
+
 (**
-  If an introduced assumption is used to rewrite and then no more used,
+  In the example above, it is also possible to use the [rewrite] tactic 
+  and get around the use of congruence.
+*)
+
+(**
+  If an assumption is used to rewrite just after being introduced and then no more used,
   it is possible to use the [->] syntax:
 *)
+
+Module MoveAndRewrite.
+
+From Coq Require Import ssreflect.
+
+Section S.
+Variables (T : Type) (op : T -> T -> T) (w x y z : T).
 
 Goal w = y -> x = z -> op w x = op y z. 
 Proof.
@@ -521,95 +809,159 @@ move->.
 by move ->. 
 Qed.
 
-End Congruence.
+End S.
+End MoveAndRewrite.
+
 
 (** *** Forward reasoning
   
-  One can use the SSReflect tactic [have:] instead of the vanilla Coq tactic [assert],
-  to do forward reasoning.
+  To do forward reasoning.
+  one can use either the SSReflect tactic, [have:], or the vanilla Rocq tactic [assert].
 
-  From the point of view of proof engineering with Coq, 
+  From the point of view of proof engineering with Rocq, 
   one generally prefers to work on the goal over working on the local context.
   This proof style is used in the Mathematical Components Library and is orthogonal to using SSReflect tactics.
   One benefit of this style is to get failure earlier when the script gets broken, 
-  and thus it is easier to fix it. Instead of working on the local context 
+  and thus it is easier to locate the proof steps that need to be fixed. Instead of working on the local context 
   (for instance by using [rewrite in] on an hypothesis in the local context)
   it is preferable to work on it while it is still in the goal and before it is introduced to the local context.
   This way, one avoids relying on the names of the introduced assumptions.
   It may also be possible to factor some treatments and remove some subgoals right away,
-  which let one keep lower number of subgoals and sometimes avoid relying on the order of introduction of subgoals.
+  which let one keep fewer subgoals (and thus sometimes avoid relying on the order of introduction of subgoals).
   Pushing something to top might be changed without creating an error immediately,
   leading to more difficulties when maintaining the script.
-  This difficulty can be more apparent when reusing old code or code written by others
+  This difficulty can be more apparent when one needs to fix a proof script 
+  to reuse old code or code written by others
   (and even more if one is just a user of the code and needs to fix a proof script).
 
   Still, one may want to use forward reasoning occasionally.
-  The main SSReflect forward reasoning tactic is [have:].
 
 *)
 
-Goal False.
+Goal forall (n : nat), n * n = 0 -> n + 1 = 1.
 Proof.
-have : 0 = 0.
-- by [].
-- move=> H.
-Abort.
+intros n Hn.
+assert (n = 0).
+- apply PeanoNat.Nat.eq_square_0.
+  assumption.
+- rewrite H. 
+  trivial.
+Qed.
 
-Goal False.
+Module ForwardReasoningWithSSReflect.
+
+From Coq Require Import ssreflect.
+
+Goal forall (n : nat), n * n = 0 -> n + 1 = 1.
 Proof.
-have H : 0 = 0. (* syntax to give a name to the introduced intermediate result *)
-- by [].
-- 
-Abort.
+move=> n Hn.
+have: n = 0.
+- by apply/PeanoNat.Nat.eq_square_0. (* this is a view application *)
+- by move ->.
+Qed.
+
+(* It can be written more shortly: *)
+
+Goal forall (n : nat), n * n = 0 -> n + 1 = 1.
+Proof.
+move=> n /PeanoNat.Nat.eq_square_0 Hn. (* move + view application *)
+by have: n = 0 => // ->.
+Qed.
+
+(* In this example, it is better to avoid forward reasoning. *)
+
+Goal forall (n : nat), n * n = 0 -> n + 1 = 1.
+Proof. by move=> n /PeanoNat.Nat.eq_square_0 ->. Qed.
+
+End ForwardReasoningWithSSReflect.
 
 (** 
   The [have:] tactic can be combined with destructing [[]] and with rewriting [->].
   Below are some examples:
 *)
 
-Module MoreHave.
+Module MoreForwardReasoning.
+(* From Coq Require Import ssreflect. *)
 
-From mathcomp Require Import ssrbool eqtype ssrnat.
+Section S.
 
-Local Open Scope nat_scope.
+Require Import List.
 
-Variables (P : nat -> nat -> bool) (m n : nat).
+Variable (T : Type).
+Hypothesis eq_dec : forall x y : T, {x = y} + {x <> y}.
 
-Goal P m n.
+Lemma nodupIn (a : T) (l : list T) : 
+  In a l -> nodup eq_dec (a :: l) = nodup eq_dec l.
 Proof.
-move: (eqVneq m n).
-Print eq_xor_neq.
-move=> [eq_mn|neq_mn].
-- rewrite eq_mn.
-  admit.
--
-Abort.
+intros In_al.
+simpl.
+now case (in_dec eq_dec a l); intros H; trivial.
+Qed.
 
-(**
-  The above code can be simplified into:
-*)
-
-Goal P m n.
+Goal forall (x y : T) (l : list T), 
+  List.nodup eq_dec (x::(y::l)) = if (eq_dec x y) 
+                                  then List.nodup eq_dec (x::l) 
+                                  else List.nodup eq_dec (x::(y::l)).
 Proof.
-move: (eqVneq m n) => [->|neq_mn].
-- admit.
--
-Abort.
+intros x y l.
+generalize (eq_dec x y).
+intros [eq_xy|neq_xy].
+- rewrite eq_xy.
+  clear eq_xy.
+  rewrite nodupIn; last exact (in_eq y l).
+   reflexivity.  
+- reflexivity.
+Qed.
 
-End MoreHave.
+End S.
+End MoreForwardReasoning.
+
+Module MoreSSRForwardReasoning.
+From Coq Require Import ssreflect.
+
+Section S.
+
+Require Import List.
+
+Variable (T : Type).
+Hypothesis eq_dec : forall x y : T, {x = y} + {x <> y}.
+
+Lemma nodupIn (a : T) (l : list T) : 
+  In a l -> nodup eq_dec (a :: l) = nodup eq_dec l.
+Proof.
+move=> In_al /=.
+by case: (in_dec eq_dec a l). 
+Qed.
+
+Goal forall (x y : T) (l : list T), 
+  List.nodup eq_dec (x::(y::l)) = (if (eq_dec x y) 
+                                  then List.nodup eq_dec (x::l) 
+                                  else List.nodup eq_dec (x::(y::l)))%GEN_IF.
+Proof.
+move=> x y l.
+have [->|neq_xy] := eq_dec x y.
+- rewrite nodupIn; first exact: (in_eq y l).
+  by case: (eq_dec y y).
+- by case: (eq_dec x y).
+Qed.
+
+End S.
+End MoreSSRForwardReasoning.
 
 
 (** *** Changing view
-  
-  Changing view - also called view application - is performed on the first assumption with the tactic [move/]
+   
+  View change - also called view application - is performed on the top assumption with the SSReflect tactic [move/]
   or on the conclusion with the tactic [apply/].
   It replaces it with a "different view".
-  The first assumption can be replaced with a weaker asumption 
-  and the conclusion can be replaced with a stronger conclusion.
+  The conclusion can be replaced with a stronger conclusion
+  and the top assumption can be replaced with a weaker asumption (when it is not the conclusion).
 
   One specific case of view application results are reflection results (which use the [reflect] keyword).
-  A reflection establishes the equivalence between a proposition and a boolean. 
-  In this context, a boolean can always be coerced to a proposition with the coercion [is_true].
+  A reflection establishes the equivalence between a proposition and a boolean
+  (the truth of the proposition is thus decidable).
+  In this context, a boolean can always be coerced to a proposition 
+  and this is done with the coercion [is_true] on the Mathematical Components Library.
   By exploiting a reflection result, a proposition can be replaced with an equivalent boolean 
   and conversely a boolean can be replaced with an equivalent proposition.
   This is part of the Small Scale Reflection methodology.
@@ -622,6 +974,9 @@ End MoreHave.
 
 Module ChangingView.
 
+From Coq Require Import ssreflect.
+
+Section S.
 Variables (A B C D E : Prop).
 Hypothesis (H : B -> C).
 
@@ -637,32 +992,37 @@ apply/H. (* strenghten C to B *)
 move: HA.
 Abort.
 
+Hypothesis (H2 : D -> (B -> C)).
+
+Goal A -> B -> C.
+Proof.
+move=> A' /=.
+apply/H2.
+Abort.
+
 (*
   These examples also work with equivalence instead of implication.
 *)
 
-Hypothesis (H' : B <-> C).
+Hypothesis (H3 : B <-> C).
 
 Goal B -> D -> E.
 Proof.
-move/H'. (* weakens B to C *)
+move/H3. (* weakens B to C *)
 Abort.
 
 Goal A -> C.
 Proof.
 move=> HA.
-apply/H'. (* strenghten C to B *)
+apply/H3. (* strenghten C to B *)
 move: HA.
 Abort.
-
-End ChangingView.
 
 (* 
   Some examples of view changing are now shown with boolean reflection.
 
 *)
 
-Module BooleanReflection.
 From mathcomp Require Import ssrbool ssrnat.
 
 Check minn_idPr.
@@ -680,7 +1040,7 @@ Abort.
 
 Goal minn m n = n -> P.
 Proof.
-move/minn_idPr=> H.
+move/minn_idPr=> H'.
 Abort.
 
 (*
@@ -694,37 +1054,65 @@ Abort.
 
 Goal P -> minn m n = n.
 Proof.
-move=> H.
+move=> H'.
 apply/minn_idPr.
 Abort.
 
 Goal P -> n <= m.
 Proof.
-move=> H.
+move=> H'.
 apply/minn_idPr.
 Abort.
 
-End BooleanReflection.
+End S.
+End ChangingView.
+
+Module ChangingViewVanillaCoq.
+
+Variables (P Q R : Prop).
+Hypothesis (H : P <-> Q).
+
+Goal P.
+Proof.
+apply H.
+(* apply <- H. *)
+Abort.
+
+Goal Q.
+Proof.
+apply H.
+(* apply -> H. *)
+Abort.
+
+End ChangingViewVanillaCoq.
+
 
 (** Rewriting pattern. *)
 
 (** 
-  SSReflect offers rewrite patterns to guide Coq to select specific matches for a rewrite.
-  Otherwise the first match is selected, which is not necessarly the desired effect.
+  SSReflect offers rewrite patterns to guide Rocq to select specific matches for a rewrite.
+  By default (when no pattern is specified) the first match is selected, which is not necessarly the desired effect.
   Please not that match and occurence differs.
   A pattern has several matches - eventually none - and each match has one or multiple occurrences.
   Let's look at some examples. 
 *)
 
-Module RewritePatterns.
+Module SSReflectRewritePatterns.
 
-From mathcomp Require Import ssrbool ssralg ssrnum.
+From Coq Require Import ssreflect.
 
-(* Import GRing.Theory Num.Theory. *)
-Local Open Scope ring_scope.
+Section S.
 
-Variables (R : ringType) (a b c : R).
-Hypothesis H : forall (x : R), x = c.
+Variable (T : Type).
+Variables (add mul : T -> T -> T).
+
+Local Notation "x + y" := (add x y).
+Local Notation "x * y" := (mul x y).
+
+Variable (c : T).
+Hypothesis H : forall (x : T), x = c.
+
+Variables (a b : T).
 
 Goal (a + b) * a + (a + b + a) * b = (b + b) * a + (a + b + b) * a * b.
 Proof.
@@ -772,10 +1160,13 @@ Proof.
 rewrite [X in (_ + _)* _ + (_ + X + _)* _ * _]H.
 Abort.
 
-End RewritePatterns.
+End S.
 
-Module SomeMorePatterns.
+End SSReflectRewritePatterns.
 
+Module SomeMoreSSReflectPatterns.
+
+From Coq Require Import ssreflect.
 From mathcomp Require Import ssrbool ssrnat order.
 
 Local Open Scope nat_scope.
@@ -795,39 +1186,89 @@ Proof.
 rewrite [ltRHS]H.
 Abort.
 
-End SomeMorePatterns.
+End SomeMoreSSReflectPatterns.
 
-(** ** 3. More SSReflect tactics
+(** ** 3. More tactics
 *)
 
 (** *** Case analysis
 
-  The SSReflect tactic for case analysis is [case:].
-  The colon punctuation mark at the end of [case:] distinguishes it 
-  from the [case] tactic from vanilla Coq.
+  Case analysis is performed with [case] with vanilla Rocq
+  and with [case:] with SSReflect.
+  The colon punctuation mark at the end of [case:] distinguishes both tactics.
 
 *)
 
-Goal forall (n : nat), n + n = n.
+Module CaseAnalysis.
+Section S.
+
+Variables (a b : nat). 
+
+Definition f n := match n with
+  | 0 => a
+  | S n => b + n
+end.
+
+Require Import Nat.
+Goal forall (n : nat), f n <= max a (b + n).
+Proof.
+intros n.
+case n.
+(* the goal is splitted into two goals *)
+- simpl.
+  rewrite PeanoNat.Nat.add_0_r.
+  exact (PeanoNat.Nat.le_max_l a b).
+- intros m.
+  simpl.
+  apply (PeanoNat.Nat.le_trans _ _ _ (ssreflect.iffLR (PeanoNat.Nat.add_le_mono_l _ _ _) (PeanoNat.Nat.le_succ_diag_r _))).
+  exact (PeanoNat.Nat.le_max_r a (b + S m)).
+Qed.
+
+End S.
+End CaseAnalysis.
+
+Module SSReflectCase.
+
+From Coq Require Import ssreflect.
+
+Section S.
+
+Variables (a b : nat). 
+
+Definition f n := match n with
+  | 0 => a
+  | S n => b + n
+end.
+
+Require Import Nat.
+Goal forall (n : nat), f n <= max a (b + n).
 Proof.
 move=> n.
 case: n.
 (* the goal is splitted into two goals *)
 - rewrite /=.
-  by [].
-- move=> n.
-Abort.
+  rewrite PeanoNat.Nat.add_0_r.
+  exact: (PeanoNat.Nat.le_max_l a b).
+- move=> m.
+  rewrite /=.
+  apply: (PeanoNat.Nat.le_trans _ _ _ (ssreflect.iffLR (PeanoNat.Nat.add_le_mono_l _ _ _) (PeanoNat.Nat.le_succ_diag_r _))).
+  exact: (PeanoNat.Nat.le_max_r a (b + S m)).
+Qed.
 
-(** The previous script can be written more shortly as follows 
-*)
+(* The previous script can be simplified as follows: *)
 
-Goal forall (n : nat), n + n = n.
+Require Import Nat.
+Goal forall (n : nat), f n <= max a (b + n).
 Proof.
-move=> n.
-case: n=> [|n]. (* the pipe symbol '|' separates each subgoal *)
-(* the goals is splitted into two goals *)
-- by []. 
-Abort.
+move=> /= [|n].
+- rewrite PeanoNat.Nat.add_0_r. 
+  exact: (PeanoNat.Nat.le_max_l a b).
+- apply: (PeanoNat.Nat.le_trans _ _ _ (ssreflect.iffLR (PeanoNat.Nat.add_le_mono_l _ _ _) (PeanoNat.Nat.le_succ_diag_r _))). 
+  exact: (PeanoNat.Nat.le_max_r a (b + S n)).
+Qed.
+
+End S.
+
 
 (** 
   It is possible to combine moving ([move =>]) 
@@ -836,34 +1277,69 @@ Abort.
   Thus, only one goal remains and [n] can be introduced without using the pipe symbol.
 *)
 
-Goal forall (n : nat), n + n = n.
-Proof.
-move=> n.
-case: n=> // n. 
-Abort.
+End SSReflectCase.
 
 (** *** Specialising 
 
-  One can always weaken the top assumtpion by specialising it. 
-  With vanilla Coq, this can be achieved with the [specialize] tactic.
+  One can always weaken the top assumption by specialising it. 
+  With vanilla Rocq, this can be achieved with the [specialize] tactic.
   With SSReflect, it can be achieved as a special case of view application, with the syntax [/(_ value)].
   In the following example, the assumption [forall y, P y] is specialised with [x],
   which results in the asumption [P x]. 
 
 *)
 
-Goal forall (T G : Type) (P : T -> Prop) (x : T), (forall y, P y) -> G.
+Module Specialise.
+
+Section S.
+Variables (T : Type) (P : T -> Prop) (Q : Prop) (a : T).
+Hypothesis H : P a -> Q.
+
+Goal (forall (x : T), P x) -> Q.
 Proof.
-move=> T G P x.
-move/(_ x).
-Abort.
+intros H'.
+specialize (H' a).
+apply H.
+assumption.
+Qed.
+
+End S.
+End Specialise.
+
+
+Module SSReflectspecialise.
+
+From Coq Require Import ssreflect.
+
+Section S.
+Variables (T : Type) (P : T -> Prop) (Q : Prop) (a : T).
+Hypothesis H : P a -> Q.
+
+Goal (forall (x : T), P x) -> Q.
+Proof.
+move/(_ a).
+exact: H.
+Qed.
+
+End S.
+End SSReflectspecialise.
 
 (** *** Discarding top
 
-  Discarding the top assumption can be achieved with [move=> _]
+  Discarding the top assumption can be achieved by introducing it with [_] instead of a proper name.
+  With SSReflect, this writes [move=> _] and with vanilla Rocq this writes [intros _].
   as in the following example.
 
 *)
+Goal forall (P Q : Prop), P -> Q -> P.
+Proof.
+intros P Q HP _.
+exact HP.
+Qed.
+
+Module SSReflectDiscard.
+
+From Coq Require Import ssreflect.
 
 Goal forall (P Q : Prop), P -> Q -> P.
 Proof.
@@ -871,13 +1347,20 @@ move=> P Q HP _.
 exact: HP.
 Qed.
 
+End SSReflectDiscard.
+
 (**
-  Discarding something from the local context is achieved with the syntax [move=> {somehting}].
+  One can also discard something from the local context.
+  It may be interesting to do so to keep a smaller local context 
+  and to emphasise that it is not used anymore in the proof.
+  With SSReflect, this is achieved with the syntax [move=> {something}].
+  With vanilla Rocq, one can do it with the [clear] tactic.
   Here is an example:
 *)
 
-Module DiscardFromLocalContext.
+Module SSReflectDiscardFromLocalContext.
 
+From Coq Require Import ssreflect.
 From mathcomp Require Import ssrbool eqtype ssralg ssrnum.
 Import GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
@@ -891,15 +1374,33 @@ move=> x_neq_0.
 rewrite -mulrA.
 rewrite mulfV.
 - move=> {x_neq_0}. (* we can discard x_neq_0 here *)
-                    (* it may be interesting to do so in a longer script *)
   by rewrite mulr1.
 - exact: x_neq_0.
+Qed.
+
+End SSReflectDiscardFromLocalContext.
+
+Module DiscardFromLocalContext.
+
+Variables (P Q R : Prop).
+
+Goal P -> (P -> Q) -> (Q -> R) -> R.
+Proof.
+intros HP HPQ HQR.
+apply HQR.
+clear HQR.
+apply HPQ.
+clear HPQ.
+exact HP.
 Qed.
 
 End DiscardFromLocalContext.
 
 (** ** 4. Exercices
+  with SSReflect.
 *)
+
+From Coq Require Import ssreflect.
 
 (** *** Exercice 1
   For this exercice, you may want to use the vanilla tactic [split].
@@ -938,16 +1439,3 @@ Lemma div2nSn (n : nat) : 2 %| n * n.+1.
 Proof. by rewrite dvdn2 oddM /= andbN. Qed.
 
 End Exercice3.
-
-(** ** Where to go from here
- 
-  One may try to port one proof script from vanilla Coq to SSReflect and see the difference.
-  In addition to using SSReflect tactics, 
-  one may start reusing some results from the Mathematical Components Library. 
-
-  Finally, one may get inspiration from the Mathematical Component Library for their own formalisation.
-  This includes Small Scale Reflection methodology and SSReflect coding conventions. 
-  Some ingredients are boolean reflection, structures with decidable equality 
-  and hierarchy of structures (with Hierarchy Builder).
-
-*)
