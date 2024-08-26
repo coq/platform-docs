@@ -160,9 +160,9 @@ revert P Q HP HQ.
 generalize or_comm.
 Abort.
 
-(*
+(**
   One goes from a goal of the form [P] to [T -> P] where [T] is a result from the global context.
-  If one look at the goal only, it seems that it has been weakened.
+  If one looks at the goal only, it seems that it has been weakened.
   However, it is indeed a generalisation and here follows an explanation why.
 
   One should look at the whole information that consists of both the context and the goal.
