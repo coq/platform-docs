@@ -22,7 +22,7 @@ This project aims to create an online compilation of short and interactive tutor
 Each core functionality and plugin of Coq and the Coq Platform should have (short) pedagogical tutorials and/or
 how-to guides demonstrating how to use the functionality, with practical examples.
 They should further be available online through an interactive interface, most likely using JSCoq.
-There is now a prototype [web interface](https://www.theozimmermann.net/platform-docs/) to check out.
+There is now a prototype [web interface](https://coq.inria.fr/platform-docs/) to check out.
 
 Tutorials and how-to guides serve different purposes and are complementary.
 Tutorials guide a user during learning in discovering specific aspects of a feature like "Notations in Coq",
