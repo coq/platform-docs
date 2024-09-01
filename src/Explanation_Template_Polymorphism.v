@@ -34,7 +34,7 @@
     - 2. Some issues with monomorphic universes
     - 3. What template universe polymorphism does and doesn't do
       - 3.1. Principle
-      - 3.2. Breaking cycles with template polymorphisms
+      - 3.2. Breaking cycles with template polymorphism
       - 3.3. Template polymorphism doesn't go through intermediate definitions
     - 4. A taste of “full” universe polymorphism
       - 4.1. Principle
@@ -170,8 +170,8 @@ Check (fun (T: Type@{Set+1}) => mprod T).
 (** ** 2. Some issues with monomorphic universes *)
 
 (** The core limitations of template universe polymorphism are related to when
-    it _isn't_ polymorphic, so we can first demonstrate these issues on
-    monomorphic universes.
+    it doesn't activate and leaves you with monomorphic universes, so we can
+    demonstrate most of the issues directly on monomorphic universes.
 
     Let's introduce a new universe [u]. Initially [u] and [uprod] are
     unrelated, which we can see by printing the section of the constraint graph
@@ -219,14 +219,19 @@ About lazy.
     monad or functor laws). *)
 
 (** We can see this in a universe constraint if we bring them both in a single
-    definition, such as the very natural [lazy_pure] function below. Since
-    [lazyT] lives at level [lazyT.u1+1], [lazy_pure.u0 <= lazyT.u1] is actually
-    a strict inequality between the universes of [A] and [lazyT A]. *)
+    definition, such as the very natural [lazy_pure] function below. A universe
+    variable [lazy_pure.u0] is introduced for [A], and since we supply [A] as
+    (implicit) argument to [lazy]'s [A] argument which lives in universe level
+    [lazyT.u1], we get [lazy_pure.u0 <= lazyT.u1].
+
+    Since [lazyT] itself lives at level [lazyT.u1+1], the new constraint
+    [lazy_pure.u0 <= lazyT.u1] implies a strict inequality between the
+    universes of [A] and [lazyT A]. *)
 Definition lazy_pure {A: Type} (a: A): lazyT A := lazy (fun _ => a).
 Print Universes Subgraph (lazy_pure.u0 lazyT.u0 lazyT.u1).
 
-(** The core of the problem now shows up if we now happen to want products in
-   these two places at once:
+(** We run into the typical limitation of monomorphic universes if we now
+   happen to want products in these two places at once:
    - Products as arguments to [lazyT] (enforcing [uprod <= lazyT.u1])
    - [lazyT] within products (enforcing [lazyT.u1+1 <= uprod]).
    This is a very common thing to want, especially when passing values around as
@@ -259,8 +264,10 @@ Fail Definition mprod_lazy {A B: Type} (a: A) (b: B):
 
 (** Template universe polymorphism is a middle-ground between monomorphic
     universes and proper polymorphic universes that allow for some degree of
-    flexibility. We can see it in action in the type of [prod] from the standard
-    library. *)
+    flexibility. We can see it mentioned in the description of [prod] from the
+    standard library; [About] says "[prod] is template universe polymorphic on
+    [prod.u0] [prod.u1]". This has no effect on the printed type, because it
+    only affects instances. *)
 About prod.
 
 (** Now, remember how [mprod] lives at level [uprod] all the time? This shows if
@@ -282,10 +289,11 @@ Check (fun (S: Set) => S * S).
 
 (** In other words, [prod] can live in different universes depending on what
     arguments it is applied to, making it “universe polymorphic” in a certain
-    sense. There are restrictions, which we'll see soon enough, and these
-    restrictions are why we call that “template universe polymorphism”. *)
+    sense. You can think about it as being parameterized over universe levels,
+    with the constraint that the input levels must be below [prod.u0] and
+    [prod.u1] respectively. *)
 
-(** *** Breaking cycles with template polymorphisms *)
+(** *** Breaking cycles with template polymorphism *)
 
 (** It looks like we've solved our universe problem now because we can have both
     definitions of [prod] within [lazyT] and [lazyT] within [prod]. *)
@@ -313,7 +321,7 @@ Print Universes Subgraph (
 (** *** Template polymorphism doesn't go through intermediate definitions *)
 
 (** And thus, that's the problem solved... but only when the universe at fault
-    comes from an inductive type directly (here, [prod]). Template polymoprhic
+    comes from an inductive type directly (here, [prod]). Template polymorphic
     universes don't propagate to any other derived definition. So if we define
     the state monad for example, it will not itself be universe polymorphic at
     all, and thus it will exhibit the same behavior as [mprod]. *)
@@ -321,7 +329,9 @@ Definition state (S: Type) := fun (T: Type) => S -> (S * T).
 About state.
 
 (** [state.{u0,u1}] correspond to the old [uprod]: the type of [T] is
-    monomorphic. So the earlier issue still comes up. *)
+    monomorphic. Notice how [About state] doesn't say that [state] is template
+    universe polymorphic, while it does for [prod]. So now the issue from
+    earlier comes up again. *)
 Definition state_pure {S T: Type} (t: T): state S T := fun s => (s, t).
 Definition lazy_pure_state {S T: Type} (t: T): lazyT (state S T) :=
   lazy_pure (state_pure (S := S) t).
@@ -361,7 +371,7 @@ About list.
     parameters, which are similar to universe variables except that they are
     quantified over by definitions. *)
 
-(** We can enable universe polymorphism from here onwards with [Set Universe
+(** We can enable universe polymorphism from here onward with [Set Universe
     Polymorphism]. We need it on basically every type and definition. *)
 Set Universe Polymorphism.
 Inductive pprod (A B: Type) := ppair (a: A) (b: B).
