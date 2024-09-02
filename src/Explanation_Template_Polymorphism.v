@@ -209,7 +209,7 @@ About lazyT.
 (* lazyT : Type@{lazyT.u0} -> Type@{max(Set,lazyT.u1+1)} *)
 
 (** But it is required by the [lazy] function, which takes a [lazyT.u1], thus
-    structurally smaller than [lazyT] which lives at level [lazyT.u1+1]. *)
+    smaller than [lazyT] which lives at level [lazyT.u1+1]. *)
 About lazy.
 (* lazy : forall {A : Type@{lazyT.u1}}, (unit -> A) -> lazyT A *)
 
@@ -249,7 +249,7 @@ Print Universes Subgraph (lazyT.u1 uprod).
     Because we've defined [lazy_pure_mprod], this is inconsistent with existing
     constraints, so the definition doesn't typecheck! *)
 Fail Definition mprod_lazy {A B: Type} (a: A) (b: B):
-    mprod (layzT A) (lazyT B) :=
+    mprod (lazyT A) (lazyT B) :=
   mpair _ _ (lazy_pure a) (lazy_pure b).
 
 (** This definition would have been accepted had we not defined
@@ -263,7 +263,7 @@ Fail Definition mprod_lazy {A B: Type} (a: A) (b: B):
 (** *** Principle *)
 
 (** Template universe polymorphism is a middle-ground between monomorphic
-    universes and proper polymorphic universes that allow for some degree of
+    universes and proper polymorphic universes that allows for some degree of
     flexibility. We can see it mentioned in the description of [prod] from the
     standard library; [About] says "[prod] is template universe polymorphic on
     [prod.u0] [prod.u1]". This has no effect on the printed type, because it
@@ -320,7 +320,7 @@ Print Universes Subgraph (
 
 (** *** Template polymorphism doesn't go through intermediate definitions *)
 
-(** And thus, that's the problem solved... but only when the universe at fault
+(** And thus, the problem is solved... but only when the universe at fault
     comes from an inductive type directly (here, [prod]). Template polymorphic
     universes don't propagate to any other derived definition. So if we define
     the state monad for example, it will not itself be universe polymorphic at
@@ -353,7 +353,7 @@ Fail Definition state_lazy {S T: Type} (t: T): state S (lazyT T) :=
 
 (** These limitations are rather annoying because constructions based on [prod]
     are _everywhere_ in the standard library and in projects. The state monad is
-    just one in a million. It's also the same problem with [sum] many other
+    just one in a million. It's also the same problem with [sum] and many other
     core types like [list]. *)
 About sum.
 About list.
