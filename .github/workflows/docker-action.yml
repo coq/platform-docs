@@ -1,0 +1,78 @@
+name: Docker CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    # the OS must be GNU/Linux to be able to use the docker-coq-action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: coq-community/docker-coq-action@v1
+        with:
+          opam_file: 'coq-platform-docs.opam'
+          before_script: |
+            startGroup "Workaround permission issue"
+              sudo chown -R coq:coq .  # <--
+            endGroup
+            startGroup "Install APT dependencies"
+              cat /etc/os-release  # Print the Debian OS version
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+              sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends \
+                nodejs
+            endGroup
+          script: |
+            startGroup "Build"
+              cd src
+              make node_modules
+              make
+            endGroup
+          uninstall: ""
+      - uses: actions/upload-artifact@v4
+        with:
+          path: |
+            src/images
+            src/node_modules
+            src/*.html
+            src/*.css
+            src/*.js
+            src/*.v
+
+  # Deploy job
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Add a dependency to the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifact/
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# See also:
+# https://github.com/coq-community/docker-coq-action#readme
+# https://github.com/erikmd/docker-coq-github-action-demo

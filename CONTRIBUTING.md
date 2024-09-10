@@ -12,8 +12,30 @@ There are different possible ways to contribute depending on your time and techn
 - There is a lot of tutorials and how-tos to write, both about Coq and plugins in its Platform
 - There is technical work to be done on the (interactive) web interface side
 
+> [!TIP]
+> Before starting to work on something and invest time into it, check if it is not already existing,
+> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
 
-### Writing Tutorials and How-tos
+
+## Building the documentation
+
+We generate interactive documents using jsCoq from the `.v` files in the `src` directory.
+To build and test the documentation locally, you need to have npm and the Coq Platform installed.
+Then run:
+
+```bash
+cd src
+make node_modules
+make
+make serve
+```
+
+The last step will start a local server that you can access at `http://localhost:8080`.
+
+To extend the list of packages that are available in jsCoq, you should add them both in `src/package.json` and in `src/jscoq-agent.js`.
+
+## Writing Tutorials and How-tos
+
 If you have an idea for a tutorial or how-to, you can create a discussion on the dedicated [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs)
 to get feedback on your idea, through the writing and to reach others that may be interested.
 If there is a stream dedicated to the topic or package that you are covering in your tutorial, you can also create a discussion there.
@@ -24,11 +46,7 @@ Once you have a plan and some content, you can create a draft pull request to ma
 and get feedback on it while you (and others) progress on it.
 
 > [!WARNING]
-> Before starting to work on a tutorial or a how-to and invest time into it, check if it is not already existing,
-> or if someone hasn't already started working on it, either by creating a discussion on the [Zulip stream](https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs) or a draft pull request about it.
-
-> [!WARNING]
-> Lots of stuff have already be written about Coq, it can make sense to reuse some of the content. 
+> Lots of stuff have already be written about Coq, it can make sense to reuse some of the content.
 > If you wish to do so, be careful that you are indeed allowed by the copyright owners or the content licenses.
 
 
@@ -37,10 +55,18 @@ and get feedback on it while you (and others) progress on it.
 ### Format
 For the moment we only support files written in [coqdoc's syntax](https://coq.inria.fr/doc/V8.19.0/refman/using/tools/coqdoc.html?highlight=coqdoc).
 It is not hard to learn but a bit limited.
-We plan to be compatible with a more standard and polyvalent format in the futur.
+We plan to be compatible with a more standard and polyvalent format in the future.
+
+For writing sections, please use the following conventions:
+```
+* Title
+** Section
+*** Subsection
+**** SubSubsection
+```
 
 ### Template to start your file
-To contribute, please start your file with the following [template](https://github.com/Zimmi48/platform-docs/blob/main/template.md).
+To contribute, please start your file with the following [template](template.md).
 It requires to fill very basic information:
   - a title
   - a summary of the tutorial and its content
@@ -70,11 +96,11 @@ It requires to fill very basic information:
 Tutorials are meant to introduce and explain the different aspects of a functionality, pedagogically, step by step with (simplified) examples.
 The goal is to provide user with an action-oriented documentation that user can use to learn about a feature they don't know,
 and a (non-exhaustive and opinionated) material that they can come back to when they are stuck trying to use a feature.
-As examples, we have been working on new tutorials for the package Equations. 
-The first one is complete and can be checked out [here](https://github.com/Zimmi48/platform-docs/blob/main/src/Tutorial_Equations_basics.v).
+As examples, we have been working on new tutorials for the package Equations.
+The first one is complete and can be checked out [here](src/Tutorial_Equations_basics.v).
 
 
-### Horizontality
+### Writing Horizontal Tutorials
 
 Tutorials do not necessarily need to be long, nor should aim to present
 all the aspects of a feature in one unique tutorial.
@@ -82,23 +108,48 @@ Moreover, they do not have the purpose to be exhaustive like a reference
 manual, and do not have to discuss every single aspects of a feature.
 
 On the contrary, the various independent aspects of a feature should be split into several tutorials.
-As a general rule, if a tutorial is becoming too long or complicated to navigate, 
+As a general rule, if a tutorial is becoming too long or complicated to navigate,
 or if its structure is branching out, you may want to consider splitting it out.
 Moreover, tutorials can also be split in order to provide a more gradual introduction to a complicated feature.
 
-Doing so enables users to only have to read the basics to be able to start working, 
+Doing so enables users to only have to read the basics to be able to start working,
 and leaves them the possibility to learn new aspects modularly, according to their needs.
 It also makes the documentation easier to maintain and to navigate, and makes it easier to add new tutorials.
 
-When possible tutorials should try to be as self contained as possible, 
+When possible tutorials should try to be as self contained as possible,
 and should not hesitate to recall quickly a concept rather than referring to another tutorial.
-Doing so only takes a bit more time when writing a tutorial but saves a lot of times to a lot of users 
+Doing so only takes a bit more time when writing a tutorial but saves a lot of times to a lot of users
 that will not have to chase information in different other tutorials, tutorials which could in turn refer to other tutorials.
 It also eases maintenance as one does not need to worry about potential modifications to other tutorials.
 
-### Adding Exercices
-As tutorials are meant for studying, do not hesitate to add some exercices for the users to try, e.g. functions or properties to prove or finish.
-In general, we recommand to provide at least definitions prefilled with typing informations like:
+### Discussing Recurring Issues
+
+When writing a tutorial, it often happens to be confronted to something that
+does not work as easily as expected due to limitations of a feature or genuine bugs.
+In this case, often people decide not to mention the problem as they plan /
+it is planned to fix the problem.
+The issue is that most times, it turns out that it is actually not that easy to fix
+nor that fast, and meanwhile users are left with a solution.
+Worse, not only they are not told how to go around the problem,
+but they are not even warned that a problem may rise up.
+This can be particularly limiting for non expert users, that may not be able
+to identify the problem and manage to go around it on their own.
+
+This issue is particularly relevant in our case, as the documentation is aimed
+at the general public, and is indexed on the versions of Coq platform
+that do not change everyday.
+
+> [!NOTE]
+> Consequently, it is really important to mention in tutorials issues that
+> often come up with a feature, and to provide as reasonable solution as possible.
+> The tutorials can always be modified once the fix are effective, but meanwhile
+> users have solutions.
+
+
+### Adding Exercises
+As tutorials are meant for studying, do not hesitate to add some exercises
+for the users to try, e.g. functions or properties to prove or finish.
+In general, we recommend to provide at least definitions prefilled with typing information like:
 
 ```
 Fixpoint map {A B} (f : A -> B) (l : list A) : list B := to_fill.
@@ -107,13 +158,11 @@ Lemma map_app {A B} (f : A -> B) (l l' : list A) : map f (l ++ l') = map f l + m
 Proof. Admitted.
 ```
 
-To do so, you can add the following code at the beginning of the tutorial.
-It creates an axiom `to_fill` and hides it so that it is does not appear in the body of the tutorial.
+To do so, you can add the following code at the beginning of the tutorial,
+that creates an axiom that can fill any goal.
 ```
-(* begin hide *)
 Axiom to_fill : forall A, A.
 Arguments to_fill {_}.
-(* end hide *)
 ```
 
 You can also provides tests for the users to be able to check if their definition works.
