@@ -88,6 +88,7 @@ Equations vmap {A B} (f : A -> B) (n : nat) (v : vec A n) : vec B n :=
 vmap f 0 vnil := vnil ;
 vmap f (S n) (vcons a n v) := vcons (f a) n (vmap f n v).
 
+
 Equations vapp {A} (n : nat) (v : vec A n) (m : nat) (v' : vec A m) : vec A (n+m) :=
 vapp 0 vnil m v' :=  v';
 vapp (S n) (vcons a n v) m v' := vcons a (n+m) (vapp n v m v').
@@ -103,17 +104,17 @@ vapp (S n) (vcons a n v) m v' := vcons a (n+m) (vapp n v m v').
 Definition vmap_comp {A B C} (f : A -> B) (g : B -> C) (n : nat) (v : vec A n) :
            vmap g n (vmap f n v) = vmap (fun a => g (f a)) n v.
 Proof.
-  funelim (vmap f n v).
+  funelim (vmap f n v); simp vmap.
   - reflexivity.
-  - simp vmap. f_equal. apply H.
+  - f_equal. apply H.
 Qed.
 
-Lemma vmap_rect {A B} (f : A -> B) (g : B -> A) (Hrect : forall (a:A), g (f a) = a)
-      (n : nat) (v : vec A n) : vmap (fun a => g (f a)) n v = vmap (fun a => a) n v.
+Lemma vmap_cong {A B n} (f f': A -> B) (v : vec A n) (Heq : forall (a:A), f a = f' a)
+      : vmap f n v = vmap f' n v.
 Proof.
-  funelim (vmap _ n v); simp vmap.
+  funelim (vmap f n v); simp vmap.
   - reflexivity.
-  - now rewrite Hrect, H.
+  - now rewrite Heq, (H f').
 Qed.
 
 (** However, it can make some differences when operations on indices are
@@ -130,21 +131,21 @@ Qed.
 Definition vmap_vapp {A B} (n m : nat) (f : A -> B) (v : vec A n) (v' : vec A m) :
            vmap f (n+m) (vapp n v m v') = vapp n (vmap f n v) m (vmap f m v').
 Proof.
-  funelim (vmap f n v).
+  funelim (vmap f n v); simp vapp.
   - reflexivity.
-  - simp vapp.
-    (* Here we can see [simp] fails to simplify [vmap f (S n + m) ...] as
-      [S n + m] is not of the form [S x] for some [x : nat].
-      We need to first simplify [+] using [cbn] :                         *)
+  - (* Here we can see [simp] fails to simplify [vmap f (S n + m) ...] as
+      [S n + m] is not of the form [S x] for some [x : nat].              *)
+    simp vmap.
+    (* We need to first simplify [+] using [cbn] :                         *)
     cbn.
     (* We can now simplify *)
-    simp vmap vapp. f_equal. apply H.
+    simp vmap vapp. now rewrite H.
 Abort.
 
 (** In practice, indices are mostly inferable, so it is usually possible to
     make them implicit.
     It has the advantage to make the code much more concise.
-    For instance, for [vec], it enables to write much shorte definitions
+    For instance, for [vec], it enables to write much shorter definitions
     of [vmap] and [vapp]:
 *)
 
@@ -227,8 +228,7 @@ vtail (vcons a v) := v.
 
 Equations diag {A n} (v : vec (vec A n) n) : vec A n :=
 diag (n:=O) vnil := vnil ;
-diag (n:=S _) (vcons (vcons a v) v') :=
-  vcons a (diag (vmap vtail v')).
+diag (n:=S _) (vcons (vcons a v) v') := vcons a (diag (vmap vtail _ v')).
 
 (** To do so, the pattern-matching compiler behind [Equations] uses unification
    with the theory of constructors to discover which cases need to be
@@ -254,15 +254,17 @@ Derive NoConfusion for nat.
     deal with the cases that are possible:
 *)
 
+Arguments vmap {_ _} _ {_} _.
+
 Definition vmap_diag {A B n} (f : A -> B) (v : vec (vec A n) n) :
            vmap f (diag v) = diag (vmap (fun v' => vmap f v') v).
 Proof.
   (* We start by induction, simplify and use the induction hypothesis *)
-  funelim (diag v). reflexivity. simp vmap diag. f_equal. rewrite H.
+  funelim (diag v); simp vmap diag. 1: easy. rewrite H. f_equal.
   (* We simplify the goal by collapsing the different [vmap] using [vmap_comp],
      and notice the proof boils down to commutativity if [vtail] and [vmap] *)
-  repeat rewrite vmap_comp. f_equal. apply vmap_cong.
-  (* There is left to prove that using [vtail] or [vmap] first do no matter  *)
+  rewrite ! vmap_comp. f_equal. apply vmap_cong.
+  (* There is left to prove by function elimination on [vtail] or [vmap]  *)
   intro v2. funelim (vtail v2). simp vmap vtail. reflexivity.
 Qed.
 
