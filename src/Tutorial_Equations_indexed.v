@@ -85,9 +85,10 @@ Arguments vcons {_} _ _ _.
 *)
 
 Equations vmap {A B} (f : A -> B) (n : nat) (v : vec A n) : vec B n :=
-vmap f 0 vnil := vnil ;
-vmap f (S n) (vcons a n v) := vcons (f a) n (vmap f n v).
+vmap f _ vnil := vnil ;
+vmap f _ (vcons a n v) := vcons (f a) n (vmap f n v).
 
+Print vmap.
 
 Equations vapp {A} (n : nat) (v : vec A n) (m : nat) (v' : vec A m) : vec A (n+m) :=
 vapp 0 vnil m v' :=  v';
@@ -142,7 +143,10 @@ Proof.
     simp vmap vapp. now rewrite H.
 Abort.
 
-(** In practice, indices are mostly inferable, so it is usually possible to
+(** This is not a limitaton of [Equations] itself. It is due to how the
+    [rewrite] tactic behind [simp] unifies terms.
+
+    In practice, indices are mostly inferable, so it is usually possible to
     make them implicit.
     It has the advantage to make the code much more concise.
     For instance, for [vec], it enables to write much shorter definitions
@@ -191,16 +195,18 @@ Abort.
 
 (** ** 2. The No-Confusion property
 
+    *** 2.1 Discarding Impossible Cases
+
     Having information directly part of typing, like the length for vector,
     can have advantages.
-    Most noticeably, it can be used to exclude invalid cases.
+    Most noticeably, it can be used to exclude invalid cases automatically.
     For instance, consider the function tail that returns the last element.
-    In the case of list, the [tail] function had to return a term of type
+    In the case of [list], the [tail] function had to return a term of type
     [option A] as were no insurance that the input would not be the empty list.
     This is not necessary for vectors as we can use the indice to ensure
     there is at least one element by defining tail as a function of type
     [vec A (S n) -> vec A n].
-    This can be implemented very directly with Equations as Equations can
+    This can be implemented very directly with [Equations] as [Equations] can
     deduce on its own that the [vnil] case is impossible :
 *)
 
@@ -222,6 +228,7 @@ vtail (vcons a v) := v.
 
     it returns [a] added to the diagonal of vmap [vtail v'], that is
     [v'] where the first column has been forgotten.
+
     Note, that in this case, pattern match on [n] needs to be added to help
     Coq see it is strictly decreasing.
 *)
@@ -230,26 +237,7 @@ Equations diag {A n} (v : vec (vec A n) n) : vec A n :=
 diag (n:=O) vnil := vnil ;
 diag (n:=S _) (vcons (vcons a v) v') := vcons a (diag (vmap vtail _ v')).
 
-(** To do so, the pattern-matching compiler behind [Equations] uses unification
-   with the theory of constructors to discover which cases need to be
-   considered and which are impossible.
-   This powerful unification engine running under the hood permits to write
-   concise code where all uninteresting cases are handled automatically.
-   Importantly, it relies on the property of no-confusion, that is
-   that two different constructors of an inductive can not be equal,
-   here for [nat], [0 = S n -> False].
-   The no confusion property can be generated automatically by [Equations]
-   using the command [Derive].
-*)
-
-Derive NoConfusion for nat.
-
-(** You may notice that we have derive the no confusion property for [nat]
-    after defining [tail] and [diag], even though it supposed the be necessary.
-    This is because it is already defined for [nat] by default, so
-    there was actually no need to do derive it in this particular case.
-
-    Thanks to [funelim], reasoning for this kind of programs is as usual
+(** Thanks to [funelim], reasoning for this kind of programs is as usual
     to the difference that, as for function definitions, we only need to
     deal with the cases that are possible:
 *)
@@ -269,10 +257,81 @@ Proof.
 Qed.
 
 
-(* TALK ABOUT NO CONFUSION FOR VEC *)
+(** *** 2.2 The No-Confusion properties
 
-Derive Signature NoConfusion NoConfusionHom for vec.
+    To do so, the elaboration procedure behind [Equations] relies crucially on
+    no-confusion properties to deduce which cases are impossible, enabling to
+    write concise code where all uninteresting cases are handled automatically.
 
+    No confusion properties basically embodies both discrimination and injectivity
+    of constructors: it asserts which equations are impossible because the head
+    constructors do not match and if they do simplifies the equations.
+
+    The cases above relies on the no-confusion property for [nat], that given
+    [n], [m] eturns [True] if [n] and [m] are both [0], [n = m] if they are both
+    of the form [S n], [S m], and [False] otherwise.
+
+    [Equations] provides a [Derive] command to generate them automatically.
+    For instance, for [nat], it suffices to write:
+*)
+
+Derive NoConfusion for nat.
+Check NoConfusion_nat.
+
+(** You may have noticed that we have derive the no confusion property for [nat]
+    after defining [tail] and [diag], even though it supposed the be necessary.
+    This is because it is already defined for [nat] by default, so there was
+    actually no need to do derive it in this particular case.
+
+    For index inductive types, they are two kind of no-confusion properties
+    that can be derived by [Equations]:
+    - The [NoConfusion] property that enable to distinguish object with different indices.
+      It takes as argument objects in the total space {n : nat & vec A n}:
+*)
+Derive NoConfusion for vec.
+Check NoConfusion_vec.
+
+(**
+    - The [NoConfusionHom] property that enables to disinguish objects with the
+      same indices, which is useful for simplifying equations:
+*)
+
+Derive NoConfusionHom for vec.
+Check NoConfusionHom_vec.
+
+(** The [NonConfusionHom] property is not derivable for all index inductive types.
+    It only is when equality of constructors can be reduced to equality of forced
+    argument, that is indices ???
+
+    If it not possible to derive it, then [Equations] may need the indices to
+    satify Uniqueness of Identity Proof asserting that all proofs are equal, i.e.
+    [UIP : forall (A : Type) (a b : A) (p q : a = b), p = q], to be able to
+    elaborate the definition to a Coq term.
+
+    It can be proven for some types like [nat], but in the general case, this is
+    an axiom that is compatible with Coq and classical logical but incosistent
+    with univalence, so you may not want to admit it globally.
+    [Equations] offers both choices, you can declare it for a specific type
+    or assume it globally:
+*)
+
+
+
+
+
+(** *** 2.3 Depelim  *)
+
+(** They come with a tactic apply_noconfusion *)
+
+Section Foo.
+  (* Context (A : Type).
+  Context (a b : A).*)
+
+Definition foo (x y : vec nat 2) (H : x = y) : x = y.
+  depelim H.
+Abort.
+
+End Foo.
 
 (** ** 3. Unifying Indices and Inaccessible Patterns
 
