@@ -17,8 +17,11 @@
   to particularise indices when matching, and issues that can arise.
 
   *** Table of content
-  - 1. Reasoning about indexed inductive types
-  - 2. The No-Confusion property
+  - 1. Basic Reasoning on Indexed Inductive Types
+  - 2. Advanced Dependent Pattern Matching
+    - 2.1 Discarding Automatically Impossible Cases
+    - 2.2 The No-Confusion Properties
+    - 2.3 The Tactic Depelim
   - 3. Unifying Indices and Inaccessible Patterns
 
   *** Prerequisites:
@@ -40,7 +43,7 @@
 
 From Equations Require Import Equations.
 
- (** ** 1. Reasoning about indexed inductive types
+ (** ** 1. Basic Reasoning on Indexed Inductive Types
 
     Indexed inductive types are particular kind of inductive definitions
     that consist in defining not one single inductive type but a family
@@ -193,9 +196,9 @@ Proof.
 Abort.
 
 
-(** ** 2. The No-Confusion property
+(** ** 2. Advanced Dependent Pattern Matching
 
-    *** 2.1 Discarding Impossible Cases
+    *** 2.1 Discarding Automatically Impossible Cases
 
     Having information directly part of typing, like the length for vector,
     can have advantages.
@@ -257,7 +260,7 @@ Proof.
 Qed.
 
 
-(** *** 2.2 The No-Confusion properties
+(** *** 2.2 The No-Confusion Properties
 
     To do so, the elaboration procedure behind [Equations] relies crucially on
     no-confusion properties to deduce which cases are impossible, enabling to
@@ -326,19 +329,32 @@ Axiom uipa : forall A, UIP A.
 Local Existing Instance uipa.
 
 
-(** *** 2.3 Depelim  *)
 
-(** They come with a tactic apply_noconfusion *)
+(** *** 2.3 The Tactic Depelim  *)
+
+(** [Equations] provide a tactic [depelim] to recursively simplify and invert
+    equations and simplify the goals, which is based on the [NoConfusion]
+    principles and [Equations] simplification engine.
+    When index inductive types are involved, it often provides a better simplification
+    tactic than the default [inversion] tactic.
+*)
 
 Section Foo.
-  (* Context (A : Type).
-  Context (a b : A).*)
+  Context (A : Type).
+  Context (a b : A).
 
-Definition foo (x y : vec nat 2) (H : x = y) : x = y.
-  depelim H.
-Abort.
+Goal forall (x y : vec A 2), (vcons a (vcons a x) = vcons a (vcons b y)) -> a = b /\ x = y.
+  intros x y H. depelim H. now split.
+Qed.
 
-End Foo.
+Goal forall ( x : vec A 2) z, (vcons a x = z) -> vtail z = x.
+  intros x z H. depelim H. simp vtail. reflexivity.
+Qed.
+
+Goal forall (x : vec nat 2), (vcons 0 x = vcons 1 x) -> False.
+  intros x H. depelim H.
+Qed.
+
 
 (** ** 3. Unifying Indices and Inaccessible Patterns
 
