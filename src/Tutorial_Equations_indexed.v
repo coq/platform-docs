@@ -64,11 +64,11 @@ Inductive vec A : nat -> Type :=
 Arguments vnil {_}.
 Arguments vcons {_} _ _ _.
 
-(** The difference between a parameter and an indice is that a parameter is
-    constant over all the constructors, whereas an indice changes in the
+(** The difference between a parameter and an index is that a parameter is
+    constant over all the constructors, whereas an index changes in the
     constructor.
     For instance, in the definition of vectors the type [A] is a parameter
-    as it is constant in all the constructors, but [n:nat] is an indice as
+    as it is constant in all the constructors, but [n:nat] is an index as
     [vcons] relates two different types of the family, [vec A n] and [vec A (S n)].
 
     Reasoning about indexed inductive types like vectors is a bit more
@@ -95,7 +95,7 @@ vapp 0 vnil m v' :=  v';
 vapp (S n) (vcons a n v) m v' := vcons a (n+m) (vapp n v m v').
 
 
-(** Reasoning on indexed inductive is not very different than reasoning
+(** Reasoning on indexed inductive is not very different from reasoning
     on regular inductive types except that we have to account for indices,
     which can in some cases cause some overheads.
 
@@ -143,7 +143,7 @@ Proof.
     simp vmap vapp. now rewrite H.
 Abort.
 
-(** This is not a limitaton of [Equations] itself. It is due to how the
+(** This is not a limitation of [Equations] itself. It is due to how the
     [rewrite] tactic behind [simp] unifies terms.
 
     In practice, indices are mostly inferable, so it is usually possible to
@@ -183,7 +183,7 @@ Proof.
   - reflexivity.
   - simp vapp'.
     (* If we think [vmap' f (vcons a ...)] should have been simplified,
-       we can set an alias to check if the indice is of the form [S x]  *)
+       we can set an alias to check if the index is of the form [S x]  *)
      set (vmap'_ex := @vmap' _ _).
      (* After inspecting the goal, you can just erase the tactic
         or unfold the alias                                           *)
@@ -203,7 +203,7 @@ Abort.
     For instance, consider the function tail that returns the last element.
     In the case of [list], the [tail] function had to return a term of type
     [option A] as were no insurance that the input would not be the empty list.
-    This is not necessary for vectors as we can use the indice to ensure
+    This is not necessary for vectors as we can use the index to ensure
     there is at least one element by defining tail as a function of type
     [vec A (S n) -> vec A n].
     This can be implemented very directly with [Equations] as [Equations] can
@@ -216,8 +216,8 @@ vtail (vcons a v) := v.
 (** Similarly, we can give a very short definition of a function computing
     the diagonal of a square matrix of size [n * n] represented as a
     vector of vector [v : vector (vector A n) n)].
-    On the empty matrice it returns the empty list.
-    On a matrice [(vcons (vcons a v) v')] of size [(S n) x (S n)] representing
+    On the empty matrix it returns the empty list.
+    On a matrix [(vcons (vcons a v) v')] of size [(S n) x (S n)] representing
 
     [[
               | a |     v     |
@@ -264,8 +264,8 @@ Qed.
     write concise code where all uninteresting cases are handled automatically.
 
     No confusion properties basically embodies both discrimination and injectivity
-    of constructors: it asserts which equations are impossible because the head
-    constructors do not match and if they do simplifies the equations.
+    of constructors: they assert which equations are impossible because the head
+    constructors do not match, and if they do, simplify the equations.
 
     The cases above relies on the no-confusion property for [nat], that given
     [n], [m] eturns [True] if [n] and [m] are both [0], [n = m] if they are both
@@ -279,12 +279,13 @@ Derive NoConfusion for nat.
 Check NoConfusion_nat.
 
 (** You may have noticed that we have derive the no confusion property for [nat]
-    after defining [tail] and [diag], even though it supposed the be necessary.
+    after defining [tail] and [diag], even though it is supposed to be necessary.
     This is because it is already defined for [nat] by default, so there was
     actually no need to do derive it in this particular case.
 
-    For index inductive types, they are two kind of no-confusion properties
-    that can be derived by [Equations]:
+    [nat] is a very simple inductive type.
+    In the general case, for index inductive types, they are two kind of no-confusion
+    properties that can be derived by [Equations]:
     - The [NoConfusion] property that enable to distinguish object with different indices.
       It takes as argument objects in the total space {n : nat & vec A n}:
 *)
@@ -301,22 +302,28 @@ Check NoConfusionHom_vec.
 
 (** The [NonConfusionHom] property is not derivable for all index inductive types.
     It only is when equality of constructors can be reduced to equality of forced
-    argument, that is indices ???
+    argument, that is indices ???.
+    Note, that for most of the basic index inductive types, this is the case,
+    so it rarely an issue in practice.
 
-    If it not possible to derive it, then [Equations] may need the indices to
-    satify Uniqueness of Identity Proof asserting that all proofs are equal, i.e.
+    If it is not possible to derive it, then [Equations] may need the indices to
+    satify Uniqueness of Identity Proof, asserting that all proofs are equal, i.e.
     [UIP : forall (A : Type) (a b : A) (p q : a = b), p = q], to be able to
     elaborate the definition to a Coq term.
 
-    It can be proven for some types like [nat], but in the general case, this is
-    an axiom that is compatible with Coq and classical logical but incosistent
-    with univalence, so you may not want to admit it globally.
-    [Equations] offers both choices, you can declare it for a specific type
-    or assume it globally:
+    UIP holds for some types like [nat], but in the general case, this is an axiom.
+    It is compatible with Coq and classical logical but inconsistent
+    with univalence, so you may not want to admit it globally in your development.
+    Consequently, [Equations] offers both options: you can declare it only for the types
+    for which you can prove it or need it, or or assume it globally:
 *)
 
+(* Assuming you can prove it *)
+Axiom uip_nat : UIP nat.
+Local Existing Instance uip_nat.
 
-
+Axiom uipa : forall A, UIP A.
+Local Existing Instance uipa.
 
 
 (** *** 2.3 Depelim  *)
@@ -336,7 +343,7 @@ End Foo.
 (** ** 3. Unifying Indices and Inaccessible Patterns
 
     A particularity of indexed inductive type is that during pattern-matching
-    indices may be particularises to values like variables or terms of
+    indices may be particularised to values like variables or terms of
     the form [(f (...))], where [f] is not a constructor of an inductive type
     like [O] or [S].
 
@@ -352,7 +359,7 @@ End Foo.
       | eq_refl : eq A x x.
     ]]
 
-    Pattern-matching on the equality then unifies the indice [y] with the
+    Pattern-matching on the equality then unifies the index [y] with the
     parameter [x], that is to a variable.
     Consequently, we have determined the _value_ of the pattern [y], and it is
     no longer a candidate for refinement with available constructors like
@@ -371,13 +378,13 @@ eq_sym x ?(x) eq_refl := eq_refl.
 
 (** In practice, when the values determined are variable as in [eq_sym],
     the inaccessibility annotation is optional and we can simply write [x]
-    rather than [?(x)].
+    or a wild card [_] rather than [?(x)].
 *)
 
 Equations eq_trans {A} (x y z : A) (p : x = y) (q : y = z) : x = z :=
 eq_trans x x x eq_refl eq_refl := eq_refl.
 
-(** For an example, where the [?(t)] notation is needed consider this inductive
+(** For an example, where the [?(t)] notation is needed, consider this inductive
     definition of the image.
     It has one constructor that for all elements [a:A] generates an element
     in its image by [f], [Imf f (f a)].
@@ -395,8 +402,26 @@ Inductive Imf {A B} (f : A -> B) : B -> Type
     with available constructors.
     In this case, it is essential as [f a] is not a variable.
     As an example, we can write a function returning the [a] associated
-    to on object in the image :
+    to an object in the image :
 *)
 
 Equations inv {A B} (f : A -> B) (t : B) (im : Imf f t) : A :=
 inv f ?(f s) (imf f s) := s.
+
+(** Be careful that if you forget to mark inaccessible patterns, then [Equations]
+    will try to match on the patterns, creating potentially pointless branches.
+    It is fine in theory as the definition obtained will be logically equivalent
+    provided elaboration succededs, but annoying if you want to extract the code as the definition will be more involved.
+
+    For instance, if we define [vmap''] by matching on [n] without marking the
+    pattern associated to [n] as inaccessible, we can see at extraction that [Equations]
+    matched [n] and end up with absurd branch to eliminates, yielding a more complicated
+    definition than the original [vmap]:
+*)
+
+Equations vmap'' {A B} (f : A -> B) (n : nat) (v : vec A n) : vec B n :=
+vmap'' f 0 vnil := vnil ;
+vmap'' f (S n) (vcons a v) := vcons (f a) (vmap'' f n v).
+
+Extraction vmap.
+Extraction vmap''.
