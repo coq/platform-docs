@@ -303,11 +303,10 @@ Check NoConfusion_vec.
 Derive NoConfusionHom for vec.
 Check NoConfusionHom_vec.
 
-(** The [NonConfusionHom] property is not derivable for all index inductive types.
+ (** Though, the [NonConfusionHom] property is derivable for most index inductive types,
+     it is not the case that is is derivable for all index inductive types.
     It only is when equality of constructors can be reduced to equality of forced
-    argument, that is indices ???.
-    Note, that for most of the basic index inductive types, this is the case,
-    so it rarely an issue in practice.
+    argument, that is ???
 
     If it is not possible to derive it, then [Equations] may need the indices to
     satify Uniqueness of Identity Proof, asserting that all proofs are equal, i.e.
