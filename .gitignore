@@ -16,6 +16,8 @@
 *.synctex.gz
 *.toc
 *.vrb
+*.bcf
+*.run.xml
 *.html
 *.css
 *~
