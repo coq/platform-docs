@@ -1,0 +1,28 @@
+% \documentclass[10pt]{beamer}
+
+%%% Mise en page %%%
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel} % traduction des noms chapitre, section, etc.
+\usepackage{enumitem} % modifier les puces + leftmargin
+\usepackage{xcolor}
+
+% ###########################
+% #####      MATHS     ######
+% ###########################
+
+\usepackage{amsmath} % sans doute charger par asmthm
+\usepackage{amssymb} % pour mathfrak
+\usepackage{mathrsfs} % pour mathscr
+\usepackage{stmaryrd} % rrbracket
+\usepackage{amsthm} % env lemme, theorem ...
+% \usepackage{mathtools} % fonction def par cas
+
+
+\newcommand{\TodoWarning}{\PackageWarning{}{Todo left to attend}}
+\newcommand{\todo}{\textbf{\textcolor{red}{TODO}}\TodoWarning}
+\newcommand{\todot}[1]{\textbf{\textcolor{red}{TODO : #1}}\TodoWarning}
+
+\newcommand{\ul}[1]{\underline{#1}}
+
+

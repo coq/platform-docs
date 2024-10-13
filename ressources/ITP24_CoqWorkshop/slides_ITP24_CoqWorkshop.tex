@@ -1,0 +1,305 @@
+
+\documentclass[10pt]{beamer}
+\usepackage{import}
+
+
+
+
+\subimport{./}{header_slides.tex}
+\subimport{./}{metropolis_theme.tex}
+
+\usepackage{csquotes}
+\usepackage{biblatex}
+\addbibresource{ref.bib}
+
+
+\title{Coq Platform Docs: \\ Documenting Coq and its Platform}
+\author{\textbf{Thomas Lamiaux}, ENS Paris-Saclay \\
+Pierre Rousselin, LAGA, Université Sorbonne Paris Nord \\
+Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
+
+
+\date{September 2024}
+
+% latexmk -e '$max_repeat=6' slides_Abu_Dhabi.tex
+
+\begin{document}
+
+\begin{frame}
+    \maketitle
+\end{frame}
+
+
+\section*{Coq Platform Docs}
+
+\subsection{Introduction}
+
+\begin{frame}{Why do we need such a documentation ?}
+  \begin{tcbProp}{To keep in mind}
+    \begin{enumerate}
+      \item Having a proper, clean and accessible documentation is one of the
+            keys to the success of software: \ul{to get and keep users}
+      \item<2-> There are different forms of documentation:
+      \begin{itemize}[label=$-$]
+        \item Abstract and detailed documentation like the ref man
+        \item Course-shaped documentation like Coq'Art or SF
+        \item Action-oriented documentation like tutorials or how-to guides
+      \end{itemize}
+    \end{enumerate}
+  \end{tcbProp}
+  \onslide<3->
+  \begin{tcbPbl}{A lack of action-oriented documentation }
+    There are currently a lack of action-oriented documentation:
+    \begin{enumerate}
+      \item When it exits, it is often incomplete or outdated
+      \item When it exits, it often spread out over many repo / blog
+    \end{enumerate}
+  \end{tcbPbl}
+\end{frame}
+
+\begin{frame}{Why is it important ?}
+  \begin{tcbProp}{For users}
+    \begin{enumerate}
+      \item It enables user to learn and discover new features on their own and
+            to debug themselves when stuck
+      \item<2-> It enables to turn folklore into knowledge and make it accessible
+      \item<3-> It enables to find specific knowledge easily
+    \end{enumerate}
+  \end{tcbProp}
+  \onslide<4->
+  \begin{tcbProp}{For experts}
+    \begin{enumerate}
+      \item Writing documentation forces us to do stuff right (no cheating)
+      \item It makes our work easier to discover and more accessible
+    \end{enumerate}
+  \end{tcbProp}
+\end{frame}
+
+\subsection{The Project}
+
+\begin{frame}{Presentation}
+  \begin{tcbObj}{Coq Platform Docs}
+    \begin{enumerate}
+      \item<1-> Each features and plugins of Coq and its platform would have one
+            or several \ul{interactive tutorials and how-to guides}
+      \item<2-> It would be \ul{indexed on the Coq Platform} to be easy to use
+      \item<3-> Possible to extend with explanations or learning games
+    \end{enumerate}
+  \end{tcbObj}
+  \onslide<4->
+  \begin{tcbObj}{Interactive Web interface}
+    \begin{enumerate}
+      \item<5-> It would be \ul{accessible online, interactively,} e.g., using JsCoq
+      \item<6-> It should be \ul{part of Rocq's new website}
+    \end{enumerate}
+  \end{tcbObj}
+\end{frame}
+
+\begin{frame}{Advantages of such a documentation}
+  \begin{tcbProp}{Advantages}
+    \begin{enumerate}
+      \item<1-> All the documentation should be \ul{accessible at the same place}
+      \item<2-> It is possible to build \ul{modularly and collaboratively}
+      \item<3-> Such a documentation should be \ul{horizontal:}
+      \begin{itemize}[label=$-$]
+        \item it easier to navigate and discover new features
+        \item it easier to maintain as less dependencies
+        \item it allows differentiate learning: \\
+              Ltac2 for new users\;  /  \;Ltac2 for Ltac1's users
+      \end{itemize}
+      \item<4-> It will \ul{showcase all that is possible} with Coq
+    \end{enumerate}
+  \end{tcbProp}
+\end{frame}
+
+\begin{frame}{Tutorials vs How-to guides}
+  \begin{tcbProp}{Tutorials}
+    % Tutorials guide a user during learning in discovering specific aspects
+    % of a feature like "Notations in Coq", by going through (simple)
+    % predetermined examples, and introducing notions gradually.
+    Tutorials guide users through learning new features:
+    \begin{enumerate}
+      \item It introduces notions gradually, step by step
+      \item Going through predetermined nice examples
+      \item It talks about \ul{one} specific feature
+    \end{enumerate}
+\end{tcbProp}
+  \onslide<2>{
+  \begin{tcbEx}{Examples Coq}
+    \begin{itemize}[label=$-$]
+      \item Searching for Lemma
+      \item Requiring and Importing Files / Modules
+      \item Setting up a Coq project
+      \item Using Notations
+    \end{itemize}
+  \end{tcbEx}}
+\end{frame}
+
+\begin{frame}{Tutorials vs How-to guides}
+  \begin{tcbProp}{Tutorials}
+      % Tutorials guide a user during learning in discovering specific aspects
+      % of a feature like "Notations in Coq", by going through (simple)
+      % predetermined examples, and introducing notions gradually.
+      Tutorials guide users through learning new features:
+      \begin{enumerate}
+        \item It introduces notions gradually, step by step
+        \item Going through predetermined nice examples
+        \item It talks about \ul{one} specific feature
+      \end{enumerate}
+  \end{tcbProp}
+  \begin{tcbEx}{Examples Equations}
+    \begin{itemize}[label=$-$]
+      \item Introduction to Equations
+      \item Equations and obligations
+      \item Equations and well-founded recursion
+      \item Equations and dependent programming
+    \end{itemize}
+  \end{tcbEx}
+\end{frame}
+
+\begin{frame}{Tutorials vs How-to guides}
+  \begin{tcbProp}{How-to guides}
+    How-to guides are meant to guide users through the resolution of real life
+    problem:
+    \begin{enumerate}
+        \item Provide a step by step resolution procedure
+        \item Accounting for real life complexity
+        \item But without touring all that is possible
+      \end{enumerate}
+  \end{tcbProp}
+  \onslide<2>{
+  \begin{tcbEx}{Examples Coq}
+    \begin{itemize}[label=$-$]
+      \item How to search for a lemma
+      \item How to set up a Coq Project
+      \item How to use Equations to reason about intrinsic syntax
+    \end{itemize}
+  \end{tcbEx}}
+\end{frame}
+
+\begin{frame}{Example: Documenting Equations}
+  \begin{tcbPbl}{The documentation was inadequate}
+    \begin{enumerate}
+      \item Many features: basics, dependent programming, wf recursion
+      \item The documentation was old and not very complete
+    \end{enumerate}
+  \end{tcbPbl}
+  \onslide<2->
+  \begin{tcbProp}{A new documentation}
+    \begin{enumerate}
+      \item We wrote 3 tutorials out of 5 planned, ~500l code/~1000l text
+      \item The documentation is now much clear, and easy to improve
+      \item We wrote it modularly with help from the community
+    \end{enumerate}
+    \end{tcbProp}
+  \onslide<3->
+  \begin{tcbSol}{Many Improvements}
+  \begin{enumerate}
+    \item Found 2/3 bugs writing the documentation
+    \item Improve the behavior of the main tactic
+  \end{enumerate}
+  \end{tcbSol}
+\end{frame}
+
+\subsection{Demonstration}
+
+% 3 - 5 minutes
+
+
+\subsection{Contributing}
+
+% \subsection{Contributing to the documentation}
+
+\begin{frame}{Documenting Project and Plugins}
+  \begin{tcbProp}{Develop the documentation modularly}
+    \begin{itemize}
+      \item Each community should have a reviewer term and a project to manage
+            its part of the documentation
+    \end{itemize}
+  \end{tcbProp}
+  \onslide<2->
+  \begin{tcbProp}{Basic Plan}
+    \begin{enumerate}
+      \item Set up a reviewer team and a project
+      \item Understand what the documentation should look like
+      \item Set up the associated ci
+      \item Port / update / write the documentation
+    \end{enumerate}
+  \end{tcbProp}
+\end{frame}
+
+\begin{frame}{Contributing as a Coq's User}
+  \begin{tcbProp}{Contributing by Reviewing}
+    \begin{enumerate}
+      \item Becoming an expert reviewer for a project or a general reviewer
+      \item Review from time to time something you are an expert or not
+    \end{enumerate}
+  \end{tcbProp}
+  \onslide<2->
+  \begin{tcbProp}{Contributing by Writting}
+    \begin{enumerate}
+      \item Writing tutorials or how-to guides
+      \item Help improve existing tutorials via P.R
+    \end{enumerate}
+  \end{tcbProp}
+  \onslide<3->
+  \begin{tcbProp}{Contributing by Sharing Knoweldge}
+    \begin{enumerate}
+      \item Share folklore that should be common knowledge
+      \item Answer the questions of people writing tutorials
+      \item Give feedbacks on existing tutorials and your needs
+    \end{enumerate}
+  \end{tcbProp}
+\end{frame}
+
+
+\begin{frame}{Contributing Technically}
+  \begin{tcbProp}{Help with the Web interface}
+    \begin{itemize}[label=$-$]
+      \item Help setting up the web interface (set up Alectryon / Sphinx)
+      \item Help setting up a nice automatic deployment
+      \item Find a solution for JsCoq
+    \end{itemize}
+  \end{tcbProp}
+  \onslide<2->
+  \begin{tcbProp}{Help with the Repo}
+    \begin{itemize}[label=$-$]
+      \item Help setting up a nice ci (platform / dev etc..)
+      \item Help writing contribution guidelines
+      \item etc...
+    \end{itemize}
+  \end{tcbProp}
+\end{frame}
+
+\subsection{Conclusion}
+
+% \begin{tcbProp}{Sum up}
+
+% \end{tcbProp}
+\begin{frame}[fragile]{Conclusion}
+  \begin{tcbObj}{The Project}
+    \begin{enumerate}
+      \item Each features and plugins of Coq and its platform would have one
+            or several \ul{interactive tutorials and how-to guides}
+      \item Be accessible interactively online, and part of Coq's new website
+    \end{enumerate}
+  \end{tcbObj}
+  \onslide<2->
+  \begin{tcbObj}{Contributing}
+    \begin{enumerate}
+      \item We are open to contribution: there is plenty to do
+      \item Everyone can contribute: you don't need to be a Coq developer
+    \end{enumerate}
+  \end{tcbObj}
+  \onslide<3->
+  \begin{tcbProp}{Ressources to check out}
+    \begin{itemize}[label=$-$]
+      \item Check out the \textcolor{blue}{\href{https://coq.inria.fr/platform-docs/}{prototype website and the first tutorials}}
+      \item Come talk to us and give feedback on the \textcolor{blue}{\href{https://www.theozimmermann.net/platform-docs/}{zulip stream}}
+      \item Check out the \textcolor{blue}{\href{https://github.com/coq/platform-docs}{repo}} and the \textcolor{blue}{\href{https://github.com/coq/ceps/pull/91}{CEP}}
+    \end{itemize}
+  \end{tcbProp}
+\end{frame}
+
+
+\end{document}
