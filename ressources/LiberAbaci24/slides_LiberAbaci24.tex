@@ -113,7 +113,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
     \begin{enumerate}
       \item<1-> A lot about Coq is pratical knowledge and can be subtle
       \item<2-> It is not possible to be behind every student helping them
-      \item<3-> You can not teach everything in a 24h/48h class:
+      \item<3-> You cannot teach everything in a 24h/48h class:
       \onslide<4->{
       \begin{itemize}[label=$-$]
         \item There are too much features, or too many aspects to discuss
@@ -129,8 +129,8 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
             through learning content and examples
       \item<6-> How-to guides provides students with pratical examples helping them
             to debug themselves when working on projects
-      \item<7-> Action-oriented documentation provides learning content for what you
-                do not have time to discuss in class
+      \item<7-> Action-oriented documentation enables students to continue
+            learning after class, and to get towards autonomy in Coq
     \end{enumerate}
   \end{tcbSol}
 \end{frame}
@@ -148,10 +148,11 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 \onslide<4->
 \begin{tcbProp}{For experts}
   \begin{enumerate}
-    \item<4-> Writing documentation forces us to do stuff right (no chesating)
-    \item<5-> It makes our work easier to discover and more accessible
-    \item<6-> It help getting new users, and getting them more experts
-    \item<7-> Experts have features they want to learn too
+    \item<4-> It makes our work easier to discover and more accessible
+    \item<5-> It help getting new users, and getting them more experts
+    \item<6-> It enables to put forward and promote good practices
+    \item<7-> Writing documentation forces us to do stuff right (no cheating)
+    % \item<8-> Experts have features they want to learn too
   \end{enumerate}
 \end{tcbProp}
 \end{frame}
@@ -176,7 +177,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \end{tcbObj}
 \end{frame}
 
-\begin{frame}{Advantages of such a documentation}
+\begin{frame}{Advantages of such a project}
   \begin{tcbSol}{Advantages for users}
     \begin{enumerate}
       \item<1-> Coq is an interactive et practical software, it \ul{needs} an
@@ -193,8 +194,9 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \begin{tcbSol}{Advantages for the community}
     \begin{enumerate}
       \item<5-> It is possible to build \ul{modularly and collaboratively}
-      \item<6-> Being horizontal, it should be \ul{easier to maintain}
-      \item<7-> It will \ul{showcase all that is possible} with Coq
+      \item<6-> It enables to \ul{centralise efforts} in a \ul{lasting way}
+      \item<7-> Being horizontal, it should be \ul{easier to maintain}
+      % \item<8-> It will \ul{showcase all that is possible} with Coq
     \end{enumerate}
   \end{tcbSol}
 \end{frame}
@@ -275,16 +277,17 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \begin{tcbProp}{Develop the documentation modularly}
     For each projet or plugins, we would like to set up:
     \begin{enumerate}
-      \item Set up a reviewer term with dev / maintainer / advanced users
-      \item Set up a project and open issues so that people can contribute
+      \item<2-> Set up a reviewer term with dev / maintainer / advanced users
+      \item<2-> Set up a project and open issues so that people can contribute
     \end{enumerate}
   \end{tcbProp}
+  \onslide<3->
   \begin{tcbProp}{Being a reviewer}
     The job of the reviewers is not to write documentation, it is to:
     \begin{enumerate}
-      \item Identify the needs of documentation, and create issues for it
-      \item Ensure that the documentation stays consistent through PR
-      \item Review contributions when some are created
+      \item<4-> Identify the needs of documentation, and create issues for it
+      \item<5-> Ensure that the documentation stays consistent through PR
+      \item<6-> Review contributions when some are created
     \end{enumerate}
   \end{tcbProp}
 \end{frame}
@@ -293,7 +296,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
 \begin{frame}[fragile]{Conclusion}
   \begin{tcbObj}{The Project}
-    \begin{enumerate}
+    \begin{enumerate}[leftmargin=10pt]
       \item Each features and plugins of Coq and its platform would have one
             or several \ul{interactive tutorials and how-to guides}
       \item Be accessible \ul{interactively online}, and part of \ul{Rocq's new website}
@@ -301,14 +304,14 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \end{tcbObj}
   \onslide<2->
   \begin{tcbObj}{Contributing}
-    \begin{enumerate}
+    \begin{enumerate}[leftmargin=10pt]
       \item Everyone can contribute: you don't need to be a Coq developer
       \item Everyone can have a valuable contribution
     \end{enumerate}
   \end{tcbObj}
   \onslide<3->
   \begin{tcbProp}{Ressources to check out}
-    \begin{itemize}[label=$-$]
+    \begin{itemize}[label=$-$,leftmargin=10pt]
       \item Check out the \textcolor{blue}{\href{https://coq.inria.fr/platform-docs/}{prototype website and the first tutorials}}
       \item Come talk to us and give feedback on the \textcolor{blue}{\href{https://www.theozimmermann.net/platform-docs/}{zulip stream}}
       \item Check out the \textcolor{blue}{\href{https://github.com/coq/platform-docs}{repo}} and the \textcolor{blue}{\href{https://github.com/coq/ceps/pull/91}{CEP}}
