@@ -91,21 +91,21 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
 % TO WORK ON
 \begin{frame}{Why is it important for Learning}
-  \begin{tcbPbl}{Have you noticed ?}
-    \begin{itemize}
-      \item That people have a hard time learning
-      \item That people often tend to learn through experts
-    \end{itemize}
-  \end{tcbPbl}
-  \begin{tcbProp}{}
-    \begin{enumerate}
-      \item Tutorials enables users to discover and learn new features on their own
-      \item Tutorials enables users to become more experts on complex features
-      \item How to guides enables users to step from learning to doing
-      \item How-to guides enables users and to confront themselves
-            to real life examples when working on projects
-    \end{enumerate}
-  \end{tcbProp}
+  % \begin{tcbPbl}{Have you noticed ?}
+  %   \begin{itemize}
+  %     \item That people have a hard time learning
+  %     \item That people often tend to learn through experts
+  %   \end{itemize}
+  % \end{tcbPbl}
+  % \begin{tcbProp}{}
+  %   \begin{enumerate}
+  %     \item Tutorials enables users to discover and learn new features on their own
+  %     \item Tutorials enables users to become more experts on complex features
+  %     \item How to guides enables users to step from learning to doing
+  %     \item How-to guides enables users and to confront themselves
+  %           to real life examples when working on projects
+  %   \end{enumerate}
+  % \end{tcbProp}
 \end{frame}
 
 \begin{frame}{It is important for Teaching}
@@ -249,72 +249,48 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
 % \subsection{Contributing to the documentation}
 
+\begin{frame}{Contributing}
+  \begin{tcbObj}{Everyone can help}
+    \begin{enumerate}
+      \item<1-> \ul{Everyone can contribute} whatever their expertise !
+      \item<2-> \ul{Both} experts and casual users' opinions are valuable !
+    \end{enumerate}
+  \end{tcbObj}
+  \onslide<3->
+  \begin{tcbProp}{Contributing}
+    There are \ul{many ways} to contribute:
+    \begin{enumerate}
+      \item<3-> Give feedbacks on existing tutoand how-to, or wishes on
+      \textcolor{blue}{\href{https://www.theozimmermann.net/platform-docs/}{zulip}}
+      \item<4-> Answer questions, and share knowledge and folklore on
+      \textcolor{blue}{\href{https://www.theozimmermann.net/platform-docs/}{zulip}}
+      \item<5-> Write tutorials and how-to guides, or write PR to improve them
+      \item<6-> Help reviewing tutorials and how-to guides
+      \item<7-> Help setting up the repo, or the web-interface
+    \end{enumerate}
+  \end{tcbProp}
+\end{frame}
+
 \begin{frame}{Documenting Project and Plugins}
   \begin{tcbProp}{Develop the documentation modularly}
-    \begin{itemize}
-      \item Each community should have a reviewer term and a project to manage
-            its part of the documentation
-    \end{itemize}
-  \end{tcbProp}
-  \onslide<2->
-  \begin{tcbProp}{Basic Plan}
+    For each projet or plugins, we would like to set up:
     \begin{enumerate}
-      \item Set up a reviewer team and a project
-      \item Understand what the documentation should look like
-      \item Set up the associated ci
-      \item Port / update / write the documentation
+      \item Set up a reviewer term with dev / maintainer / advanced users
+      \item Set up a project and open issues so that people can contribute
     \end{enumerate}
   \end{tcbProp}
-\end{frame}
-
-\begin{frame}{Contributing as a Coq's User}
-  \begin{tcbProp}{Contributing by Reviewing}
+  \begin{tcbProp}{Being a reviewer}
+    The job of the reviewers is not to write documentation, it is to:
     \begin{enumerate}
-      \item Becoming an expert reviewer for a project or a general reviewer
-      \item Review from time to time something you are an expert or not
+      \item Identify the needs of documentation, and create issues for it
+      \item Ensure that the documentation stays consistent through PR
+      \item Review contributions when some are created
     \end{enumerate}
-  \end{tcbProp}
-  \onslide<2->
-  \begin{tcbProp}{Contributing by Writting}
-    \begin{enumerate}
-      \item Writing tutorials or how-to guides
-      \item Help improve existing tutorials via P.R
-    \end{enumerate}
-  \end{tcbProp}
-  \onslide<3->
-  \begin{tcbProp}{Contributing by Sharing Knoweldge}
-    \begin{enumerate}
-      \item Share folklore that should be common knowledge
-      \item Answer the questions of people writing tutorials
-      \item Give feedbacks on existing tutorials and your needs
-    \end{enumerate}
-  \end{tcbProp}
-\end{frame}
-
-
-\begin{frame}{Contributing Technically}
-  \begin{tcbProp}{Help with the Web interface}
-    \begin{itemize}[label=$-$]
-      \item Help setting up the web interface (set up Alectryon / Sphinx)
-      \item Help setting up a nice automatic deployment
-      \item Find a solution for JsCoq
-    \end{itemize}
-  \end{tcbProp}
-  \onslide<2->
-  \begin{tcbProp}{Help with the Repo}
-    \begin{itemize}[label=$-$]
-      \item Help setting up a nice ci (platform / dev etc..)
-      \item Help writing contribution guidelines
-      \item etc...
-    \end{itemize}
   \end{tcbProp}
 \end{frame}
 
 \subsection{Conclusion}
 
-% \begin{tcbProp}{Sum up}
-
-% \end{tcbProp}
 \begin{frame}[fragile]{Conclusion}
   \begin{tcbObj}{The Project}
     \begin{enumerate}
