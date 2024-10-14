@@ -65,9 +65,8 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
     % predetermined examples, and introducing notions gradually.
     Tutorials help users to learn a new feature, step by step, introducing
     notions gradually through predetermined examples:
-    \begin{itemize}[label=$-$]
-      \item<2-> Searching for Lemma, Combining Tactics
-      \item<2-> Introduction to Equations, Equations and well-founded recursion
+    \begin{itemize}[label=$\hookrightarrow$]
+      \item<2-> Searching for Lemma, Combining Tactics, etc...
     \end{itemize}
   \end{tcbProp}
   \vspace*{-4pt}
@@ -75,35 +74,36 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \begin{tcbProp}{How-to guides}
     How-to guides provide users with step by step resolution procedures for real
     life problems but without touring all that is possible:
-    \begin{itemize}[label=$-$]
-      \item<4-> How to set up a Coq Project
-      \item<4-> How to use Equations to reason about intrinsic syntax
+    \begin{itemize}[label=$\hookrightarrow$]
+      \item<4-> How to search for a lemma
+      \item<5-> How to set up a Coq Project
     \end{itemize}
   \end{tcbProp}
   \vspace*{-4pt}
-  \onslide<5->
+  \onslide<6->
   \begin{tcbSol}{To Remember}
-    Tutorials and How-to guides are complementaty
+    \begin{enumerate}
+      \item Tutorials and how-guides are different and complementaty
+      \item They are both about practical knowledge and achieving goals
+    \end{enumerate}
   \end{tcbSol}
 \end{frame}
 
 % TO WORK ON
-\begin{frame}{Why is it important for Learning ?}
+\begin{frame}{Why is it important for Learning}
   \begin{tcbPbl}{Have you noticed ?}
     \begin{itemize}
-      \item That people have a hard time learning Coq ?
+      \item That people have a hard time learning
       \item That people often tend to learn through experts
     \end{itemize}
   \end{tcbPbl}
-
-\end{frame}
-
-\begin{frame}{It is important for Learning}
   \begin{tcbProp}{}
     \begin{enumerate}
-      \item Explore and discover additional subjects and features
-      \item Find expert information to go further
-      \item Find help and examples when working on projects
+      \item Tutorials enables users to discover and learn new features on their own
+      \item Tutorials enables users to become more experts on complex features
+      \item How to guides enables users to step from learning to doing
+      \item How-to guides enables users and to confront themselves
+            to real life examples when working on projects
     \end{enumerate}
   \end{tcbProp}
 \end{frame}
@@ -140,7 +140,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \begin{enumerate}
     \item It enables users to learn and discover new features on their own,
           and to debug themselves when they are stuck
-    \item<2-> It enables users to find specific and practical knowledge
+    \item<2-> It enables users to find specific practical knowledge
     \item<3-> It enables to turn folklore into knowledge, and to make it
           accessible to users that would not know it otherwise
   \end{enumerate}
@@ -148,9 +148,10 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 \onslide<4->
 \begin{tcbProp}{For experts}
   \begin{enumerate}
-    \item<4-> Writing documentation forces us to do stuff right (no cheating)
+    \item<4-> Writing documentation forces us to do stuff right (no chesating)
     \item<5-> It makes our work easier to discover and more accessible
-    \item<6-> Experts are not all knowing: they are features they want to learn
+    \item<6-> It help getting new users, and getting them more experts
+    \item<7-> Experts have features they want to learn too
   \end{enumerate}
 \end{tcbProp}
 \end{frame}
@@ -176,45 +177,59 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 \end{frame}
 
 \begin{frame}{Advantages of such a documentation}
-  \begin{tcbProp}{Advantages}
+  \begin{tcbSol}{Advantages for users}
     \begin{enumerate}
-      \item<1-> All the documentation should be \ul{accessible at the same place}
-      \item<2-> It is possible to build \ul{modularly and collaboratively}
-      \item<3-> Such a documentation should be \ul{horizontal:}
-      \begin{itemize}[label=$-$]
-        \item it easier to navigate and discover new features
-        \item it easier to maintain as less dependencies
-        \item it allows differentiate learning: \\
-              Ltac2 for new users\;  /  \;Ltac2 for Ltac1's users
+      \item<1-> Coq is an interactive et practical software, it \ul{needs} an
+            interactive and practical documentation
+      \item<2-> All the documentation should be \ul{accessible at the same place}
+      \item<3-> It should be horizontal making it \ul{easier to discover} new features,
+      \item<4-> It should be horizontal allowing \ul{differentiate learning}:
+      \begin{itemize}[label=$\hookrightarrow$]
+        \item Ltac2 for new users\;  v.s.  \;Ltac2 for Ltac1's users
       \end{itemize}
-      \item<4-> It will \ul{showcase all that is possible} with Coq
     \end{enumerate}
-  \end{tcbProp}
+  \end{tcbSol}
+  \onslide<5->
+  \begin{tcbSol}{Advantages for the community}
+    \begin{enumerate}
+      \item<5-> It is possible to build \ul{modularly and collaboratively}
+      \item<6-> Being horizontal, it should be \ul{easier to maintain}
+      \item<7-> It will \ul{showcase all that is possible} with Coq
+    \end{enumerate}
+  \end{tcbSol}
 \end{frame}
 
-% TO IMPROVE
 \begin{frame}{Example: Documenting Equations}
+  \onslide<1->
+  \vspace*{-3pt}
   \begin{tcbPbl}{The documentation was inadequate}
     \begin{enumerate}
-      \item Many features: basics, dependent programming, wf recursion
-      \item The documentation was old and not very complete
+      \item Many features: basics, dependent matching, wf recursion, ...
+      \item Despite many examples, the doc was not very fitted nor complete
     \end{enumerate}
   \end{tcbPbl}
   \onslide<2->
-  \begin{tcbProp}{A new documentation}
+  \vspace*{-3pt}
+   \begin{tcbProp}{A new documentation}
     \begin{enumerate}
-      \item We wrote 3 tutorials out of 5 planned, ~500l code/~1000l text
-      \item The documentation is now much clear, and easy to improve
+      \item We wrote 4 tutorials out of 6 planned, ~600l code/~1200l text
+      \item It is now much clear, and easy to improve or extend
       \item We wrote it modularly with help from the community
     \end{enumerate}
-    \end{tcbProp}
-  \onslide<3->
+  \end{tcbProp}
+  \only<2>{
+  \vspace*{-15pt}
+  \begin{figure}[H] \hspace*{-0.9cm}
+    \includegraphics[scale=0.35]{equations_tuto.jpg}
+  \end{figure}}
+  \only<3>{
+  \vspace*{-3pt}
   \begin{tcbSol}{Many Improvements}
   \begin{enumerate}
-    \item Found 2/3 bugs writing the documentation
-    \item Improve the behavior of the main tactic
+    \item We found 2/3 bugs writing the documentation
+    \item We improved the behavior of the main tactic
   \end{enumerate}
-  \end{tcbSol}
+  \end{tcbSol}}
 \end{frame}
 
 \subsection{Demonstration}
