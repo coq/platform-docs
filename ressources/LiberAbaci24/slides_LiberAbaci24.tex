@@ -14,7 +14,7 @@
 
 
 \title{Coq Platform Docs: \\ Documenting Coq and its Platform}
-\author{\textbf{Thomas Lamiaux}, ENS Paris-Saclay \\
+\author{\textbf{Thomas Lamiaux}, LS2N, Inria \& Nantes University \\
 Pierre Rousselin, LAGA, Université Sorbonne Paris Nord \\
 Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
@@ -32,7 +32,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
 \section*{Coq Platform Docs}
 
-\subsection{Why does Action-oriented Documentation Matter?}
+\subsection{Why does action-oriented documentation matter?}
 
 \begin{frame}{Introduction}
   \begin{tcbProp}{To keep in mind}
@@ -50,8 +50,8 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \onslide<3->
   \begin{tcbPbl}{A lack of action-oriented documentation }
     \begin{enumerate}
-      \item When it exists, it is often incomplete or outdated
-      \item When it exists, it is often spread out over many repos / blogs
+      \item<3-> When it exists, it is often incomplete or outdated
+      \item<4-> When it exists, it is often spread out over many repos / blogs
     \end{enumerate}
   \end{tcbPbl}
 \end{frame}
@@ -65,25 +65,25 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
     Tutorials help users to learn a new feature, step by step, introducing
     notions gradually through predetermined examples:
     \begin{itemize}[label=$\hookrightarrow$]
-      \item<2-> Searching for Lemma, Combining Tactics, etc...
+      \item<1-> Searching for Lemma, Combining Tactics, etc...
     \end{itemize}
   \end{tcbProp}
   \vspace*{-4pt}
-  \onslide<3->
+  \onslide<2->
   \begin{tcbProp}{How-to guides}
     How-to guides provide users with step by step resolution procedures for real
     life problems but without touring all that is possible:
     \begin{itemize}[label=$\hookrightarrow$]
-      \item<4-> How to search for a lemma
-      \item<5-> How to set up a Coq Project
+      \item<2-> How to search for a lemma
+      \item<2-> How to set up a Coq Project
     \end{itemize}
   \end{tcbProp}
   \vspace*{-4pt}
-  \onslide<6->
+  \onslide<3->
   \begin{tcbSol}{To Remember}
     \begin{enumerate}
-      \item Tutorials and how-guides are different and complementary
-      \item They are both about practical knowledge and achieving goals
+      \item<3-> Tutorials and how-guides are different and complementary
+      \item<4-> They are both about practical knowledge and achieving goals
     \end{enumerate}
   \end{tcbSol}
 \end{frame}
@@ -111,24 +111,24 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \begin{tcbProp}{When Teaching}
     \begin{enumerate}
       \item<1-> A lot about Coq is pratical knowledge and can be subtle
-      \item<2-> It is not possible to be behind every student helping them
-      \item<3-> You cannot teach everything in a 24h/48h class:
-      \onslide<4->{
+      \item<1-> It is not possible to be behind every student helping them
+      \item<1-> You cannot teach everything in a 24h/48h class:
+      \onslide<1->{
       \begin{itemize}[label=$-$]
         \item There are too many features, or too many aspects to discuss
         \item Some features are too advanced, or too technical to discuss
       \end{itemize}}
     \end{enumerate}
   \end{tcbProp}
-  \onslide<5->
+  \onslide<2->
   \begin{tcbSol}{Action-oriented Documentation}
     % Action-oriented documentation enables to continue the class outside of class
     \begin{enumerate}
-      \item<5-> Tutorials enable students to check and expand their knowledge
+      \item<2-> Tutorials enable students to check and expand their knowledge
             through learning content and examples
-      \item<6-> How-to guides provide students with practical examples helping them
+      \item<3-> How-to guides provide students with practical examples helping them
             to debug themselves when working on projects
-      \item<7-> Action-oriented documentation enables students to continue
+      \item<4-> Action-oriented documentation enables students to continue
             learning after class, and to get towards autonomy in Coq
     \end{enumerate}
   \end{tcbSol}
@@ -170,8 +170,8 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
   \onslide<4->
   \begin{tcbObj}{Interactive Web interface}
     \begin{enumerate}
-      \item<5-> It would be \ul{accessible online, interactively,} e.g., using JsCoq
-      \item<6-> It should be \ul{part of Rocq's new website}
+      \item<4-> It would be \ul{accessible online, interactively,} e.g., using JsCoq
+      \item<5-> It should be \ul{part of Rocq's new website}
     \end{enumerate}
   \end{tcbObj}
 \end{frame}
@@ -218,6 +218,7 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
       \item We wrote it modularly with help from the community
     \end{enumerate}
   \end{tcbProp}
+  \only<1>{\vspace*{4cm}}
   \only<2>{
   \vspace*{-15pt}
   \begin{figure}[H] \hspace*{-0.9cm}
@@ -230,7 +231,8 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
     \item We found 2/3 bugs writing the documentation
     \item We improved the behavior of the main tactic
   \end{enumerate}
-  \end{tcbSol}}
+  \end{tcbSol}
+  \vspace*{1cm}}
 \end{frame}
 
 \subsection{Demonstration}
@@ -274,19 +276,19 @@ Théo Zimmermann, LTCI, Télécom Paris, Polytechnic Institute of Paris }
 
 \begin{frame}{Documenting Project and Plugins}
   \begin{tcbProp}{Develop the documentation modularly}
-    For each projet or plugins, we would like to:
+    For each projet or plugins, we would like to set up:
     \begin{enumerate}
-      \item<2-> Set up a reviewer team with dev / maintainer / advanced users
-      \item<2-> Set up a project and open issues so that people can contribute
+      \item<1-> A reviewer team of dev, maintainer, and advanced users
+      \item<1-> A project, and open issues so that people can contribute
     \end{enumerate}
   \end{tcbProp}
-  \onslide<3->
+  \onslide<2->
   \begin{tcbProp}{Being a reviewer}
     The job of the reviewers is not to write documentation, it is to:
     \begin{enumerate}
-      \item<4-> Identify the needs of documentation, and create issues for it
-      \item<5-> Ensure that the documentation stays consistent through PR
-      \item<6-> Review contributions when some are created
+      \item<3-> Identify the needs of documentation, and create issues for it
+      \item<3-> Ensure that the documentation stays consistent through PR
+      \item<3-> Review contributions when some are created
     \end{enumerate}
   \end{tcbProp}
 \end{frame}
