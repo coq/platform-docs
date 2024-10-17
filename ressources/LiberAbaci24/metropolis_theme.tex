@@ -1,0 +1,87 @@
+
+% Metropolis Theme
+% \usepackage{FiraSans}
+
+\usetheme[
+    % main theme
+    titleformat = regular, % regular, smallcaps, allsmallcaps, allcaps
+    % inner theme
+    sectionpage = progressbar, % none, simple, progressbar
+    subsectionpage = progressbar, % none, simple, progressbar
+    % outer theme
+    numbering = fraction , % none, counter, fraction
+    progressbar = frametitle, % none, head, foot, frametitle
+    % color theme
+    block = fill, %transparent, fill
+    background = light, % dark, light
+    ]{metropolis}
+
+\setbeamerfont{section title}{size=\LARGE}
+\setbeamerfont{subsection title}{size=\Large}
+
+\setbeamercolor{frametitle}{bg = lightgray!35!black}
+% \setbeamercolor{frametitle}{bg = white!0!blue!50!black}
+% \setbeamercolor{frametitle}{bg = violet!50!black}
+
+% \setbeamercolor{progress bar}{fg = white!10!violet!70!black}
+% \setbeamercolor{progress bar in head}{ bg = red}
+% \setbeamercolor{progress bar in section page}{ ... }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage{tcolorbox}
+
+\newtcolorbox{tcbObj}[1]{
+    colframe=lightgray!35!black,
+    colbacktitle=violet!92,
+    colback=violet!17!white,
+    boxrule = 0.6pt,
+    title = \hspace{-8pt} #1
+}
+
+\newtcolorbox{tcbProp}[1]{
+    colframe=lightgray!35!black,
+    colbacktitle=white!40!blue!75!black,
+    colback=blue!12!white,
+    boxrule = 0.6pt,
+    title = \hspace{-8pt} #1
+}
+
+\newtcolorbox{tcbPbl}[1]{
+    colframe=lightgray!35!black,
+    colbacktitle=white!15!red!75!black,
+    colback=yellow!5!white!87!red,
+    boxrule = 0.6pt,
+    title = \hspace{-8pt} #1
+}
+
+\newtcolorbox{tcbSol}[1]{
+    colframe=green!0!black,
+    colbacktitle=white!10!green!62!black,
+    colback=green!15!white,
+    boxrule = 0.6pt,
+    title = \hspace{-8pt} #1
+}
+
+\definecolor{BlueEx}{RGB}{59, 147, 218}
+
+\newtcolorbox{tcbEx}[1]{
+    colframe=lightgray!35!black,
+    colbacktitle=BlueEx,
+    colback=BlueEx!15!white,
+    boxrule = 0.6pt,
+    title = \hspace{-8pt} #1
+}
+
+\colorlet{ArrayBg}{blue!10!white}
+\colorlet{ArrayGreen}{black!15!green!70!white}
+% \colorlet{ArrayRed}{black!10!red!80!white}
+
+% \definecolor{ArrayRed}{RGB}{210, 43, 43}
+% \definecolor{ArrayRed}{RGB}{238, 75, 43}
+% \definecolor{ArrayRed}{RGB}{227, 66, 52}
+\definecolor{ArrayRed}{RGB}{230, 68, 51}
+
+\setlist[itemize]{label=$\bullet$, leftmargin=*}
+\setlist[enumerate]{label=\arabic*., leftmargin=*}

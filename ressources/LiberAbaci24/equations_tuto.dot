@@ -1,0 +1,23 @@
+digraph interval_deps {
+  pad=0.4;
+	node [URL="\N.svg",
+		color=black,
+		shape=ellipse,
+		style="filled"
+	];
+	"Introduction to Equations"	[fillcolor="#60ed60"];
+  "Equations and Obligations"	[fillcolor="#60ed60"];
+  "Equations and Obligations" -> "Introduction to Equations";
+  "Equations and Well-founded Recursion"	      [fillcolor="#61ed61"];
+  "Equations and Well-founded Recursion" -> "Equations and Obligations";
+  "Equations and Views"	      [fillcolor=white];
+  "Equations and Views" -> "Introduction to Equations";
+  "Equations and Index Inductive Types"	  [fillcolor=yellow];
+  "Equations and Index Inductive Types" -> "Introduction to Equations";
+  "Using Equations to reason about Intrinsic Syntax" [fillcolor=white,shape=rectangle];
+  "Using Equations to reason about Intrinsic Syntax" -> "Equations and Index Inductive Types";
+
+}
+
+// preprocess_uparams -> preprocess_strpos_uparams;
+// dot equations_tuto.dot -Tjpg -o equations_tuto.jpg
