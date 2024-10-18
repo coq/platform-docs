@@ -270,7 +270,11 @@ Global Transparent f4.
 Goal f4 3 = 4.
 Proof.
   (* [f4] can now be unfolded *)
-  unfold f4. Restart.
+  unfold f4.
+Abort.
+
+Goal f4 3 = 4.
+Proof.
   (* Yet, it still cannot be simplify by [cbn] *)
   Fail progress cbn.
   (* [Arguments] enables to recover simplification *)
@@ -418,6 +422,7 @@ Proof.
   - apply H.
 Abort.
 
+(* Doing induction naively to reproduce a pattern can get you stuck *)
 Definition half_mod2 (n : nat) : n = half n + half n + mod2 n.
 Proof.
   induction n; try reflexivity.
@@ -427,7 +432,11 @@ Proof.
   rewrite PeanoNat.Nat.add_succ_r. cbn.
   f_equal. f_equal.
   (* We then get stuck as we have the wrong hypotheses *)
-  Restart.
+Abort.
+
+(* Wheras funelim does it automatically for you *)
+Definition half_mod2 (n : nat) : n = half n + half n + mod2 n.
+Proof.
   funelim (half n); try reflexivity.
   autorewrite with half mod2.
   rewrite PeanoNat.Nat.add_succ_r. cbn.

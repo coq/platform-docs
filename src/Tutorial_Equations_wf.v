@@ -451,8 +451,10 @@ Definition ack1 {n} : ack 1 n = 2 + n.
 Proof.
   (* If we apply [ack_elim], we get unwarranted cases *)
   apply ack_elim; intros.
-  Restart.
-  (* So we reproduce the pattern with induction *)
+Abort.
+
+(* So we reproduce the pattern with induction *)
+Definition ack1 {n} : ack 1 n = 2 + n.
   induction n; simp ack.
   - reflexivity.
   - rewrite IHn. reflexivity.
@@ -496,7 +498,8 @@ Context (h : exists m : nat, f m = true).
       Consequently, to prove [Acc n] when [n < m], we want to reason by induction
       on [k := m - n]. To do so, we add [n = S m] to the relation.
 
-    This gives us the following relation and proof of our intuition:
+    This gives us the following relation and proof of our intuition.
+    Note that understanding the proofs doe not matter for this tutorial.
 *)
 
 Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
@@ -504,15 +507,20 @@ Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
 Lemma wf_R_m_le m (h : f m = true) : forall n, m <= n -> Acc R n.
 Proof.
   intros n H. constructor. intros ? [h' ?].
-  specialize (h' m ltac:(auto)).
+  specialize (h' m H).
   congruence.
 Qed.
 
+
 Lemma wf_R_lt_m m (h : f m = true) : forall n, n < m -> Acc R n.
 Proof.
-  intros n H. assert (Acc R m) by (eapply wf_R_m_le; eauto).
-  rewrite <- (Nat.sub_add n m ltac:(lia)) in *.
+  intros n H.
+  (* Prove Acc m *)
+  assert (Acc R m) as Hm_acc by (eapply wf_R_m_le; eauto).
+  (* Set up induction on k := m - n *)
+  rewrite <- (Nat.sub_add n m) in * by lia.
   set (k := m - n) in *; clearbody k. clear h H.
+  (* Proof *)
   induction k.
   - easy.
   - apply IHk. constructor. intros ? [? ->]. assumption.
