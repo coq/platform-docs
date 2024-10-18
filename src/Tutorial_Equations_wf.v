@@ -518,8 +518,7 @@ Proof.
   (* Prove Acc m *)
   assert (Acc R m) as Hm_acc by (eapply wf_R_m_le; eauto).
   (* Set up induction on k := m - n *)
-  assert (m - n + n = m) as Hmn by (apply Nat.sub_add; lia).
-  rewrite <- Hmn in *; clear Hmn.
+  rewrite <- (Nat.sub_add n m) in * by lia.
   set (k := m - n) in *; clearbody k. clear h H.
   (* Proof *)
   induction k.
