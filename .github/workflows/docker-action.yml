@@ -17,6 +17,7 @@ jobs:
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'coq-platform-docs.opam'
+          coq_version: '8.19'
           before_script: |
             startGroup "Workaround permission issue"
               sudo chown -R coq:coq .  # <--
