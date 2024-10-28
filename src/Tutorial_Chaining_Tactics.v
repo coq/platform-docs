@@ -41,7 +41,7 @@
 
   (* INTRO TEXT *)
 
-  Section Foo.
+  Section Chaining.
   Context (A B C D E F : Type).
 
   Set Printing Parentheses.
@@ -334,3 +334,4 @@
 (* ** 2. Combining Tactics *)
 
 
+End Chaining.
