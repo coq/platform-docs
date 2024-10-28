@@ -349,7 +349,7 @@ Defined.
 
 Lemma gcd_same x : gcd x x = x.
 Proof.
-  funelim (gcd x x). all: try lia. reflexivity.
+  funelim (gcd x x). all: lia.
 Qed.
 
 Lemma gcd_spec0 a : gcd a 0 = a.
@@ -367,10 +367,9 @@ Proof.
   - now rewrite Nat.Div0.mod_0_l.
   - reflexivity.
   - now rewrite (Nat.mod_small (S n) (S n0)).
-  - rewrite <- Heqcall.
-    rewrite refl, Nat.Div0.mod_same.
+  - rewrite refl, Nat.Div0.mod_same.
     reflexivity.
-  - rewrite <- Heqcall. rewrite H; auto.
+  - rewrite H; auto.
     rewrite mod_minus; auto.
 Qed.
 
@@ -424,7 +423,7 @@ ack (S m) (S n) := ack m (ack (S m) n).
 
 Definition ack_min {m n} : n < ack m n.
 Proof.
-  Fail timeout 5 (funelim (ack m n)).
+  Timeout 5 (funelim (ack m n)).
 Abort.
 
 (** There are two main solutions to go around similar issues depending on your case.
@@ -479,8 +478,8 @@ Qed.
 
 Module LinearSearch.
 
-Context (f : nat -> bool).
-Context (h : exists m : nat, f m = true).
+Parameter (f : nat -> bool).
+Parameter (h : exists m : nat, f m = true).
 
 (** Knowing there exists an [m : nat] such that [f m = true], we would like to
     actually compute one.

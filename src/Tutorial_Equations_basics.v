@@ -483,7 +483,7 @@ Abort.
 
 Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
 Proof.
-  funelim (nth_option n l); simp nth_option nth_option'.
+  funelim (nth_option n l); simp nth_option nth_option'; reflexivity.
 Qed.
 
 (** *** 1.2.4 Extending [autorewrite] and [simp]
@@ -551,7 +551,7 @@ Abort.
 (** It actually enables to greatly automate proofs using [simp] *)
 Lemma rev_eq {A} (l l' : list A) : rev_acc l l' = rev l ++ l'.
 Proof.
-  funelim (rev l); simp rev rev_acc app.
+  funelim (rev l); simp rev rev_acc app; reflexivity.
 Qed.
 
 (** *** Exercises *)
@@ -673,8 +673,8 @@ Lemma filter_In {A} (x : A) (l : list A) (p : A -> bool)
 Proof.
   funelim (filter l p); simp filter In.
   - intuition congruence.
-  - rewrite Heq; simp filter In. rewrite H. intuition congruence.
-  - rewrite Heq; simp filter In. rewrite H. intuition congruence.
+  - rewrite H. intuition congruence.
+  - rewrite H. intuition congruence.
 Qed.
 
 (** [With] clauses can also be useful to inspect a recursive call.
@@ -802,5 +802,5 @@ Lemma rev_acc_rev {A} (l : list A) : rev_acc' l = rev l.
 Proof.
   unshelve eapply rev_acc'_elim.
   1: exact (fun A _ l acc aux_res => aux_res = rev l ++ acc).
-  all: cbn; intros; simp rev app in *.
+  all: cbn; intros; simp rev app in *; reflexivity.
 Qed.
