@@ -13,7 +13,11 @@
 [zulip-shield]: https://img.shields.io/badge/chat-on%20Zulip-blue
 [zulip-link]: https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs
 
-
+The documentation is working with the latesest version of [Coq Platform](https://github.com/coq/platform/blob/main/doc/README~8.19~2024.10.md), i.e [8.19.2].
+It is planned in the future to index the documentation and the Coq Platform's version and to have a dev version of it, 
+so that users can find docmentation working for their version of the Coq and the Platform.
+It is not the case as of yet, so the documentation it is not guaranteed to work perfectly on other versions of Coq and the Platform, 
+though most of the content should still be working fine.
 
 ## A Collection of Short Interactive Tutorials and How-To Guides for Coq
 
