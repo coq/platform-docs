@@ -6,8 +6,13 @@
 
     *** Summary
 
-    In this tutorial, we explain how to chain tactics together to write more
-    concise code.
+    In this tutorial, we explain how to chain tactics together to write more concise code.
+
+    In the first part, we explain how to chain tactics linearly,
+    that is so they are chained and excuted together one after the other.
+
+    In the second part, we explain how to combined tactics in a more involved
+    way, possibly repeating tactics and branching possibilities.
 
     *** Table of content
 
@@ -18,9 +23,9 @@
             - 1.2.2 Ignoring Subgoals when Chaining
             - 1.2.3 Chaining on a Range of Sugoals
           - 1.3 Chaining is actually backtracking
-        - 2. ???
-          - ???
-          - ???
+        - 2. Chaining Tactics with Repetition and Branching
+          - 2.1 Repeating Tactics
+          - 2.2 Branching Tactics
 
     *** Prerequisites
 
@@ -52,7 +57,7 @@
     In practice, it often happens that one logical step gets decomposed into a
     sequence of tactics, and hence into a sequence of interactive steps.
     This is not very practical, as it hinders understanding when running a proof.
-    Not introduces extra-steps that we do not care about and can be tedious,
+    It introduces extra-steps that we do not care about and can be tedious to run,
     but also makes the logical structure harder to recognize.
 
     For instance, consider the second subgoal of the proof below.
@@ -60,7 +65,6 @@
     and hence would like to bring ourself back to proving [A * B].
     While this correponds to one simple logical step, it actually gets decomposed
     into two tactics applied in a row [left. right.].
-
 *)
 
   Goal A * (B + C + D) -> A * B + A * C + A * D.
@@ -76,14 +80,13 @@
       -- assumption.
   Qed.
 
-
 (** To recover the correspondance between interactive steps and logical steps,
     we would like to be able to chain tactics, so that in the example [left]
     and [right] are excuted together, one after the other.
     This is possible using the notation [tac1 ; tac2] that is going to execute
     the tactic [tac1], and then [tac2] on all the subgoals created by [tac1].
 
-    In our case, at hand, it enables to write [left; left.] rather than [left. left.]
+    In our case, it enables us to write [left; left.] rather than [left. left.]
     to get one logical step:
 *)
 
@@ -112,8 +115,8 @@
     Typically, in the example above, in all the cases created by [constructor],
     we want to apply [assumption] to conclude the proof.
     We can hence share the code by writing [constructor; assumption] rather
-    than dealing with each subgoal independently, and in total to remove 6 proofs.
-    Greatly simplifying the proof structure, while better reflecting the logical structure.
+    than dealing with each subgoal independently, and in total to remove 6 subproofs.
+    This greatly simplifies the proof structure, while better reflecting the logical structure.
 *)
 
   Goal A * (B + C + D) -> A * B + A * C + A * D.
@@ -129,18 +132,19 @@
     **** 1.2.1 Basics
 
     Chaining tactics with [tac1 ; tac2] applies the tatic [tac2] to all the subgoals created by [tac1].
-    Yet, it is not always subtile enough as different subgoals can require
+    Yet, it is not always subtle enough as different subgoals can require
     slightly different kind of reasonning.
 
     For instance, consider the example below where we need to apply different functions
     to each subgoal, namely applying [fAC] in one case and [fBD] in the other case:
 *)
-    Goal (A -> C) -> (B -> D) -> A * B -> C * D.
-      intros fAC fBD p. destruct p as [a b].
-      constructor.
-      - apply fAC. assumption.
-      - apply fBD. assumption.
-    Qed.
+
+  Goal (A -> C) -> (B -> D) -> A * B -> C * D.
+    intros fAC fBD p. destruct p as [a b].
+    constructor.
+    - apply fAC. assumption.
+    - apply fBD. assumption.
+  Qed.
 
 (** Yet, we would still like to be able to chain tactics together to factorise code and make it clear.
     It is possible by combining the [tac ;] notation with the notation
@@ -148,7 +152,7 @@
     The tactic [ tac; [tac1 | ... | tacn] ] will then apply [taci] to the
     i-th subgoal created by [tac].
 
-    This enables to chain [constructor] withe the [apply] by writing
+    This enables us to chain [constructor] with the [apply] by writing
    [ constructor; [apply fAC | apply fBD] ].
 *)
 
@@ -188,14 +192,14 @@
     We hence, would like to apply [constructor] once more, but only on the first branch.
 *)
 
-    Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
-      intros fAD fBE fCF p. destruct p as [[a b] c].
-      constructor.
-      - constructor.
-        -- apply fAD; assumption.
-        -- apply fBE; assumption.
-      - apply fCF; assumption.
-    Qed.
+  Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
+    intros fAD fBE fCF p. destruct p as [[a b] c].
+    constructor.
+    - constructor.
+      -- apply fAD; assumption.
+      -- apply fBE; assumption.
+    - apply fCF; assumption.
+  Qed.
 
 (** This is possible by using the [idtac s] tactic that does noting but printing [s],
     or simply by leaving the expected tactic spot emppty.
@@ -204,29 +208,30 @@
     natural proof structure:
 *)
 
-    Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
-      intros fAD fBE fCF p. destruct p as [[a b] c].
-      constructor; [constructor| idtac "hello world"].
-      - apply fAD; assumption.
-      - apply fBE; assumption.
-      - apply fCF; assumption.
-    Qed.
+  Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
+    intros fAD fBE fCF p. destruct p as [[a b] c].
+    constructor; [constructor| idtac "hello world"].
+    - apply fAD; assumption.
+    - apply fBE; assumption.
+    - apply fCF; assumption.
+  Qed.
 
-    Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
-      intros fAD fBE fCF p. destruct p as [[a b] c].
-      constructor; [constructor|].
-      - apply fAD; assumption.
-      - apply fBE; assumption.
-      - apply fCF; assumption.
-    Qed.
+  Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
+    intros fAD fBE fCF p. destruct p as [[a b] c].
+    constructor; [constructor|].
+    - apply fAD; assumption.
+    - apply fBE; assumption.
+    - apply fCF; assumption.
+  Qed.
 
 (** If wished, it is then possible to further factorise the structure by
     chaining the [apply] and [assumption] as before.
 *)
-    Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
-      intros fAD fBE fCF p. destruct p as [[a b] c].
-      constructor; [constructor |]; [apply fAD | apply fBE | apply fCF]; assumption.
-    Qed.
+
+  Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
+    intros fAD fBE fCF p. destruct p as [[a b] c].
+    constructor; [constructor |]; [apply fAD | apply fBE | apply fCF]; assumption.
+  Qed.
 
 (** However, as you can see it does not necessarily makes the proof clearer.
     Chaining is great but be careful not to overuse as it can create long and
@@ -237,32 +242,32 @@
     a trivial subgoal is generated by [constructor]:
 *)
 
-    Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
-      intros fBD fCD p. destruct p as [a x].
-      constructor.
-      - assumption.
-      - destruct x; [apply fBD | apply fCD] ; assumption.
-    Qed.
+  Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
+    intros fBD fCD p. destruct p as [a x].
+    constructor.
+    - assumption.
+    - destruct x; [apply fBD | apply fCD] ; assumption.
+  Qed.
 
 (** Chaining with [ [assumption |] ] enables to get rid of the trivial goal,
     making the proof flatter and letting us focus on the main goal:
 *)
 
-    Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
-      intros fBD fCD p. destruct p as [a x].
-      constructor; [assumption |].
-      destruct x; [apply fBD | apply fCD] ; assumption.
-    Qed.
+  Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
+    intros fBD fCD p. destruct p as [a x].
+    constructor; [assumption |].
+    destruct x; [apply fBD | apply fCD] ; assumption.
+  Qed.
 
 (** Note, that is is also possible with the notation [only n: tac] that applies a
     tactic only to the n-th goal.
  *)
 
-    Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
-      intros fBD fCD p. destruct p as [a x].
-      constructor; only 1: assumption.
-      destruct x; [apply fBD | apply fCD] ; assumption.
-    Qed.
+  Goal (B -> D) -> (C -> D ) -> A * (B + C) -> A * D.
+    intros fBD fCD p. destruct p as [a x].
+    constructor; only 1: assumption.
+    destruct x; [apply fBD | apply fCD] ; assumption.
+  Qed.
 
 
 (** **** 1.2.3 Chaining on a Range of Sugoals
@@ -308,7 +313,7 @@
       left; left. assumption.
     Qed.
 
-(** Or alternatively
+(** Or alternatively:
 *)
 
     Goal forall (a : A), D.
@@ -324,9 +329,9 @@
 
 (** *** 1.3 Chaining is actually backtracking
 
-    A substiltiy with chaining of tactics is that [tac1 ; tac2] does not only
+    A substiltiy with chaining tactics is that [tac1 ; tac2] does not only
     chain tactics together, applying [tac2] on the subgoals created by [tac1],
-    but also does batracking.
+    but also does backtracking.
 
     If the tactic [tac1] makes choice out of several possible ones, e.g. which
     constructor to apply, and [tac2] fails with this choice, then [tac1; tac2]
@@ -342,7 +347,7 @@
     whatever the constructor we need to apply to keep going and complete the proof.
 
     Consider, the following proof where we have to choose between proving the
-    left side [A * B] or the right side [A * C] depending on which sugoals we
+    left side [A * B] or the right side [A * C] depending on which subgoals we
     are trying to prove and our hypothesis:
 *)
 
@@ -353,7 +358,7 @@
     - right. constructor; assumption.
   Qed.
 
-(** Using [cosntructor], we can replace [left] and [right] to get the same
+(** Using [constructor], we can replace [left] and [right] to get the same
     proof script for the first and second goal, as:
     - for the first goal, it will try [left] continue and solve the goal
     - for the second goal, it will try [left] continue the proof and fail,
@@ -381,21 +386,188 @@
     all: constructor; only 1-2: constructor; constructor; assumption.
   Qed.
 
-(** Using the backtracking ability of [;] is a simple method but it allows
-    writing simple but very powerful script, as backtracking enables to deal simply
-    with different possible choices that would be tedious to automatize otherwise.
+(** Using the backtracking ability of [;] to make the right choice out of
+    several possible choices is a simple but very powerful method that enables us
+    to write short but polyvalent proof scripts.
 *)
 
 
 
-(* ** 2. Combining Tactics *)
+(** ** 2. Combining Tactics
 
-(* TODO/ WRTIE SECTION *)
+    In the previous section, we have explained how to chain tactics linearly so
+    that they excute one after the other, on respectively created subgoals.
+    While this is already very practical, in some cases, we need a bit more
+    freedom like to be able to repeat tactics, or to try a set of tactics.
+    This is what we discuss in this section.
 
-(* repeat *)
+    *** 2.1 Repeating Tactics
+
+    Consider the following example of section 1, that has ~25 interactive steps,
+    6 sub-proofs and is 10 lines long, even though it is a fairly simple proof.
+*)
+
+  Goal A * (B + C + D) -> A * B + A * C + A * D.
+    intros x. destruct x as [a x]. destruct x as [[b | c] | d].
+    - left. left. constructor.
+      -- assumption.
+      -- assumption.
+    - left. right. constructor.
+      -- assumption.
+      -- assumption.
+    - right. constructor.
+      -- assumption.
+      -- assumption.
+  Qed.
+
+(** Chaining tactics linearly, we have managed to bring down the proofs to
+    only three interactive steps corresponding to the three logical steps of
+    the proof, and to only two lines.
+*)
+
+  Goal A * (B + C + D) -> A * B + A * C + A * D.
+    intros x. destruct x as [a x]. destruct x as [[b | c] | d].
+    all: constructor; only 1-2: constructor; constructor; assumption.
+  Qed.
+
+(** That is already nice, but the proof is still involved conceptually.
+    Not only we have to repeat [constructor] three times, but we have to
+    think by ourself when writing the proof that for the third case we only need
+    [constructor] once and not twice, and hence write [only 1-2: constructor].
+
+
+    This even though, the proof is conceptually simple: select the appropriate
+    subtype like [A * C] to prove depending on our case, and prove it
+    with [constructor; assumption].
+
+    This is particular annoying as it does not scale very well.
+    Consider, this small varians with only two more types to distribute on.
+    The proof and its overhead then gets much greater, even though it is
+    conceptually as simple as before.
+*)
+
+  Goal A * (B + C + D + E + F) -> A * B + A * C + A * D + A * E + A * F.
+    intros x. destruct x as [a x]. destruct x as [[[[b | c] | d] | e] | f].
+    all: constructor;
+         only 1-5: constructor;
+         only 1-4: constructor;
+         only 1-3: constructor;
+         only 1-2: constructor;
+         assumption.
+  Qed.
+
+(** Instead, we would like to be able to apply [constructor] as much as needed
+    using the backtracking to choose the good subtype to prove; then concludes
+    with [constructor; assumption].
+
+    This is possible with the [repeat tac] combinator, that given a tactic
+    will apply it repeatedly until it can no longer be applied, or fails if it
+    can not be applied at all.
+
+    This enables us to refactor the proof by simply writing [repeat constructor; assumption],
+    getting a proof that now fully correspond to the logical steps we wanted to take.
+    It further scales much better, as it works exactly the same for the variant
+    with two more types.
+*)
+
   Goal A * (B + C + D) -> A * B + A * C + A * D.
     intros x. destruct x as [a x]. destruct x as [[b | c] | d].
     all: repeat constructor; assumption.
   Qed.
 
+  Goal A * (B + C + D + E + F) -> A * B + A * C + A * D + A * E + A * F.
+    intros x. destruct x as [a x]. destruct x as [[[[b | c] | d] | e] | f].
+    all: repeat constructor; assumption.
+  Qed.
+
+(** However, [repeat] can be a bit subtle, so be careful not to fall into this
+    two pitfalls:
+    - 1. [repeat] will stop if it succeeds, but it may not be what you expect
+      especially when backtracking is involved
+
+      Consider the example above. [repeat constructor; assumption] manages to
+      solve the subgoals because it tries to apply [constructor] as much as it
+      can, then to solve to solve the subgoals created by [assumption] and if it
+      fails bracktracks to make other choices.
+      If you stop linking them, then [repeat constructor] will just apply
+      contructor as much as it can; getting us to prove [A * B] then [A] and [B]
+      in every case, getting us stuck.
+      In other words [repeat constructor; assumption] is not the same as
+      [repeat constructor. all: assumption]:
+*)
+
+  Goal A * (B + C + D + E + F) -> A * B + A * C + A * D + A * E + A * F.
+    intros x. destruct x as [a x]. destruct x as [[[[b | c] | d] | e] | f].
+    all: repeat constructor. Fail all: assumption.
+    (* First case: proving A and B *)
+    - assumption.
+    - assumption.
+    (* Second case: proving A and B rather than A and C *)
+    - assumption.
+    - Fail assumption.
+  Abort.
+
+(***
+    - 2. [repeat] will apply a tactic as much as possible, it can be more than what you expect
+
+      Consider proving the same goal as before but with [A] instantiated to [nat].
+      You would expect that in both cases, [repeat constructor] gets you into proving
+      [nat * B] then [nat] and [B] just like explained before.
+      However, running it will actually create only two goals [B] and [B]
+      The reason is that [constructor] applies to [nat], and solve the goals using [0]
+      even though you would wanted to solve it using [n].
+ *)
+
+  Goal nat * (B + C + D) -> nat * B + nat * C + nat * D.
+    intros x. destruct x as [n x]. destruct x as [b | c].
+    all: repeat constructor.
+    Show Proof.
+  Abort.
+
+(** Such issues can be particularly annoying getting you stuck in an unprovable
+    goal, providing the wrong witness as the above that would impact the rest
+    of the proof, or solve wrongly a metavariable. Once should hence be careful.
+*)
+
+(** The [repeat] combiantor also comes as a variant named [do n tac] that enables
+    to apply [tac] exactly [n] times, and if it cannot do it exactly [n] times
+    fails:
+*)
+
+Goal A -> B -> C -> D -> E -> F.
+  do 4 intros ?.
+Abort.
+
+Goal A -> B -> C -> D -> E -> F.
+  Fail do 8 intros ?.
+Abort.
+
 End Chaining.
+
+
+
+(* More to talk about
+
+(* 1. Chaining *)
+
+  (* 1.1 basic *)
+  ;
+  (* 1.2 subgoals *)
+  [ | | .. ] / only
+  (* 1.3 Backtracking  *)
+
+(* 2. Branching and else *)
+
+  (* 2.1 Looping *)
+  do // repeat
+  (* 2.2 Branching *)
+  - try / triif
+  - first / solve
+
+- once // exactly_one
+- abstract
+- gfail
+- timeout // progress
+
+
+*)
