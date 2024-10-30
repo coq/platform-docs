@@ -8,24 +8,15 @@
 
     In this tutorial, we explain how to chain tactics together to write more concise code.
 
-    In the first part, we explain how to chain tactics linearly,
-    that is so they are chained and excuted together one after the other.
-
-    In the second part, we explain how to combined tactics in a more involved
-    way, possibly repeating tactics and branching possibilities.
-
     *** Table of content
 
-        - 1. Chaining Tactics Linearly
-          - 1.1 Basics
-          - 1.2 Chaining Selectively on Subgoals
-            - 1.2.1 Basics
-            - 1.2.2 Ignoring Subgoals when Chaining
-            - 1.2.3 Chaining on a Range of Sugoals
-          - 1.3 Chaining is actually backtracking
-        - 2. Chaining Tactics with Repetition and Branching
-          - 2.1 Repeating Tactics
-          - 2.2 Branching Tactics
+        - 1. Introduction to Chaining
+        - 2. Chaining Selectively on Subgoals
+          - 2.1 Basics
+          - 2.2 Ignoring Subgoals when Chaining
+          - 2.3 Chaining on a Range of Sugoals
+        - 3. Chaining is actually backtracking
+        - 4. Repeating Tactics and Chaining
 
     *** Prerequisites
 
@@ -33,7 +24,7 @@
     - No Prerequisites
 
     Not Needed:
-    - TO FILL
+    - No Prerequisites
 
     Installation:
   - Available by default with coq
@@ -43,9 +34,11 @@
 
 
 
-(** ** 1. Chaining Tactics Linearly
+(** ** 1. Introduction to Chaining
 
-    *** 1.1 Basic Chaining *)
+*)
+
+  Require Import Lia.
 
   Section Chaining.
   Context (A B C D E F : Type).
@@ -127,9 +120,9 @@
   Qed.
 
 
-(** *** 1.2 Chaining Selectively on Subgoals
+(** ** 2 Chaining Selectively on Subgoals
 
-    **** 1.2.1 Basics
+    *** 2.1 Basics
 
     Chaining tactics with [tac1 ; tac2] applies the tatic [tac2] to all the subgoals created by [tac1].
     Yet, it is not always subtle enough as different subgoals can require
@@ -180,7 +173,7 @@
   Qed.
 
 
-(** **** 1.2.2 Ignoring Subgoals when Chaining
+(** *** 2.2 Ignoring Subgoals when Chaining
 
     The construction [tac ; [tac1 | ... | tacn] requires a tactic per subgoal.
     Yet, in some cases, before continuing the common proof, an action is needed
@@ -270,7 +263,7 @@
   Qed.
 
 
-(** **** 1.2.3 Chaining on a Range of Sugoals
+(** *** 2.3 Chaining on a Range of Sugoals
 
     It often happens that we have several subgoals, for which we want to apply
     the same tactic, or do nothing.
@@ -293,14 +286,16 @@
       - left; left. assumption.
     Qed.
 
-(** Consequently, we would like to either apply [assumption] on the first three goals
-    before dealing with the last one; or using [left; left] first on the last goal.
+(** Consequently, we would like to either apply [assumption] on the first to
+    get rid of the trivial goals before tackling the last one.
 
-    There is two facilities to do that:
-    - 1. use the notation [only m-n,..., p-q: tac], that applies [tac] to the ranges of
+    There is three facilities to do that, we can:
+    - 1. Use the notation [only m-n,..., p-q: tac], that applies [tac] to the ranges of
       sugoals [n-m], ..., and [p-q]
-    - 2. use the [..] notation to apply a tactic to all the subgoal until the
-         nest specified one like in [ [tac1 | tac2 .. | tack | tac n ]].
+    - 2. Use the [..] notation to apply a tactic to all the subgoal until the
+         nest one specified like in [ [tac1 | tac2 .. | tack | tac n ]].
+    - 3. Use the combinator [try tac] that tries to apply [tac] to all the
+         subgoals, and it succeeds if no progress is possible
 *)
 
     Goal forall (a : A), D.
@@ -309,25 +304,29 @@
     Qed.
 
     Goal forall (a : A), D.
-      intros a . apply up; [ assumption .. | ].
+      intros a. apply up; [ assumption .. | ].
       left; left. assumption.
     Qed.
 
-(** Or alternatively:
+    Goal forall (a : A), D.
+      intros a. apply up; try assumption.
+      left; left. assumption.
+    Qed.
+
+    (* try always succeeds *)
+    Goal forall (a : A), D.
+      intros a. apply up; try fail.
+    Abort.
+
+(** Note that in this very particular case, we could have used first [left; left]
+    on the last goal then applied [assumption] everywhere, but it is not a good
+    idea in the facing case, we can hardly predict how difficult will be the last goal.
 *)
-
-    Goal forall (a : A), D.
-      intros a. apply up; only 4: (left; left) ; assumption.
-    Qed.
-
-    Goal forall (a : A), D.
-      intros a. apply up; [.. | left; left]; assumption.
-    Qed.
 
   End Range.
 
 
-(** *** 1.3 Chaining is actually backtracking
+(** ** 3 Chaining is actually backtracking
 
     A substiltiy with chaining tactics is that [tac1 ; tac2] does not only
     chain tactics together, applying [tac2] on the subgoals created by [tac1],
@@ -393,15 +392,13 @@
 
 
 
-(** ** 2. Combining Tactics
+(** ** 4. Repeating Tactics
 
     In the previous section, we have explained how to chain tactics linearly so
     that they excute one after the other, on respectively created subgoals.
     While this is already very practical, in some cases, we need a bit more
     freedom like to be able to repeat tactics, or to try a set of tactics.
     This is what we discuss in this section.
-
-    *** 2.1 Repeating Tactics
 
     Consider the following example of section 1, that has ~25 interactive steps,
     6 sub-proofs and is 10 lines long, even though it is a fairly simple proof.
@@ -543,31 +540,3 @@ Goal A -> B -> C -> D -> E -> F.
 Abort.
 
 End Chaining.
-
-
-
-(* More to talk about
-
-(* 1. Chaining *)
-
-  (* 1.1 basic *)
-  ;
-  (* 1.2 subgoals *)
-  [ | | .. ] / only
-  (* 1.3 Backtracking  *)
-
-(* 2. Branching and else *)
-
-  (* 2.1 Looping *)
-  do // repeat
-  (* 2.2 Branching *)
-  - try / triif
-  - first / solve
-
-- once // exactly_one
-- abstract
-- gfail
-- timeout // progress
-
-
-*)
