@@ -192,8 +192,9 @@
     - apply fCF; assumption.
   Qed.
 
-(** This is possible by using the [idtac s] tactic that does nothing but printing [s],
-    or simply by leaving the expected tactic spot empty.
+(** This is possible by either:
+    - 1. leaving the tactic spot empty
+    - 2. using the [idtac] tactic that does nothing
 
     This enables to flatten, the structure of the proof, yielding a much more
     natural proof structure:
@@ -201,7 +202,7 @@
 
   Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
     intros fAD fBE fCF p. destruct p as [[a b] c].
-    constructor; [constructor| idtac "hello world"].
+    constructor; [constructor|].
     - apply fAD; assumption.
     - apply fBE; assumption.
     - apply fCF; assumption.
@@ -209,7 +210,7 @@
 
   Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
     intros fAD fBE fCF p. destruct p as [[a b] c].
-    constructor; [constructor|].
+    constructor; [constructor| idtac "hello world"].
     - apply fAD; assumption.
     - apply fBE; assumption.
     - apply fCF; assumption.
