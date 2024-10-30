@@ -55,8 +55,8 @@
 
     For instance, consider the second subgoal of the proof below.
     Knowing [a : A] and [b : B], we have to prove [(A * B) + (A * C) + (A * D)],
-    and hence would like to bring ourself back to proving [A * B].
-    While this correponds to one simple logical step, it actually gets decomposed
+    and hence would like to bring ourselves back to proving [A * B].
+    While this corresponds to one simple logical step, it actually gets decomposed
     into two tactics applied in a row [left. right.].
 *)
 
@@ -73,7 +73,7 @@
       -- assumption.
   Qed.
 
-(** To recover the correspondance between interactive steps and logical steps,
+(** To recover the correspondence between interactive steps and logical steps,
     we would like to be able to chain tactics, so that in the example [left]
     and [right] are excuted together, one after the other.
     This is possible using the notation [tac1 ; tac2] that is going to execute
@@ -96,11 +96,11 @@
       -- assumption.
   Qed.
 
-(** The really strength of chaining tactics appears when different subgoals are
+(** The real strength of chaining tactics appears when different subgoals are
     created by a tactic, e.g [tac1], that requires the same kind of proofs, e.g. [tac2].
     Indeed, in such cases, by chaining tactics [tac1] to [tac2], we can apply
     [tac2] on all subgoals created by [tac1] at once, and do not have
-    to repeat [tac2] for each subgoals.
+    to repeat [tac2] for each subgoal.
 
     In general, this enables to greatly factorise redundant code, while flattening
     the code that is needing less sub-proofs / bullets.
@@ -124,9 +124,9 @@
 
     *** 2.1 Basics
 
-    Chaining tactics with [tac1 ; tac2] applies the tatic [tac2] to all the subgoals created by [tac1].
+    Chaining tactics with [tac1 ; tac2] applies the tactic [tac2] to all the subgoals created by [tac1].
     Yet, it is not always subtle enough as different subgoals can require
-    slightly different kind of reasonning.
+    slightly different kind of reasoning.
 
     For instance, consider the example below where we need to apply different functions
     to each subgoal, namely applying [fAC] in one case and [fBD] in the other case:
@@ -157,13 +157,13 @@
   Qed.
 
 (** This is particularly practical when the subgoals created require
-    a slitglty different logical step, before resuming the same proof script.
-    In which case, we can use goal selection to do a differantiated reasoning
+    a slightly different logical step, before resuming the same proof script.
+    In which case, we can use goal selection to do a differentiated reasoning
     step before resuming regular chaining.
 
     For instance, in the proof above, in both case, we conclude the proof
     with [assumption] after applying [fAC] or [fBC].
-    We can hence, further chain [ [apply fAC | apply fBD] ] with [assumption]
+    We can hence further chain [ [apply fAC | apply fBD] ] with [assumption]
     to provide a significantly shorten proof:
 *)
 
@@ -194,8 +194,8 @@
     - apply fCF; assumption.
   Qed.
 
-(** This is possible by using the [idtac s] tactic that does noting but printing [s],
-    or simply by leaving the expected tactic spot emppty.
+(** This is possible by using the [idtac s] tactic that does nothing but printing [s],
+    or simply by leaving the expected tactic spot empty.
 
     This enables to flatten, the structure of the proof, yielding a much more
     natural proof structure:
@@ -226,7 +226,7 @@
     constructor; [constructor |]; [apply fAD | apply fBE | apply fCF]; assumption.
   Qed.
 
-(** However, as you can see it does not necessarily makes the proof clearer.
+(** However, as you can see it does not necessarily make the proof clearer.
     Chaining is great but be careful not to overuse as it can create long and
     unreadable proof, that no longer reflect logical steps.
 
@@ -252,7 +252,7 @@
     destruct x; [apply fBD | apply fCD] ; assumption.
   Qed.
 
-(** Note, that is is also possible with the notation [only n: tac] that applies a
+(** Note, that it is also possible with the notation [only n: tac] that applies a
     tactic only to the n-th goal.
  *)
 
@@ -289,9 +289,9 @@
 (** Consequently, we would like to either apply [assumption] on the first to
     get rid of the trivial goals before tackling the last one.
 
-    There is three facilities to do that, we can:
+    There are basically three facilities to do that, we can:
     - 1. Use the notation [only m-n,..., p-q: tac], that applies [tac] to the ranges of
-      sugoals [n-m], ..., and [p-q]
+      subgoals [n-m], ..., and [p-q]
     - 2. Use the [..] notation to apply a tactic to all the subgoal until the
          nest one specified like in [ [tac1 | tac2 .. | tack | tac n ]].
     - 3. Use the combinator [try tac] that tries to apply [tac] to all the
@@ -328,21 +328,21 @@
 
 (** ** 3 Chaining is actually backtracking
 
-    A substiltiy with chaining tactics is that [tac1 ; tac2] does not only
+    A subtility with chaining tactics is that [tac1 ; tac2] does not only
     chain tactics together, applying [tac2] on the subgoals created by [tac1],
     but also does backtracking.
 
     If the tactic [tac1] makes choice out of several possible ones, e.g. which
     constructor to apply, and [tac2] fails with this choice, then [tac1; tac2]
     will backtrack to [tac1], make the next possible choice and try [tac2] again.
-    This until a choice makes [tac1 ; tac2] succede, or that all the possible
+    This until a choice makes [tac1 ; tac2] succeed, or that all the possible
     choice for [tac1] are exhausted, in which case [tac1 ; tac2] fails.
 
-    This is the case of the tactic [constructor] that tries to applies the first
+    This is the case of the tactic [constructor] that tries to apply the first
     constructor of an inductive type by default, and will backtrack to try
     the second constructor and so on if the rest of the proof failed.
 
-    This enables to write more conscise proofs as we can write the same script
+    This enables to write more concise proofs as we can write the same script
     whatever the constructor we need to apply to keep going and complete the proof.
 
     Consider, the following proof where we have to choose between proving the
@@ -359,9 +359,9 @@
 
 (** Using [constructor], we can replace [left] and [right] to get the same
     proof script for the first and second goal, as:
-    - for the first goal, it will try [left] continue and solve the goal
-    - for the second goal, it will try [left] continue the proof and fail,
-      hence backtrack and try [right], continue the proof and succed
+    - for the first goal, it will try [left], continue with [assumption] and solve the goal
+    - for the second goal, it will try [left], continue with [assumption] and fail,
+      hence backtrack and try [right], continue the proof and succded
 *)
 
   Goal A * (B + C + D) -> A * B + A * C + A * D.
@@ -387,7 +387,7 @@
 
 (** Using the backtracking ability of [;] to make the right choice out of
     several possible choices is a simple but very powerful method that enables us
-    to write short but polyvalent proof scripts.
+    to write short but versatile proof scripts.
 *)
 
 
@@ -395,7 +395,7 @@
 (** ** 4. Repeating Tactics
 
     In the previous section, we have explained how to chain tactics linearly so
-    that they excute one after the other, on respectively created subgoals.
+    that they execute one after the other, on respectively created subgoals.
     While this is already very practical, in some cases, we need a bit more
     freedom like to be able to repeat tactics, or to try a set of tactics.
     This is what we discuss in this section.
@@ -429,7 +429,7 @@
 
 (** That is already nice, but the proof is still involved conceptually.
     Not only we have to repeat [constructor] three times, but we have to
-    think by ourself when writing the proof that for the third case we only need
+    think by ourselves when writing the proof that for the third case we only need
     [constructor] once and not twice, and hence write [only 1-2: constructor].
 
 
@@ -438,7 +438,7 @@
     with [constructor; assumption].
 
     This is particular annoying as it does not scale very well.
-    Consider, this small varians with only two more types to distribute on.
+    Consider, this small variant with only two more types to distribute on.
     The proof and its overhead then gets much greater, even though it is
     conceptually as simple as before.
 *)
@@ -484,11 +484,11 @@
 
       Consider the example above. [repeat constructor; assumption] manages to
       solve the subgoals because it tries to apply [constructor] as much as it
-      can, then to solve to solve the subgoals created by [assumption] and if it
-      fails bracktracks to make other choices.
+      can, then to solve the subgoals created by [assumption] and if it
+      fails backtracks to make other choices.
       If you stop linking them, then [repeat constructor] will just apply
       contructor as much as it can; getting us to prove [A * B] then [A] and [B]
-      in every case, getting us stuck.
+      in each case, getting us stuck.
       In other words [repeat constructor; assumption] is not the same as
       [repeat constructor. all: assumption]:
 *)
@@ -524,9 +524,8 @@
 (** Such issues can be particularly annoying getting you stuck in an unprovable
     goal, providing the wrong witness as the above that would impact the rest
     of the proof, or solve wrongly a metavariable. Once should hence be careful.
-*)
 
-(** The [repeat] combiantor also comes as a variant named [do n tac] that enables
+    The [repeat] combinator also comes as a variant named [do n tac] that enables
     to apply [tac] exactly [n] times, and if it cannot do it exactly [n] times
     fails:
 *)
