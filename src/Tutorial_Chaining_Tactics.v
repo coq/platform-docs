@@ -1,24 +1,24 @@
 (** * Tutorial: Chaining Tactics
 
-*** Main contributors
+  *** Main contributors
 
-   - Thomas Lamiaux
+    - Thomas Lamiaux
 
-    *** Summary
+  *** Summary
 
-    In this tutorial, we explain how to chain tactics together to write more concise code.
+  In this tutorial, we explain how to chain tactics together to write more concise code.
 
-    *** Table of content
+  *** Table of content
 
-        - 1. Introduction to Chaining
-        - 2. Chaining Selectively on Subgoals
-          - 2.1 Basics
-          - 2.2 Ignoring Subgoals when Chaining
-          - 2.3 Chaining on a Range of Sugoals
-        - 3. Chaining is actually backtracking
-        - 4. Repeating Tactics and Chaining
+      - 1. Introduction to Chaining
+      - 2. Chaining Selectively on Subgoals
+        - 2.1 Basics
+        - 2.2 Ignoring Subgoals when Chaining
+        - 2.3 Chaining on a Range of Sugoals
+      - 3. Chaining is actually backtracking
+      - 4. Repeating Tactics and Chaining
 
-    *** Prerequisites
+  *** Prerequisites
 
     Needed:
     - No Prerequisites
@@ -173,7 +173,7 @@
 
 (** *** 2.2 Ignoring Subgoals when Chaining
 
-    The construction [tac ; [tac1 | ... | tacn] requires a tactic per subgoal.
+    The construction [tac ; [tac1 | ... | tacn] ] requires a tactic per subgoal.
     Yet, in some cases, before continuing the common proof, an action is needed
     for only one subgoal.
 
