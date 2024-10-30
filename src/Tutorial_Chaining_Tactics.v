@@ -210,7 +210,7 @@
 
   Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
     intros fAD fBE fCF p. destruct p as [[a b] c].
-    constructor; [constructor| idtac "hello world"].
+    constructor; [constructor| idtac].
     - apply fAD; assumption.
     - apply fBE; assumption.
     - apply fCF; assumption.
