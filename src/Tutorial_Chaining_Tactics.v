@@ -140,10 +140,8 @@
   Qed.
 
 (** Yet, we would still like to be able to chain tactics together to factorise code and make it clear.
-    It is possible by combining the [tac ;] notation with the notation
-    [ [tac1 | ... | tacn] ] with one tactic per subgoal created by [tac].
-    The tactic [ tac; [tac1 | ... | tacn] ] will then apply [taci] to the
-    i-th subgoal created by [tac].
+    It is possible by using the notation [ tac; [tac1 | ... | tacn] ] that takes exactly
+    a tactic per subgoal created by [tac], and apply [taci] on the i-th subgoal
 
     This enables us to chain [constructor] with the [apply] by writing
    [ constructor; [apply fAC | apply fBD] ].
