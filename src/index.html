@@ -9,15 +9,19 @@
   <body>
     <h1>Coq Platform Docs - Demo</h1>
 
-    <div style="text-align:left">
+    <!-- <div style="text-align:left">
         <img src="images/github-mark.png" height="25" style="border:0px">
         <a href="https://github.com/coq/platform-docs">
             View Coq-Platform-Doc
         </a>
         <img src="images/github-mark.png" height="25" style="border:0px">
-    </div>
+    </div> -->
 
-    <h2 id="about">About</h2>
+    <h2 id="project">The Project</h2>
+
+    <h3 id="about">Coq Platform Docs</h3>
+
+
     <p><a href="https://coq.inria.fr"><img src="images/coq-community-logo.png" align="right" width="100"></a></p>
     <p>
     This is a demo page for the Coq Platform Docs.
@@ -29,22 +33,44 @@
     one needs a text editor able to interact with Coq (e.g. CoqIDE, emacs with
     Proof General, vim with CoqTail, vscode with vscoq).
     </p>
-    <p>
-    The documentation is working with the latesest version of <a href="https://github.com/coq/platform/blob/main/doc/README~8.19~2024.10.md">Coq Platform</a>, i.e 8.19.2.
-    It is planned in the future to index the documentation and the Coq Platform's version and to have a dev version of it, 
-    so that users can find docmentation working for their version of the Coq and the Platform.
-    It is not the case as of yet, so the documentation it is not guaranteed to work perfectly on other versions of Coq and the Platform, 
-    though most of the content should still be working fine.
-    </p>
 
     <p>
-    For this demo, we are relying on JsCoq1 that only supports Coq up to 8.17.
-    Consequently, it may be failing for some content that need Coq 8.19.
-    We hope to switch soon to JsCoq2.
+    <h3>Some Ressources</h3>
+    <ul>
+      <li>
+        The <a href="https://coq.zulipchat.com/#narrow/stream/437203-Platform-docs">zulip chanel</a>
+        we use to discuss and exchange about the project
+      </li>
+      <li>
+        The associated <a href="https://github.com/coq/ceps/pull/91">Coq Enhacement Proposal</a>
+        describing the project in details
+      </li>
+      <li>
+        The associated <a href="https://github.com/coq/platform-docs">github repository</a>
+      </li>
+    </ul>
     </p>
 
+    <h3>Small Disclamer</h3>
 
-    <h2 id="coq-tut">Coq Tutorials</h2>
+    <p> This is a work in progress, so not everything is working perfectly yet:
+      <ul>
+        <li>
+          In the futur, the documentation is planned to be indexed on the
+          Coq Platform's version, but as of yet, it is only guaranteed to fully work
+          with the latesest version of the <a href="https://github.com/coq/platform/blob/main/doc/README~8.19~2024.10.md">Coq Platform</a> for Coq 8.19.2.
+        </li>
+        <li>
+          The interactive interface is relying on JsCoq1 that only supports Coq up to 8.17
+          so it may fail on some content requiring Coq 8.19.
+          We are working towards switching to JsCoq2.
+        </li>
+      </ul>
+    </p>
+
+    <h2 id="doc">Documentation</h2>
+
+    <h3 id="coq-tut">Coq Tutorials</h3>
     <ul>
       <li>
         Search Tutorial:
@@ -65,8 +91,8 @@
         <a href="Explanation_Template_Polymorphism.v">source code</a>
       </li>
     </ul>
-    
-    <h2 id=eq-tut>Equations tutorials</h2>
+
+    <h3 id=eq-tut>Equations tutorials</h3>
     <ul>
       <li>
         Basics:
