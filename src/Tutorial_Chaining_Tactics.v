@@ -45,13 +45,14 @@
 
   Set Printing Parentheses.
 
-(** By default, each tactic corresponds to one action and one interactive step.
-    Yet, it is not always the case that an action represent one logical step.
-    In practice, it often happens that one logical step gets decomposed into a
-    sequence of tactics, and hence into a sequence of interactive steps.
-    This is not very practical, as it hinders understanding when running a proof.
-    It introduces extra-steps that we do not care about and can be tedious to run,
-    but also makes the logical structure harder to recognize.
+(** In Coq, we prove theorems interactively, applying at each step a tactic
+    that transform the goal, and basically corresponds to applying a logical resonning.
+    Yet, in practice, it often happens that some of the primitive tactics are too low-level,
+    and that a higher-level resoning step we would like to do gets decomposed into
+    a sequence of tactics, and hence of interactive steps.
+    This is not very practical, as it hinders understanding when stepping through a proof.
+    It introduces extra interactive steps that we do not care about and can be tedious to run,
+    but also makes the logical structure of the proof harder to recognize and understand.
 
     For instance, consider the second subgoal of the proof below.
     Knowing [a : A] and [b : B], we have to prove [(A * B) + (A * C) + (A * D)],
@@ -73,9 +74,9 @@
       -- assumption.
   Qed.
 
-(** To recover the correspondence between interactive steps and logical steps,
-    we would like to be able to chain tactics, so that in the example [left]
-    and [right] are excuted together, one after the other.
+(** To recover the correspondence between the interactive steps and the logical steps
+    we have in mind, we would like to be able to chain tactics, so that in the example
+    [left] and [right] are excuted together, one after the other.
     This is possible using the notation [tac1 ; tac2] that is going to execute
     the tactic [tac1], and then [tac2] on all the subgoals created by [tac1].
 
