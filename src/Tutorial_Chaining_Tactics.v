@@ -58,7 +58,7 @@
     Knowing [a : A] and [b : B], we have to prove [(A * B) + (A * C) + (A * D)],
     and hence would like to bring ourselves back to proving [A * B].
     While this corresponds to one simple logical step, it actually gets decomposed
-    into two tactics applied in a row [left. right.].
+    into two tactics applied in a row [left. left.].
 *)
 
   Goal A * (B + C + D) -> A * B + A * C + A * D.
@@ -163,7 +163,7 @@
     For instance, in the proof above, in both case, we conclude the proof
     with [assumption] after applying [fAC] or [fBC].
     We can hence further chain [ [apply fAC | apply fBD] ] with [assumption]
-    to provide a significantly shorten proof:
+    to provide a significantly shorter proof:
 *)
 
   Goal (A -> C) -> (B -> D) -> A * B  -> C * D.
@@ -197,8 +197,8 @@
     - 1. leaving the tactic spot empty
     - 2. using the [idtac] tactic that does nothing
 
-    This enables to flatten, the structure of the proof, yielding a much more
-    natural proof structure:
+    This enables to flatten the code removing the number of nested subgoals to prove,
+    while better reflecting the natural structure of the proof:
 *)
 
   Goal (A -> D) -> (B -> E) -> (C -> F) -> A * B * C -> D * E * F.
@@ -286,14 +286,14 @@
       - left; left. assumption.
     Qed.
 
-(** Consequently, we would like to either apply [assumption] on the first to
+(** Consequently, we would like to apply [assumption] on the first three subgoals to
     get rid of the trivial goals before tackling the last one.
 
     There are basically three facilities to do that, we can:
     - 1. Use the notation [only m-n,..., p-q: tac], that applies [tac] to the ranges of
       subgoals [n-m], ..., and [p-q]
     - 2. Use the [..] notation to apply a tactic to all the subgoal until the
-         nest one specified like in [ [tac1 | tac2 .. | tack | tac n ]].
+         next one specified like in [ [tac1 | tac2 .. | tack | tac n ]].
     - 3. Use the combinator [try tac] that tries to apply [tac] to all the
          subgoals, and it succeeds if no progress is possible
 *)
@@ -427,14 +427,14 @@
     all: constructor; only 1-2: constructor; constructor; assumption.
   Qed.
 
-(** That is already nice, but the proof is still involved conceptually.
-    Not only we have to repeat [constructor] three times, but we have to
+(** That is already nice, but the proof is still convoluted.
+    Not only do we have to repeat [constructor] three times, but we have to
     think by ourselves when writing the proof that for the third case we only need
     [constructor] once and not twice, and hence write [only 1-2: constructor].
 
 
-    This even though, the proof is conceptually simple: select the appropriate
-    subtype like [A * C] to prove depending on our case, and prove it
+    This, even though, the proof is conceptually simple: depending on our case
+    select the appropriate subtype to prove, e.g. [A * C], and prove it
     with [constructor; assumption].
 
     This is particular annoying as it does not scale very well.
@@ -522,8 +522,9 @@
   Abort.
 
 (** Such issues can be particularly annoying getting you stuck in an unprovable
-    goal, providing the wrong witness as the above that would impact the rest
-    of the proof, or solve wrongly a metavariable. Once should hence be careful.
+    goal, providing the wrong witness or wrongly unifying a metavariable,
+    impact the rest of the proof and getting you stuck latter on.
+    Once should hence be careful when it comes to using tactics combinator like [repeat].
 
     The [repeat] combinator also comes as a variant named [do n tac] that enables
     to apply [tac] exactly [n] times, and if it cannot do it exactly [n] times
