@@ -38,9 +38,7 @@
 
 *)
 
-  Require Import Lia.
-
-  Section Chaining.
+Section Chaining.
   Context (A B C D E F : Type).
 
   Set Printing Parentheses.
