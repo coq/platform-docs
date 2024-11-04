@@ -502,8 +502,7 @@ Section Chaining.
     - Fail assumption.
   Abort.
 
-(***
-    - 2. [repeat] will apply a tactic as much as possible, it can be more than what you expect
+(** - 2. [repeat] will apply a tactic as much as possible, it can be more than what you expect
 
       Consider proving the same goal as before but with [A] instantiated to [nat].
       You would expect that in both cases, [repeat constructor] gets you into proving
