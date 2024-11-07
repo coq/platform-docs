@@ -20,9 +20,9 @@
     - 1.1 The syntactic guard condition is limited
     - 1.2 Well-founded recursion
     2. Well-founded recursion and Equations
-      2.1 Using a measure
-      2.2 Using a lexicographic order
-      2.3 Using a custom well-founded relation
+      - 2.1 Using a measure
+      - 2.2 Using a lexicographic order
+      - 2.3 Using a custom well-founded relation
   - 3. Different tricks to work with well-founded recursion
     - 3.1 The inspect method
     - 3.2 Improving recursion hypotheses
