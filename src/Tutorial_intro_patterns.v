@@ -2,7 +2,7 @@
 
   *** Main contributors
 
-    - Thomas Lamiaux
+    - Thomas Lamiaux, Pierre Rousselin
 
   *** Summary
 
