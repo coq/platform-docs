@@ -265,7 +265,7 @@ Qed.
 
 (** ** 4. Simplifying Equalities 
 
-  It is also very common that we have an equality as to introduce .
+  It is also very common that we have an equality to introduce .
   Most often, we want to simplify this equality using [injection] then rewrite 
   by it. 
 *) 
@@ -291,7 +291,7 @@ Qed.
 
 (** Another way of simplifying an equality is when it is absurd like [S n = 0]
     in which case we can prove the goal automatically using [discriminate].
-    This is also possible autimatically thanks to the [=] pattern:
+    This is also possible automatically thanks to the [=] pattern:
 *)
 
 Goal forall n, S n = 0 -> False.
@@ -301,13 +301,89 @@ Qed.
 
 
 
-(** ** 5. Applying Lemmas *)
+(** ** 5. Applying Lemmas 
 
+  A situation that often arises when proving properties is to we have an
+  hypothesis to introduce that we need to transform by applying lemmas to it
+  before being able to use it.
 
-Theorem app_eq_unit {A} (x y:list A) (a:A) :
-    x ++ y = [a] -> x = [] /\ y = [a] \/ x = [a] /\ y = [].
+  For instance, consider the following example where we know that [length l1 = 0].
+  To conclude that [l1 ++ l2 = l2, we must prove that [l1 = []] by applying 
+  [length_zero_iff_nil] to [length l1 = 0], then rewriting it:
+*)
+
+Goal forall A (l1 l2 : list A), length l1 = 0 -> l1 ++ l2 = l2.
 Proof.
-  destruct x; cbn.
-  - intros ->. left. easy.
-  - intros [= -> [-> ->]%app_eq_nil]. right. easy.
+  intros A l1 l2 H. apply length_zero_iff_nil in H. rewrite H. cbn. reflexivity. 
+Qed.
+
+(** To help us do this, there is an intro pattern [?x/H] that introduce the
+    variable [x] and apply the lemma [H] to it. We can hence write 
+    [intros H%length_zero_iff_nil] rather than [intros H. apply length_zero_iff_nil in H].
+*)
+
+Goal forall A (l1 l2 : list A), length l1 = 0 -> l1 ++ l2 = l2.
+Proof.
+  intros A l1 l2 H%length_zero_iff_nil. rewrite H. cbn. reflexivity. 
+Qed.
+
+(** We can then further combine it with rewrite patterns to simplify the proof: 
+*)
+
+Goal forall A (l1 l2 : list A), length l1 = 0 -> l1 ++ l2 = l2.
+Proof.
+  intros A l1 l2 ->%length_zero_iff_nil. cbn. reflexivity. 
+Qed.
+
+(** For a more concrete example of how intro patterns can be useful, consider
+    the following example asserting that the concatenation of two list has one
+    element if and only if one has one element and the other is empty. 
+
+    In the first direction, we get an equality [a1::l1++l2 = [a]] that we have
+    to simplify to [a1 = a] and [l1 ++ l2 = []] with injection, then to [l1 = []]
+    and [l2 = []] and rewrite. 
+    This creates a load overhead as introduction and operations are duplicated,
+    and we have to introduce fresh names that do not matters in the end.
+    Similarly, in the converse direction.
+*)
+
+Goal forall {A} (l1 l2 : list A) (a : A),
+    l1 ++ l2 = [a] <-> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
+Proof.
+  intros A l1 l2 a. split. 
+  + destruct l1; cbn.
+    - intros H. rewrite H. left. split; reflexivity.
+    - intros H. injection H. intros H1 H2. rewrite H2. apply app_eq_nil in H1. 
+      destruct H1 as [H3 H4]. rewrite H3, H4. right. split; reflexivity.
+  + intros H. destruct H as [H | H]. 
+    - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
+    - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
+Qed.
+
+(** Using intros patterns we can significantly shorten this proof and make it
+    more intuitive, getting rid of tedious manipulations of hypothesis.
+
+    In the first direction and the second case, we can use the intro pattern
+    [[=]] to simplify the equality [a1::l1++l2 = [a]] to [a1 = a] and [l1 ++ l2
+    = []]. We can then rewrite the first equality with [->], and simplify the
+    second equality to [l1 = [] /\ l2 = []] thanks to [%app_eq_nil]. Finally, we
+    can rewrite both equality using [->], giving us the intro pattern [intros [=
+    -> [-> ->]%app_eq_nil]].
+
+    In the converse direction, we can use intro patterns to decompose the
+    hypothesis into [[H1 H2 | H1 H2]], and as they are equalities rewrite them
+    with [->]. This gives the intro pattern [intros [[-> ->]| [-> ->]]] that as
+    it can be seen trivialize the goal.
+*)
+
+Goal forall {A} (l1 l2 : list A) (a : A),
+    l1 ++ l2 = [a] <-> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
+Proof.
+  intros A l1 l2 a. split. 
+  + destruct l1; cbn.
+    - intros ->. left. split; reflexivity.
+    - intros [= -> [-> ->]%app_eq_nil]. right. split; reflexivity.
+  + intros [[-> ->]| [-> ->]]. 
+    - cbn. reflexivity.
+    - cbn. reflexivity.
 Qed. 
