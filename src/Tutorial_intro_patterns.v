@@ -6,8 +6,13 @@
 
   *** Summary
 
-  In this tutorial, we explain how to use intro patterns to write more concise code.
+  In this tutorial, we explain how the tactic [intros] and its intro patterns 
+  works enabling us to to introduce variable and at the same the same do operations
+  like pattern-matching or rewriting equations enabling us to write more concise code.
 
+
+  In this tutorial, we explain how the tactic [intros] and its intro patterns 
+  works enabling us to to introduce variable and at the same the same do
   *** Table of content
 
       - 1. Introducing Variables
@@ -33,12 +38,11 @@ From Coq Require Import List.
 Import ListNotations.
 
 
-(** ** 1. Introducing Variables *)
+(** ** 1. Introducing Variables 
 
-(** The basic tactic to introduces variables is [intros]. In its most basic forms
+    The basic tactic to introduces variables is [intros]. In its most basic forms
     [intros x y ... z] will introduce as much variables as mentioned with the 
-    names specified [x], [y], ..., [z]. Note, it will fail if one of the names 
-    is already used.
+    names specified [x], [y], ..., [z], and fail if one of the names is already used.
 *)
 
 Goal forall n m, n < m -> n <= m.
@@ -53,9 +57,8 @@ Abort.
 
 (** It can happen that we have an hypothesis to introduce that is not useful
     to our proof. In this case, rather than introducing it we would rather like
-    to directly forget it. This is possible using the wildcard pattern [_].
-    Note that logically it is not possible to forget an hypothesis that appear 
-    in the conclusion.
+    to directly forget it. This is possible using the wildcard pattern [_], that
+    will introduce and forget a variable that do do not appear in the conclusion.
 *)
 
 Goal forall n m, n = 0 -> n < m -> n <= m.
@@ -68,9 +71,8 @@ Proof.
   Fail intros _ m H.
 Abort.
 
-
 (** In some cases, we do not wish to choose a name and would rather have Coq to
-    choose a name for us. This is possible with the [?] pattern. 
+    choose a name for us. This is possible with the [?] pattern.
 *)
 
 Goal forall n m, n < m -> n <= m.
@@ -83,11 +85,10 @@ Abort.
     generated names, and hence break the proof. This can happen very fast.
     Auto-generated names should hence only be used in combination with tactic
     like [assumption] that do not rely on names. 
-*)
 
-(** Similarly, it happens that we want to introduce all the variables, and 
-    do not want to name them. In this case, it possible to simply write [intros]
-    or as an alias [intros **]
+    Similarly, to [?] it happens that we want to introduce all the variables 
+    automatically and without naming them. This is possible by simply writing 
+    [intros] or as an alias [intros **].
 *)
 
 Goal forall n m, n < m -> n <= m.
@@ -100,9 +101,9 @@ Proof.
   intros **.
 Abort.
 
-(** As a variant [intros *] will introduce all the variables that do no appear 
-    dependently in the rest of the goal. In this example, it will hence introduce
-    [n] and [m] but not [n < m] as it depends on [n] and [m]. 
+(** As a variant of [intros], [intros *] will introduce all the variables that
+    do no appear dependently in the rest of the goal. In this example, it will
+    introduce [n] and [m] but not [n < m] as it depends on [n] and [m]. 
 *)
 
 Goal forall n m, n < m -> n <= m.
@@ -110,8 +111,8 @@ Proof.
   intros *.
 Abort.
 
-(** It is particularly practical to introduce type variables on which the goal 
-    depends but on wish we do not want to perform any specific action but introduction 
+(** This is particularly practical to introduce type variables that other variables 
+    depends upon, but that we do not want to perform any specific action on but introduction.
  *)
 
 Goal forall P Q, P /\ Q -> Q /\ P.
@@ -119,13 +120,12 @@ Proof.
   intros *. 
 Abort.
 
-  
-(** An important difference between [intros] and [intros ?x] is that [intros] 
-    is to be understood as "introduce as much variables as you see" whereas 
-    [intros ?X] is to be understood as "introduce exactly one variable".
-    [intros] will hence introduce as much variables as possible without 
-    simplifying the goal, whereas [intros ?x] will first compute the head normal 
-    form before trying to introduce a variable.
+(** An important difference between [intros] and [intros ?x] is that [intros]
+    introduce as much variables as possible without simplifying the goal,
+    whereas [intros ?x] will first compute the head normal form before trying to
+    introduce a variable. This difference can be intuitively understood 
+    by considering that [intros ?x] means there is a variable to introduce, 
+    and requires to find it.
 
     For instance, consider the definition that a relation is reflexive. 
 *)
@@ -135,7 +135,7 @@ Definition Reflexive {A} (R : A -> A -> Prop) := forall a, R a a.
 (** If we try to prove that logical equivalence is reflexive by using [intros] 
     then nothing will happen as [Reflexive] is a constant, and it needs to 
     be unfolded for a variable to introduce to appear. 
-    However, as [intros ?x] simplify the goal first, it will succed and progress:
+    However, as [intros ?x] simplifies the goal first, it will succeed and progress:
 *)
 
 Goal Reflexive (fun P Q => P <-> Q).
@@ -143,10 +143,11 @@ Goal Reflexive (fun P Q => P <-> Q).
 Abort.
 
 
+
 (** ** 2. Destructing Variables
 
   When proving properties, it is very common to introduce variables only to
-  pattern-match on them just after, e.g to properties about an inductive type 
+  pattern-match on them just after, e.g to prove properties about an inductive type 
   or simplify an inductively defined function:
 *)
 
@@ -163,9 +164,12 @@ Proof.
   + left. assumption.
 Qed.
   
-(** Consequently, Coq as special intro patterns [ [] ] to introduce and pattern
-    match on a variable at the same time. If the inductive type only has one
-    constructor like [/\], it suffices to list the names of the variables:
+(** To shorten the code, it is possible to do both at the same time using the 
+    intro pattern [ [ x ... y | ... | z ... w ] where [|] enables to separate the 
+    arguments of the different constructors. 
+    For instance, as [/\] 
+
+    If no branches or names are specified, Coq will just use auto-generated names.
 *)
 
 Goal forall P Q, P /\ Q -> Q /\ P.
@@ -174,10 +178,6 @@ Goal forall P Q, P /\ Q -> Q /\ P.
   + assumption.
 Qed.
 
-(** In the general case with several constructors, it suffices to add branches 
-    delimited by [ | ] in the pattern for each constructors:
-*)
-
 Goal forall P Q, P \/ Q -> Q \/ P.
 Proof.
   intros P Q [p | q].
@@ -185,8 +185,15 @@ Proof.
   + left. assumption.
 Qed.
 
-(** Note that destructing over [False] expects nothing no branche as [False] has
-    no constructors, and that it solves the goal automatically:  
+Goal forall P Q, P \/ Q -> Q \/ P.
+Proof.
+  intros P Q [].
+  + right. assumption.
+  + left. assumption.
+Qed.
+
+(** Note that destructing over [False] expects no branches nor names as [False]
+    has no constructors, and that it solves the goal automatically:  
 *)
 
 Goal forall P, False -> P.
@@ -195,52 +202,37 @@ Proof.
 Qed.
 
 (** It is further possible to nest the intro-patterns when inductive type are 
-    nested into each other, e.g. like a sequence of 
+    nested into each other, e.g. like a sequence of the form:
 *)
+
+Goal forall P Q R, (P \/ Q) /\ R -> P /\ R \/ Q /\ R.
+  intros P Q R [[p|q] r].
+  + left. split; assumption.
+  + right. split; assumption.
+Qed.
 
 Goal forall P Q R, P /\ Q /\ R -> R /\ Q /\ P.
   intros P Q R [p [q r]].
 Abort.
 
-(** In practice, two patterns comes up so often that they have dedicated patterns. 
-    The first one is for iterated binary inductive types like [/\]. 
-    Rather than having to destruct recursively  as [ [p [q [r h]]] ], we can 
-    instead simply write [p & q & r & h]: *)
+
+(** Actually, the latter pattern is so common that it has a special intro-pattern.
+    When the goal is for the form [X Op1 Y ... Opk W] where all the binary operation 
+    have one constructor with two arguments like [/\], then it is possible to 
+    introduce the variables as [intros p & q & r & h] rather than by having to 
+    destruct recursively them with [intros [p [q [r h]]] ].
+*)
 
 Goal forall P Q R H, P /\ Q /\ R /\ H -> H /\ R /\ Q /\ P.
 Proof.
   intros * (p & q & r & h). 
 Abort.
 
-(** The second pattern is for inductive types that only have one constructor, 
-    like records. In this case, it is possible to write [(a, b, ..., d)] rather 
-    than [ [a b ... d]]. The interrest is that it enables to preserves [let-in]
-    if there are any:  
-*)
-
-(* Record Foo := {
-  foo1 : nat; 
-  foo2 : nat;
-  foo12 := foo1 + foo2; 
-  foo_inf : foo12 = 10
-}. *)
-
-Inductive Foo := 
-  foo : forall n m, let p := n + m in p = 10 -> Foo.
-
-Goal Foo -> {n & {m | n + m = 10}}.
-Proof. intros (n, m, H). Abort.
-
-Goal Foo -> {n & {m | n + m = 10}}.
-Proof. intros [n m H]. Abort.
-
-(* TO FIX !!! => do not match refman ! *)
 
 
 (** ** 3. Rewriting Lemmas *)
 
-(** It is common when introducing variables that we introduce an equality that 
-    we wish to later rewrite: 
+(** It is also very common to introduce an equality that we wish to later rewrite by: 
 *)
 
 Goal forall n m, n = 0 -> n + m = m. 
@@ -248,50 +240,62 @@ Proof.
   intros n m H. rewrite H. cbn. reflexivity.
 Qed.
 
-(** It is so common that there is an intro patterns dedicated to that.
-    Writing [->] or [<-] will introduce [H] then rewrite it and in the context,
-    then clear it from the context. 
+(** It is possible to do so both at the time using the intro patterns [->] or
+    [<-] that will introduce [H], rewrite it in the goal and context, then clear it. 
+    It has the advantage to be much more concise, and save ourself from introducing 
+    a name for [n = 0] that we fundamentally do not really care about: 
 *)
+
+Goal forall n m, n = 0 -> n + m = m. 
+Proof.
+  intros n m ->. cbn. reflexivity.
+Qed.
+
+Goal forall n m, 0 = n -> n + m = m. 
+Proof.
+  intros n m <-. cbn. reflexivity.
+Qed.
 
 Goal forall n m p, n + p = m -> n = 0 -> p = m. 
 Proof.
   intros n m p H ->. cbn in *. apply H.
 Qed.
 
-Goal forall n m p, n + p = m -> 0 = n -> p = m. 
-Proof.
-  intros n m p H <-. cbn in *. apply H.
-Qed.
+
 
 (** ** 4. Simplifying Equalities 
 
-  It is also very common that we have an equality to introduce .
-  Most often, we want to simplify this equality using [injection] then rewrite 
-  by it. 
+  Rewriting automatically equalities is practical but sometimes we need to 
+  first simplify them with [injection] before being able to rewrite by them.
+  For instance in the example below, we have an equality [S n = 1] but 
+  as it is [n] that appear in the conclusion, we first need to simplify the equation
+  with [injection] to [n = 0] before being able to rewrite it.
 *) 
 
-Goal forall n m, S n = S 0 -> n + m = m.
+Goal forall n m, S n = 1 -> n + m = m.
   intros n m H. injection H. intros H'. rewrite H'. cbn. reflexivity.
 Qed.
 
-(** This is possible by using the [ [=] ] pattern that will introduce 
-    an equality then simplify it with [injection]:
- *)
+(** To do this automatically, there is a dedicated intro pattern [ [=] ]
+    that will introduce the equalities obtained simplification by [injection].
+*)
 
 Goal forall n m, S n = S 0 -> n + m = m.
   intros n m [=]. rewrite H0. cbn. reflexivity.
 Qed.
 
 (** It is then possible to combine it with the intro pattern for rewriting to
-    directly simplify the goal: *)
+    directly simplify the goal, giving us a particular simple proof.
+*)
 
 Goal forall n m, S n = S 0 -> n + m = m.
   intros n m [= ->]. cbn. reflexivity.
 Qed.
 
-(** Another way of simplifying an equality is when it is absurd like [S n = 0]
-    in which case we can prove the goal automatically using [discriminate].
-    This is also possible automatically thanks to the [=] pattern:
+(** Another particularly useful way of simplifying an equality is to deduce the 
+    goal is true from an absurd equation like [S n = 0].
+    This is usually done by introducing variables then using [discriminate], 
+    but can also be automatically done thanks to the intro pattern [=]:
 *)
 
 Goal forall n, S n = 0 -> False.
@@ -304,12 +308,12 @@ Qed.
 (** ** 5. Applying Lemmas 
 
   A situation that often arises when proving properties is to we have an
-  hypothesis to introduce that we need to transform by applying lemmas to it
+  hypothesis to introduce that we need to first transform by applying lemmas to it
   before being able to use it.
 
   For instance, consider the following example where we know that [length l1 = 0].
-  To conclude that [l1 ++ l2 = l2, we must prove that [l1 = []] by applying 
-  [length_zero_iff_nil] to [length l1 = 0], then rewriting it:
+  To conclude that [l1 ++ l2 = l2, we must first prove that [l1 = []] by applying 
+  [length_zero_iff_nil] to [length l1 = 0], then rewrite it:
 *)
 
 Goal forall A (l1 l2 : list A), length l1 = 0 -> l1 ++ l2 = l2.
@@ -335,16 +339,16 @@ Proof.
   intros A l1 l2 ->%length_zero_iff_nil. cbn. reflexivity. 
 Qed.
 
-(** For a more concrete example of how intro patterns can be useful, consider
-    the following example asserting that the concatenation of two list has one
-    element if and only if one has one element and the other is empty. 
+(** For a more concrete example, consider the assertion that the concatenation of
+    two list has one element if and only if one has one element and the other is empty. 
 
     In the first direction, we get an equality [a1::l1++l2 = [a]] that we have
-    to simplify to [a1 = a] and [l1 ++ l2 = []] with injection, then to [l1 = []]
-    and [l2 = []] and rewrite. 
-    This creates a load overhead as introduction and operations are duplicated,
-    and we have to introduce fresh names that do not matters in the end.
-    Similarly, in the converse direction.
+    to simplify to [a1 = a] and [l1 ++ l2 = []] with [injection], then to [l1 = []]
+    and [l2 = []] with [app_eq_nil], before rewrite them. 
+    This creates a lot over overhead as introduction and operations like destruction,
+    simplification and rewriting has to be done separately.
+    Further, at every step we have to introduce fresh names that do not
+    really matters in the end.
 *)
 
 Goal forall {A} (l1 l2 : list A) (a : A),
