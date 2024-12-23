@@ -13,8 +13,8 @@
       - 1. Introducing Variables
       - 2. Destructing Variables
       - 3. Rewriting and Injection
-      - 3. Applying Lemma
-      - 4.
+      - 4. Simplifying Equalities 
+      - 5. Applying Lemmas
 
   *** Prerequisites
 
@@ -109,6 +109,16 @@ Goal forall n m, n < m -> n <= m.
 Proof.
   intros *.
 Abort.
+
+(** It is particularly practical to introduce type variables on which the goal 
+    depends but on wish we do not want to perform any specific action but introduction 
+ *)
+
+Goal forall P Q, P /\ Q -> Q /\ P.
+Proof.
+  intros *. 
+Abort.
+
   
 (** An important difference between [intros] and [intros ?x] is that [intros] 
     is to be understood as "introduce as much variables as you see" whereas 
@@ -133,74 +143,165 @@ Goal Reflexive (fun P Q => P <-> Q).
 Abort.
 
 
+(** ** 2. Destructing Variables
 
-(** ** 2. Destructing Variables *)
+  When proving properties, it is very common to introduce variables only to
+  pattern-match on them just after, e.g to properties about an inductive type 
+  or simplify an inductively defined function:
+*)
 
-(* constructor *)
-Definition and_comm : forall P Q, P /\ Q -> Q /\ P.
-  intros P Q [p q]. split.
-  + exact q.
-  + exact p.
+Goal forall P Q, P /\ Q -> Q /\ P.
+  intros P Q x. destruct x. split.
+  + assumption.
+  + assumption.
 Qed.
 
+Goal forall P Q, P \/ Q -> Q \/ P.
+Proof.
+  intros P Q x. destruct x.
+  + right. assumption.
+  + left. assumption.
+Qed.
+  
+(** Consequently, Coq as special intro patterns [ [] ] to introduce and pattern
+    match on a variable at the same time. If the inductive type only has one
+    constructor like [/\], it suffices to list the names of the variables:
+*)
 
+Goal forall P Q, P /\ Q -> Q /\ P.
+  intros P Q [p q]. split.
+  + assumption.
+  + assumption.
+Qed.
 
+(** In the general case with several constructors, it suffices to add branches 
+    delimited by [ | ] in the pattern for each constructors:
+*)
 
-(* disjunction *)
-Definition or_comm : forall P Q, P \/ Q -> Q \/ P.
+Goal forall P Q, P \/ Q -> Q \/ P.
 Proof.
   intros P Q [p | q].
-  + right. exact p.
-  + left. exact q.
+  + right. assumption.
+  + left. assumption.
 Qed.
 
+(** Note that destructing over [False] expects nothing no branche as [False] has
+    no constructors, and that it solves the goal automatically:  
+*)
+
+Goal forall P, False -> P.
+Proof.
+  intros P [].
+Qed.
+
+(** It is further possible to nest the intro-patterns when inductive type are 
+    nested into each other, e.g. like a sequence of 
+*)
+
+Goal forall P Q R, P /\ Q /\ R -> R /\ Q /\ P.
+  intros P Q R [p [q r]].
+Abort.
+
+(** In practice, two patterns comes up so often that they have dedicated patterns. 
+    The first one is for iterated binary inductive types like [/\]. 
+    Rather than having to destruct recursively  as [ [p [q [r h]]] ], we can 
+    instead simply write [p & q & r & h]: *)
+
+Goal forall P Q R H, P /\ Q /\ R /\ H -> H /\ R /\ Q /\ P.
+Proof.
+  intros * (p & q & r & h). 
+Abort.
+
+(** The second pattern is for inductive types that only have one constructor, 
+    like records. In this case, it is possible to write [(a, b, ..., d)] rather 
+    than [ [a b ... d]]. The interrest is that it enables to preserves [let-in]
+    if there are any:  
+*)
+
+(* Record Foo := {
+  foo1 : nat; 
+  foo2 : nat;
+  foo12 := foo1 + foo2; 
+  foo_inf : foo12 = 10
+}. *)
+
+Inductive Foo := 
+  foo : forall n m, let p := n + m in p = 10 -> Foo.
+
+Goal Foo -> {n & {m | n + m = 10}}.
+Proof. intros (n, m, H). Abort.
+
+Goal Foo -> {n & {m | n + m = 10}}.
+Proof. intros [n m H]. Abort.
+
+(* TO FIX !!! => do not match refman ! *)
 
 
 (** ** 3. Rewriting Lemmas *)
 
 (** It is common when introducing variables that we introduce an equality that 
-    we wish to later rewite the goal by. *)
+    we wish to later rewrite: 
+*)
+
 Goal forall n m, n = 0 -> n + m = m. 
 Proof.
   intros n m H. rewrite H. cbn. reflexivity.
 Qed.
 
-(** It is so common that there is an intro patterns to do this automatically for us. 
-    Writing [->] or [<-] will introduce [H] then rewrite in the goal then 
-    clear it from the context.  *)
-Goal forall n m, n = 0 -> n + m = m. 
-Proof.
-  intros n m ->. cbn. reflexivity.
-Qed.
-
-Goal forall n m, 0 = n -> n + m = m. 
-Proof.
-  intros n m <-. cbn. reflexivity.
-Qed.
-
-(** It will also rewrite the variable if it is present in the context. *)
+(** It is so common that there is an intro patterns dedicated to that.
+    Writing [->] or [<-] will introduce [H] then rewrite it and in the context,
+    then clear it from the context. 
+*)
 
 Goal forall n m p, n + p = m -> n = 0 -> p = m. 
 Proof.
-  intros n m p H. intros ->. cbn in *. apply H.
+  intros n m p H ->. cbn in *. apply H.
 Qed.
 
-(* injection *)
+Goal forall n m p, n + p = m -> 0 = n -> p = m. 
+Proof.
+  intros n m p H <-. cbn in *. apply H.
+Qed.
+
+(** ** 4. Simplifying Equalities 
+
+  It is also very common that we have an equality as to introduce .
+  Most often, we want to simplify this equality using [injection] then rewrite 
+  by it. 
+*) 
+
 Goal forall n m, S n = S 0 -> n + m = m.
   intros n m H. injection H. intros H'. rewrite H'. cbn. reflexivity.
 Qed.
+
+(** This is possible by using the [ [=] ] pattern that will introduce 
+    an equality then simplify it with [injection]:
+ *)
 
 Goal forall n m, S n = S 0 -> n + m = m.
   intros n m [=]. rewrite H0. cbn. reflexivity.
 Qed.
 
+(** It is then possible to combine it with the intro pattern for rewriting to
+    directly simplify the goal: *)
+
 Goal forall n m, S n = S 0 -> n + m = m.
   intros n m [= ->]. cbn. reflexivity.
 Qed.
 
+(** Another way of simplifying an equality is when it is absurd like [S n = 0]
+    in which case we can prove the goal automatically using [discriminate].
+    This is also possible autimatically thanks to the [=] pattern:
+*)
+
+Goal forall n, S n = 0 -> False.
+Proof.
+  intros n [=].
+Qed.
 
 
-(* 4. Views *)
+
+(** ** 5. Applying Lemmas *)
 
 
 Theorem app_eq_unit {A} (x y:list A) (a:A) :
