@@ -6,13 +6,10 @@
 
   *** Summary
 
-  In this tutorial, we explain how the tactic [intros] and its intro patterns 
-  works enabling us to to introduce variable and at the same the same do operations
-  like pattern-matching or rewriting equations enabling us to write more concise code.
+  In this tutorial, we discuss intro patterns that enables us to introduce
+  hypothesis and to transform them at the same time, e.g. by pattern-matching
+  or rewriting them. This enables us to factorize and to write more direct code. 
 
-
-  In this tutorial, we explain how the tactic [intros] and its intro patterns 
-  works enabling us to to introduce variable and at the same the same do
   *** Table of content
 
       - 1. Introducing Variables
@@ -55,7 +52,7 @@ Proof.
   Fail intros n n H.
 Abort.
 
-(** It can happen that we have an hypothesis to introduce that is not useful
+(** It can happen that we have a hypothesis to introduce that is not useful
     to our proof. In this case, rather than introducing it we would rather like
     to directly forget it. This is possible using the wildcard pattern [_], that
     will introduce and forget a variable that do do not appear in the conclusion.
@@ -165,10 +162,8 @@ Proof.
 Qed.
   
 (** To shorten the code, it is possible to do both at the same time using the 
-    intro pattern [ [ x ... y | ... | z ... w ] where [|] enables to separate the 
-    arguments of the different constructors. 
-    For instance, as [/\] 
-
+    intro pattern [ [ x ... y | ... | z ... w ]. It enables to give a 
+    name of each argument of each constructor separating them by [|].
     If no branches or names are specified, Coq will just use auto-generated names.
 *)
 
@@ -215,12 +210,11 @@ Goal forall P Q R, P /\ Q /\ R -> R /\ Q /\ P.
   intros P Q R [p [q r]].
 Abort.
 
-
-(** Actually, the latter pattern is so common that it has a special intro-pattern.
+(** Actually, the latter pattern is common enough that there is a specific intro-pattern for it.
     When the goal is for the form [X Op1 Y ... Opk W] where all the binary operation 
     have one constructor with two arguments like [/\], then it is possible to 
     introduce the variables as [intros p & q & r & h] rather than by having to 
-    destruct recursively them with [intros [p [q [r h]]] ].
+    destruct them recursively with [intros [p [q [r h]]] ].
 *)
 
 Goal forall P Q R H, P /\ Q /\ R /\ H -> H /\ R /\ Q /\ P.
@@ -307,13 +301,12 @@ Qed.
 
 (** ** 5. Applying Lemmas 
 
-  A situation that often arises when proving properties is to we have an
-  hypothesis to introduce that we need to first transform by applying lemmas to it
-  before being able to use it.
+  A situation that often arises when proving properties is having a hypothesis
+  that we first need to transform before being able to use it.
 
   For instance, consider the following example where we know that [length l1 = 0].
-  To conclude that [l1 ++ l2 = l2, we must first prove that [l1 = []] by applying 
-  [length_zero_iff_nil] to [length l1 = 0], then rewrite it:
+  To conclude that [l1 ++ l2 = l2], we must first prove that [l1 = []] by
+  applying [length_zero_iff_nil] to [length l1 = 0], then rewrite it:
 *)
 
 Goal forall A (l1 l2 : list A), length l1 = 0 -> l1 ++ l2 = l2.
@@ -371,7 +364,7 @@ Qed.
     [[=]] to simplify the equality [a1::l1++l2 = [a]] to [a1 = a] and [l1 ++ l2
     = []]. We can then rewrite the first equality with [->], and simplify the
     second equality to [l1 = [] /\ l2 = []] thanks to [%app_eq_nil]. Finally, we
-    can rewrite both equality using [->], giving us the intro pattern [intros [=
+    can rewrite both equalities using [->], giving us the intro pattern [intros [=
     -> [-> ->]%app_eq_nil]].
 
     In the converse direction, we can use intro patterns to decompose the
