@@ -255,6 +255,31 @@ Proof.
   intros n m p H ->. cbn in *. apply H.
 Qed.
 
+(** For a more concrete example, consider proving that if a list has one element
+    and the other one is empty, then the concatenation of the two lists has one element. 
+    The usual proof would require us to introduce the hypothesis and decompose it 
+    into pieces before being able to rewrite and simplify the goal:
+*)
+
+Goal forall {A} (l1 l2 : list A) (a : A),
+    l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [] -> l1 ++ l2 = [a].
+Proof.
+  intros A l1 l2 a.
+  intros H. destruct H as [H | H]. 
+  - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
+  - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
+Qed.
+
+(** Using intro patterns to do the pattern-matching and the rewriting, we can get 
+    a very intuitive and compact proof without having to introduce any fresh names: *)
+
+Goal forall {A} (l1 l2 : list A) (a : A),
+    l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [] -> l1 ++ l2 = [a].
+Proof.
+  intros A l1 l2 a [[-> ->]| [-> ->]].
+  - reflexivity.
+  - reflexivity.
+Qed.
 
 
 (** ** 4. Simplifying Equalities 
@@ -332,55 +357,43 @@ Proof.
   intros A l1 l2 ->%length_zero_iff_nil. cbn. reflexivity. 
 Qed.
 
-(** For a more concrete example, consider the assertion that the concatenation of
-    two list has one element if and only if one has one element and the other is empty. 
+(** For a more involved example, consider the converse of the example of section 3:
+    if the concatenation of two list has one element then one list has one
+    element and the other one is empty. 
 
-    In the first direction, we get an equality [a1::l1++l2 = [a]] that we have
-    to simplify to [a1 = a] and [l1 ++ l2 = []] with [injection], then to [l1 = []]
-    and [l2 = []] with [app_eq_nil], before rewrite them. 
-    This creates a lot over overhead as introduction and operations like destruction,
-    simplification and rewriting has to be done separately.
-    Further, at every step we have to introduce fresh names that do not
-    really matters in the end.
+    After pattern matching on [l1], we have an equality [a1::l1++l2 = [a]]. We
+    must simplify it to [a1 = a] and [l1 ++ l2 = []] with [injection], then to
+    [l1 = []] and [l2 = []] with [app_eq_nil], before being able to rewrite.
+    This creates a lot over overhead as introduction and operations like
+    destruction, simplification and rewriting have to be done separately.
+    Further, at every step we have to introduce fresh names that do not really
+    matters in the end.
 *)
 
 Goal forall {A} (l1 l2 : list A) (a : A),
-    l1 ++ l2 = [a] <-> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
+    l1 ++ l2 = [a] -> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
 Proof.
-  intros A l1 l2 a. split. 
-  + destruct l1; cbn.
-    - intros H. rewrite H. left. split; reflexivity.
-    - intros H. injection H. intros H1 H2. rewrite H2. apply app_eq_nil in H1. 
-      destruct H1 as [H3 H4]. rewrite H3, H4. right. split; reflexivity.
-  + intros H. destruct H as [H | H]. 
-    - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
-    - destruct H as [H1 H2]. rewrite H1, H2. reflexivity.
+  intros A l1 l2 a. destruct l1; cbn.
+  - intros H. rewrite H. left. split; reflexivity.
+  - intros H. injection H. intros H1 H2. rewrite H2. apply app_eq_nil in H1. 
+    destruct H1 as [H3 H4]. rewrite H3, H4. right. split; reflexivity.
 Qed.
 
 (** Using intros patterns we can significantly shorten this proof and make it
     more intuitive, getting rid of tedious manipulations of hypothesis.
 
-    In the first direction and the second case, we can use the intro pattern
-    [[=]] to simplify the equality [a1::l1++l2 = [a]] to [a1 = a] and [l1 ++ l2
-    = []]. We can then rewrite the first equality with [->], and simplify the
-    second equality to [l1 = [] /\ l2 = []] thanks to [%app_eq_nil]. Finally, we
-    can rewrite both equalities using [->], giving us the intro pattern [intros [=
-    -> [-> ->]%app_eq_nil]].
-
-    In the converse direction, we can use intro patterns to decompose the
-    hypothesis into [[H1 H2 | H1 H2]], and as they are equalities rewrite them
-    with [->]. This gives the intro pattern [intros [[-> ->]| [-> ->]]] that as
-    it can be seen trivialize the goal.
+    We can use the intro pattern [[=]] to simplify the equality [a1::l1++l2 = [a]] 
+    to [a1 = a] and [l1 ++ l2 = []]. We can then rewrite the first equality
+    with [->], and simplify the second equality to [l1 = [] /\ l2 = []] thanks
+    to [%app_eq_nil]. Finally, we can rewrite both equalities using [->], giving
+    us the intro pattern [intros [= -> [-> ->]%app_eq_nil]].
+    This gives a much shorter proof without a bunch of fresh names.
 *)
 
 Goal forall {A} (l1 l2 : list A) (a : A),
-    l1 ++ l2 = [a] <-> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
+    l1 ++ l2 = [a] -> l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [].
 Proof.
-  intros A l1 l2 a. split. 
-  + destruct l1; cbn.
-    - intros ->. left. split; reflexivity.
-    - intros [= -> [-> ->]%app_eq_nil]. right. split; reflexivity.
-  + intros [[-> ->]| [-> ->]]. 
-    - cbn. reflexivity.
-    - cbn. reflexivity.
+  intros A l1 l2 a. destruct l1; cbn.
+  - intros ->. left. split; reflexivity.
+  - intros [= -> [-> ->]%app_eq_nil]. right. split; reflexivity.
 Qed. 
