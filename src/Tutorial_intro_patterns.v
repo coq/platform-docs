@@ -117,11 +117,11 @@ Proof.
   intros *. 
 Abort.
 
-(** An important difference between [intros] and [intros ?x] is that [intros]
+(** An important difference between [intros] and [intros x] is that [intros]
     introduce as much variables as possible without simplifying the goal,
-    whereas [intros ?x] will first compute the head normal form before trying to
+    whereas [intros x] will first compute the head normal form before trying to
     introduce a variable. This difference can be intuitively understood 
-    by considering that [intros ?x] means there is a variable to introduce, 
+    by considering that [intros x] means there is a variable to introduce, 
     and requires to find it.
 
     For instance, consider the definition that a relation is reflexive. 
@@ -132,7 +132,7 @@ Definition Reflexive {A} (R : A -> A -> Prop) := forall a, R a a.
 (** If we try to prove that logical equivalence is reflexive by using [intros] 
     then nothing will happen as [Reflexive] is a constant, and it needs to 
     be unfolded for a variable to introduce to appear. 
-    However, as [intros ?x] simplifies the goal first, it will succeed and progress:
+    However, as [intros x] simplifies the goal first, it will succeed and progress:
 *)
 
 Goal Reflexive (fun P Q => P <-> Q).
@@ -314,7 +314,7 @@ Proof.
   intros A l1 l2 H. apply length_zero_iff_nil in H. rewrite H. cbn. reflexivity. 
 Qed.
 
-(** To help us do this, there is an intro pattern [?x/H] that introduce the
+(** To help us do this, there is an intro pattern [x%H] that introduce the
     variable [x] and apply the lemma [H] to it. We can hence write 
     [intros H%length_zero_iff_nil] rather than [intros H. apply length_zero_iff_nil in H].
 *)
