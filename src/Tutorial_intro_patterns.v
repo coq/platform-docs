@@ -27,7 +27,7 @@
     - No Prerequisites
 
     Installation:
-  - Available by default with coq
+  - Available by default with Coq/Rocq
 
 *)
 
@@ -38,8 +38,8 @@ Import ListNotations.
 (** ** 1. Introducing Variables 
 
     The basic tactic to introduce variables is [intros]. Its most basic form
-    [intros x y ... z] will introduce as many variables as mentioned with the 
-    names specified [x], [y], ..., [z], and fail if one of the names is already used.
+    [intros x y ... z] will introduce as many variables and hypotheses as mentioned with the 
+    names specified [x], [y], ..., [z], and fails if one of the names is already used, or if there are no more variables or hypotheses to introduce.
 *)
 
 Goal forall n m, n < m -> n <= m.
@@ -150,14 +150,14 @@ Abort.
 *)
 
 Goal forall P Q, P /\ Q -> Q /\ P.
-  intros P Q x. destruct x. split.
+  intros P Q x. destruct H as [H1 H2]. split
   + assumption.
   + assumption.
 Qed.
 
 Goal forall P Q, P \/ Q -> Q \/ P.
 Proof.
-  intros P Q x. destruct x.
+  intros P Q x. destruct H as [H1 | H2].
   + right. assumption.
   + left. assumption.
 Qed.
@@ -202,7 +202,7 @@ Qed.
 *)
 
 Goal forall P Q R, (P \/ Q) /\ R -> P /\ R \/ Q /\ R.
-  intros P Q R [[p|q] r].
+  intros P Q R [[p | q] r].
   + left. split; assumption.
   + right. split; assumption.
 Qed.
@@ -214,7 +214,7 @@ Abort.
 (** Actually, the latter pattern is common enough that there is a specific intro-pattern for it.
     When the goal is of the form [X Op1 Y ... Opk W] where all the binary operation 
     have one constructor with two arguments like [/\], then it is possible to 
-    introduce the variables with [intros p & q & r & h] rather than by having to 
+    introduce the variables with [intros (p & q & r & h)] rather than by having to 
     destruct recursively with [intros [p [q [r h]]] ].
 *)
 
@@ -237,7 +237,7 @@ Qed.
 
 (** ** 3. Rewriting Lemmas *)
 
-(** It is also very common to introduce an equality that we wish to later rewrite: 
+(** It is also very common to introduce an equality that we only wish to use once as a rewrite rule on the goal: 
 *)
 
 Goal forall n m, n = 0 -> n + m = m. 
@@ -287,7 +287,7 @@ Qed.
 Goal forall {A} (l1 l2 : list A) (a : A),
     l1 = [] /\ l2 = [a] \/ l1 = [a] /\ l2 = [] -> l1 ++ l2 = [a].
 Proof.
-  intros A l1 l2 a [[-> ->]| [-> ->]].
+  intros A l1 l2 a [[-> ->] | [-> ->]].
   - reflexivity.
   - reflexivity.
 Qed.
@@ -303,6 +303,7 @@ Qed.
 *) 
 
 Goal forall n m, S n = 1 -> n + m = m.
+Proof.
   intros n m H. injection H. intros H'. rewrite H'. cbn. reflexivity.
 Qed.
 
@@ -311,7 +312,8 @@ Qed.
 *)
 
 Goal forall n m, S n = S 0 -> n + m = m.
-  intros n m [=]. rewrite H0. cbn. reflexivity.
+Proof.
+  intros n m [= H]. rewrite H. cbn. reflexivity.
 Qed.
 
 (** It is then possible to combine this with the intro pattern for rewriting to
@@ -319,10 +321,11 @@ Qed.
 *)
 
 Goal forall n m, S n = S 0 -> n + m = m.
+Proof.
   intros n m [= ->]. cbn. reflexivity.
 Qed.
 
-(** Another particularly useful way of simplifying an equality is to deduce the 
+(** Another particularly useful way of simplifying an equality is to deduce that the 
     goal is true from an absurd equation like [S n = 0].
     This is usually done by introducing variables then using [discriminate], 
     but can also be automatically done thanks to the intro pattern [=]:
@@ -350,8 +353,8 @@ Proof.
   intros A l1 l2 H. apply length_zero_iff_nil in H. rewrite H. cbn. reflexivity. 
 Qed.
 
-(** To help us do this, there is an intro pattern [x%H] that introduces the
-    variable [x] and applies the lemma [H] to it. We can hence write 
+(** To help us do this, the [%] intro pattern [H%impl] introduces the
+    hypothesis [H] and applies the implication [impl] in it. We can hence write 
     [intros H%length_zero_iff_nil] rather than [intros H. apply length_zero_iff_nil in H].
 *)
 
