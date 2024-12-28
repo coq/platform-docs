@@ -223,6 +223,16 @@ Proof.
   intros * (p & q & r & h). 
 Abort.
 
+(** A particularly useful case is to introduce existential quantifications.
+*)
+
+Goal forall P Q (f : forall x y, P x y -> Q x y), 
+     (exists (x y: nat), P x y) -> (exists (x y : nat), Q x y).
+Proof.
+  intros P Q f (x & y & Pxy).
+  exists x, y. apply f. assumption.
+Qed.
+
 
 
 (** ** 3. Rewriting Lemmas *)
