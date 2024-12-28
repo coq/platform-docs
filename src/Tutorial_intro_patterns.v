@@ -150,14 +150,14 @@ Abort.
 *)
 
 Goal forall P Q, P /\ Q -> Q /\ P.
-  intros P Q x. destruct H as [H1 H2]. split
+  intros P Q H. destruct H as [H1 H2]. split.
   + assumption.
   + assumption.
 Qed.
 
 Goal forall P Q, P \/ Q -> Q \/ P.
 Proof.
-  intros P Q x. destruct H as [H1 | H2].
+  intros P Q H. destruct H as [H1 | H2].
   + right. assumption.
   + left. assumption.
 Qed.
@@ -237,18 +237,18 @@ Goal forall P Q R, (P \/ Q) /\ R -> P /\ R \/ Q /\ R.
   + right. split; assumption.
 Qed.
 
-Goal forall P Q R, P /\ Q /\ R -> R /\ Q /\ P.
+Goal forall P Q R, P /\ (Q /\ R) -> R /\ (Q /\ P).
   intros P Q R [p [q r]].
 Abort.
 
 (** Actually, the latter pattern is common enough that there is a specific intro-pattern for it.
-    When the goal is of the form [X Op1 Y ... Opk W] where all the binary operation 
+    When the goal is of the form [X Op1 (Y ... Opk W)] where all the binary operation 
     have one constructor with two arguments like [/\], then it is possible to 
     introduce the variables with [intros (p & q & r & h)] rather than by having to 
     destruct recursively with [intros [p [q [r h]]] ].
 *)
 
-Goal forall P Q R H, P /\ Q /\ R /\ H -> H /\ R /\ Q /\ P.
+Goal forall P Q R H, P /\ (Q /\ (R /\ H)) -> H /\ (R /\ (Q /\ P)).
 Proof.
   intros * (p & q & r & h). 
 Abort.
