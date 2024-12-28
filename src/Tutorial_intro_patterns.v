@@ -163,7 +163,7 @@ Proof.
 Qed.
   
 (** To shorten the code, it is possible to do both at the same time using the 
-    intro pattern [ [ x ... y | ... | z ... w ]. It enables to give a 
+    intro pattern [ [ x ... y | ... | z ... w ]]. It enables to give a 
     name to each argument of each constructor, separating them by [|].
     If neither branches nor names are specified, Coq will just use auto-generated names.
 *)
