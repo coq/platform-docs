@@ -98,9 +98,11 @@ Proof.
   intros **.
 Abort.
 
-(** As a variant of [intros], [intros *] will introduce all the variables that
-    do no appear dependently in the rest of the goal. In this example, it will
-    introduce [n] and [m] but not [n < m] as it depends on [n] and [m]. 
+(** As a variant of [intros], [intros *] will introduce all the hypothesis
+    from the goal until it reaches one depending on the ones that it is has introduced, 
+    or that there is no more hypotheses to introduce. 
+    In this example, [intros *] will introduce [n] and [m], then stops at [n < m]
+    as it depends on [n] and [m] that it has just introduced.
 *)
 
 Goal forall n m, n < m -> n <= m.
