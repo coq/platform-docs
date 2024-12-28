@@ -197,6 +197,36 @@ Proof.
   intros P [].
 Qed.
 
+(** Using intro patterns is not at all restricted to logical formulas. 
+    Consider Peano's natural numbers (the type [nat] here). 
+*)
+
+Print nat.
+
+(** It has two constructors, one called [O : nat] without argument for the
+    number zero, and the successor function [S : nat -> nat], basically [1 + _].
+    This says that any number of type [nat] is either 0 or the successor of
+    another number of type [nat]. This can be used to reason by case analysis on
+    (the nullity of) a natural number. 
+*)
+
+Goal forall (n : nat), n = 0 \/ (exists (m : nat), n = 1 + m).
+Proof.
+  (* two cases, the first one is empty because [O] has no argument. *)
+  intros n. destruct n as [| n']. 
+  - left. reflexivity.
+  - right. exists n'. reflexivity.
+Qed.
+
+(** Again, we can [intros] and [destruct] our [n] variable in one step. *)
+
+Goal forall (n : nat), n = 0 \/ (exists (m : nat), n = 1 + m).
+Proof.
+  intros [| n']. (* two cases, the first one is empty because [O] has no argument. *)
+  - left. reflexivity.
+  - right. exists n'. reflexivity.
+Qed.
+
 (** It is further possible to nest the intro-patterns when inductive types are 
     nested into each other:
 *)
