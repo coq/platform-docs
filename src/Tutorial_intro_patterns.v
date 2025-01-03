@@ -448,7 +448,7 @@ Proof.
   - intros [= -> [-> ->]%app_eq_nil]. right. split; reflexivity.
 Qed.
 
-(** ** Intro patterns everywhere *)
+(** ** 6. Intro patterns everywhere *)
 
 (** We mentioned before the fact that the tactic [destruct ... as ...] expects
     an intro pattern after [as].
