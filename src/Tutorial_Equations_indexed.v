@@ -1,5 +1,8 @@
 (** * Tutorial Equations : Dealing with indexed inductive types
+  *** Main contributors
 
+    - Thomas Lamiaux
+    - Matthieu Sozeau
   *** Summary:
 
   [Equations] is a plugin for Coq that offers a powerful support
@@ -46,10 +49,10 @@ From Equations Require Import Equations.
  (** ** 1. Basic Reasoning on Indexed Inductive Types
 
     Indexed inductive types are particular kind of inductive definitions
-    that consist in defining not one single inductive type but a family
-    of linked inductive types.
-    On of the most well-known examples of indexed inductive types are vectors.
-    Given a fixed parameter [A : Type], vectors define a familly of inductive
+    Given a fixed parameter [A : Type], vectors define a family of linked 
+    inductive types.
+    One of the most well-known examples of indexed inductive types are vectors.
+    Given a fixed parameter [A : Type], vectors define a family of inductive
     types [vec A n : Type] indexed by natural numbers [n : nat] representing
     the lengths of the vectors.
     The Vector type has two constructors.
@@ -68,11 +71,12 @@ Arguments vnil {_}.
 Arguments vcons {_} _ _ _.
 
 (** The difference between a parameter and an index is that a parameter is
-    constant over all the constructors, whereas an index changes in the
-    constructor.
+    constant accros all the return types of the constructors, whereas an index
+    changes in at least one of the return types.
     For instance, in the definition of vectors the type [A] is a parameter
-    as it is constant in all the constructors, but [n:nat] is an index as
-    [vcons] relates two different types of the family, [vec A n] and [vec A (S n)].
+    as it is constant across all the return types: [vec A 0] and [vec A (S n)]. 
+    However, [n:nat] is an index as it is not constant in the returns types:
+    in the return type of [vnil] it is fixed to [0], and in the return type of  [vcons] it is [S n].
     Indices always appear after the [:] in an inductive type declaration.
 
     Reasoning about indexed inductive types like vectors is a bit more
@@ -211,8 +215,9 @@ Abort.
 
 Definition vmap_vapp_simp {A B n m }(f : A -> B) (v : vec A n) (v' : vec A m) :
            vmap' f (vapp' v v') = vapp' (vmap' f v) (vmap' f v').
-Proof.
-  funelim (vmap' f v); simp vmap' vapp'; [reflexivity|congruence].
+  funelim (vmap' f v); simp vmap' vapp'.
+  - reflexivity.
+  - congruence.
 Qed.
 
 (** ** 2. Advanced Dependent Pattern Matching
@@ -291,9 +296,8 @@ Qed.
     of constructors: they assert which equations are impossible because the head
     constructors do not match, or if they do match, simplify to equations between the
     constructor arguments.
-
     The cases above rely on the no-confusion property for [nat], that given
-    [n], [m] eturns [True] if [n] and [m] are both [0], [n = m] if they are both
+    [n], [m] returns [True] if [n] and [m] are both [0], [n = m] if they are both
     of the form [S n], [S m], and [False] otherwise.
 
     [Equations] provides a [Derive] command to generate this notion automatically
@@ -313,10 +317,12 @@ Print NoConfusion_nat.
     In the general case, for indexed inductive types, there are two kind of no-confusion
     properties that can be derived by [Equations]:
     - The [NoConfusion] property that enables to distinguish object with different indices.
-      It takes as argument objects in the total space {n : nat & vec A n} and it is used 
+      It takes as argument objects in the total space [{n : nat & vec A n}] which is generated
+      once and for all with `Derive Signature for vec`. It enables 
       to solve general equations between objects in potentially different instances of the 
       inductive family:
 *)
+Derive Signature for vec.
 Derive NoConfusion for vec.
 Check NoConfusion_vec.
 
@@ -329,12 +335,23 @@ Check NoConfusion_vec.
 Derive NoConfusionHom for vec.
 Print NoConfusionHom_vec.
 
-(** Though, the [NoConfusionHom] property is derivable for many indexed inductive types,
+(** Note that you can also derive all of them at once using [Derive Signature NoConfusion NoConfusionHom for vec]. *)
+
+(** While the [NoConfusionHom] property is derivable for many indexed inductive types,
     it is not the case that is derivable for all indexed inductive types.
     It is derivable only when equality of constructors can be reduced to equality 
-    of the non-forced constructor arguments. For example on vectors, this 
-    corresponds to the fact that 
-    [vcons a n v = vcons a' n v' :> vec A (S n) <-> a = a' /\ v = v' :> vec A n].
+    of the non-forced constructor arguments. A forced argument of a constructor 
+    is a constructor argument (say of variable name [x]) that appears in a pattern 
+    position in an index of the constructor's type conclusion. Patterns are generated
+    from variables and constructor applications in this case. 
+
+    For example on vectors, this corresponds to the fact that for [vcons a n v : vec A (S n)], 
+    [n] appears in a pattern position in [S n]. Intuitively, the value of the *forced* 
+    constructor argument [n] can be inverted from the type [vec A (S n)]. 
+    [NoConfusionHom] for [vcons] proves that 
+    [vcons a n v = vcons a' n v' :> vec A (S n) <-> a = a' /\ v = v' :> vec A n],
+    i.e. we can eliminate the trivial [n = n] equality on the forced argument [n].
+    This ultimately relies on the [UIP] property for [nat] which shows that [forall e : n = n, e = eq_refl n].
 
     If it is not possible to derive it, then [Equations] may need the indices to
     satisfy Uniqueness of Identity Proofs, asserting that all equality proofs are 
@@ -389,8 +406,8 @@ Section Tactics.
     noconf H. reflexivity.
   Qed.
   
-  (* The [dependent elimination] tactic is robust: it will fail if the 
-    pattern-matching if non-exhaustive or contains unused clauses *)
+  (* The [dependent elimination _ as _] tactic is robust: it will fail if the 
+    given patterns are non-exhaustive or contains unused clauses *)
   Goal forall a b (x : vec nat 2), (vcons a x = vcons b x) -> a = b.
   Proof. 
     intros a b x H.
