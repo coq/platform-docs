@@ -49,7 +49,6 @@
   Let us start by importing the package:
 *)
 
-From Coq Require Import Arith.
 From Equations Require Import Equations.
 
 Axiom to_fill : forall A, A.
@@ -403,7 +402,7 @@ Abort.
 Check half_elim.
 
 (** Moreover, [Equations] comes with a powerful tactic [funelim] that
-    applies the induction principle while doing different simplifications.
+    applies the functional induction principle and simplifies the associated definition.
     To use it, it suffices to write [funelim (function_name a1 ... an)]
     where [a1 ... an] are the arguments you want to do your induction on.
 
@@ -415,7 +414,7 @@ Check half_elim.
 Lemma nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
 Proof.
   funelim (nth_option n l).
-  all: autorewrite with nth_option nth_option'.
+  all: autorewrite with nth_option'.
   - reflexivity.
   - reflexivity.
   - reflexivity.
@@ -425,8 +424,8 @@ Abort.
 (* Doing induction naively to reproduce a pattern can get you stuck *)
 Definition half_mod2 (n : nat) : n = half n + half n + mod2 n.
 Proof.
-  induction n; try reflexivity.
-  induction n; try reflexivity.
+  induction n. 1: reflexivity.
+  induction n. 1: reflexivity.
   (* We simplify the goal *)
   autorewrite with half mod2.
   rewrite PeanoNat.Nat.add_succ_r. cbn.
@@ -437,7 +436,7 @@ Abort.
 (* Wheras funelim does it automatically for you *)
 Definition half_mod2 (n : nat) : n = half n + half n + mod2 n.
 Proof.
-  funelim (half n); try reflexivity.
+  funelim (half n). 1-2: reflexivity.
   autorewrite with half mod2.
   rewrite PeanoNat.Nat.add_succ_r. cbn.
   f_equal. f_equal.
@@ -472,14 +471,12 @@ Abort.
 (** As you can see, by default [simp] does not try to prove goals that hold
     by definition, like [None = None].
     If you wish for [simp] to do so, or for [simp] to try any other tactic,
-    you need to add it as a hint to one of the hint databses used by [simp].
-    Currently, there is no dedicated database for that, and it is hence
-    recommanded to add hints to the hint database [Below].
+    you need to add it as a hint to one of the hint databse [simp] used by [simp].
     In particular, you can extend [simp] to to prove definitional equality using
     the following command.
 *)
 
-#[local] Hint Resolve eq_refl : Below.
+#[local] Hint Resolve eq_refl : simp.
 
 Definition nth_eq {A} (l : list A) (n : nat) : nth_option n l = nth_option' l n.
 Proof.
@@ -595,8 +592,9 @@ Admitted.
 
 (** ** 2. With clauses
 
-    The structure of real programs is generally richer than a simple case tree on the
-    original arguments.
+    The structure of real programs is generally richer than a simple case tree
+    on the original arguments.
+
     In the course of a computation, we might want to compute or scrutinize
     intermediate results (e.g. coming from function calls) to produce an answer.
     In terms of dependent pattern matching, this literally means adding a new
@@ -641,7 +639,8 @@ Equations filter' {A} (l : list A) (p : A -> bool) : list A :=
 filter' [] p => [];
 filter' (a :: l) p with p a => {
   | true  => a :: filter' l p
-  | false => filter' l p }.
+  | false => filter' l p
+  }.
 
 (** To show that [filter] is well-behaved, we can define a predicate [In] and
     check that if an element is in the list and verifies the predicate,
@@ -658,14 +657,7 @@ In x (a::l) => (x = a) \/ In x l.
     In the case of [filter], it means additionally destructing [p a] and
     remembering whether [p a = true] or [p a = false].
 
-    For regular patterns, simplifying [filter] behaves as usual.
-    For the [with] clause, simplifying [filter] makes a subclause
-    corresponding to the current case appear.
-    For [filter], in the [p a = true] case, a [filter_clause_1] appears, and
-    similarly in the [false] case.
-    This is due to [Equations]' internal mechanics.
-    To simplify the goal further, it suffices to rewrite [p a] by its value
-    in the branch, and to simplify [filter] again.
+    For regular patterns, simplifying [filter] behaves as usual when using [funelim]:
 *)
 
 Lemma filter_In {A} (x : A) (l : list A) (p : A -> bool)
@@ -673,8 +665,25 @@ Lemma filter_In {A} (x : A) (l : list A) (p : A -> bool)
 Proof.
   funelim (filter l p); simp filter In.
   - intuition congruence.
-  - rewrite Heq; simp filter In. rewrite H. intuition congruence.
-  - rewrite Heq; simp filter In. rewrite H. intuition congruence.
+  - rewrite H. intuition congruence.
+  - rewrite H. intuition congruence.
+Qed.
+
+(** However, simplifying [with] clauses can make subclauses appear corresponding
+    to the different branches of the [with] clause.
+    For [filter'], in the [p a = true] case, a [filter_clause_1] appears, and
+    similarly in the [false] case.
+    This is due to [Equations]' internal mechanics.
+    To simplify the goal further, it suffices to rewrite [p a] by its value
+    in the branch, and to simplify [filter] again.
+*)
+
+Lemma filter_filter' {A} (l : list A) (p : A -> bool)
+      : filter l p = filter' l p.
+Proof.
+  funelim (filter l p); simp filter'.
+  - rewrite Heq. cbn. reflexivity.
+  - rewrite Heq. cbn. reflexivity.
 Qed.
 
 (** [With] clauses can also be useful to inspect a recursive call.
