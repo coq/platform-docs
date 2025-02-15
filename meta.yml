@@ -19,4 +19,4 @@ dependencies:
     name: coq-equations
 opam-file-maintainer: "Théo Zimmermann <theo.zimmermann@telecom-paris.fr>"
 tested_coq_opam_versions:
-- version: "8.19"
+- version: "8.20.1"

@@ -349,7 +349,7 @@ Defined.
 
 Lemma gcd_same x : gcd x x = x.
 Proof.
-  funelim (gcd x x). all: try lia. reflexivity.
+  funelim (gcd x x). all: try lia.
 Qed.
 
 Lemma gcd_spec0 a : gcd a 0 = a.
@@ -367,11 +367,8 @@ Proof.
   - now rewrite Nat.Div0.mod_0_l.
   - reflexivity.
   - now rewrite (Nat.mod_small (S n) (S n0)).
-  - rewrite <- Heqcall.
-    rewrite refl, Nat.Div0.mod_same.
-    reflexivity.
-  - rewrite <- Heqcall. rewrite H; auto.
-    rewrite mod_minus; auto.
+  - now rewrite refl, Nat.Div0.mod_same.
+  - rewrite H; auto. now rewrite mod_minus.
 Qed.
 
 
@@ -415,49 +412,19 @@ ack (S m) 0     := ack m 1;
 ack (S m) (S n) := ack m (ack (S m) n).
 
 
-(** In principle, we should be able to reason about [ack] as usual using [funelim].
-    Unfortunately, in this particular case, [funelim] runs forever which you can
-    check out below.
-    It is a known issue currently being fixed due to oversimplification being done
-    by [funelim].
+(** Reasoning about [ack] works as usual whether the pattern is general or specialized:
 *)
 
 Definition ack_min {m n} : n < ack m n.
 Proof.
-  Fail timeout 5 (funelim (ack m n)).
-Abort.
-
-(** There are two main solutions to go around similar issues depending on your case.
-
-    If your pattern is fully generic, i.e. of the form [ack m n], you can apply
-    functional elimination directly by [apply ack_elim].
-    Though note, that in this case you may need to generalise the goal by hand,
-    in particular by equalities (e.g. using the remember tactic) if the function
-    call being eliminated is not made of distinct variables.
-*)
-Definition ack_min {m n} : n < ack m n.
-Proof.
-  apply ack_elim; intros; eauto with arith.
+  funelim (ack m n). all: eauto with arith.
 Qed.
 
-(** However, if your pattern is partially specialised like [ack 1 n],
-    it can be better to finish reproducing the pattern using [induction].
-    Indeed, [ack_elim] "reproduces" the full pattern, that is, it generalises [1]
-    to [m] and tries to prove [ack m n = 2 + n] by induction, creating cases like
-    [ack (S m) n] which clearly are not warranted here.
-*)
-
 Definition ack1 {n} : ack 1 n = 2 + n.
 Proof.
-  (* If we apply [ack_elim], we get unwarranted cases *)
-  apply ack_elim; intros.
-Abort.
-
-(* So we reproduce the pattern with induction *)
-Definition ack1 {n} : ack 1 n = 2 + n.
-  induction n; simp ack.
+  funelim (ack 1 n); simp ack.
   - reflexivity.
-  - rewrite IHn. reflexivity.
+  - rewrite H. reflexivity.
 Qed.
 
 
@@ -477,7 +444,7 @@ Qed.
     This is represented by this context:
  *)
 
-Module LinearSearch.
+Section LinearSearch.
 
 Context (f : nat -> bool).
 Context (h : exists m : nat, f m = true).
@@ -504,22 +471,21 @@ Context (h : exists m : nat, f m = true).
 
 Definition R n m := (forall k, k <= m -> f k = false) /\ n = S m.
 
-Lemma wf_R_m_le m (h : f m = true) : forall n, m <= n -> Acc R n.
+Lemma wf_R_m_le m (p : f m = true) : forall n, m <= n -> Acc R n.
 Proof.
   intros n H. constructor. intros ? [h' ?].
   specialize (h' m H).
   congruence.
 Qed.
 
-
-Lemma wf_R_lt_m m (h : f m = true) : forall n, n < m -> Acc R n.
+Lemma wf_R_lt_m m (p : f m = true) : forall n, n < m -> Acc R n.
 Proof.
   intros n H.
   (* Prove Acc m *)
   assert (Acc R m) as Hm_acc by (eapply wf_R_m_le; eauto).
   (* Set up induction on k := m - n *)
   rewrite <- (Nat.sub_add n m) in * by lia.
-  set (k := m - n) in *; clearbody k. clear h H.
+  set (k := m - n) in *; clearbody k. clear p H.
   (* Proof *)
   induction k.
   - easy.
@@ -529,7 +495,7 @@ Qed.
    (** We can now prove that the relation is well-founded: *)
 Lemma wf_R : (exists n : nat, f n = true) -> well_founded R.
 Proof.
-    intros [m h] n. destruct (le_lt_dec m n).
+    intros [m p] n. destruct (le_lt_dec m n).
     - eapply wf_R_m_le; eassumption.
     - eapply wf_R_lt_m; eassumption.
 Qed.
@@ -631,7 +597,7 @@ Abort.
     elements [(a, eq_refl) : {b : A | a = b}].
 *)
 
-Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
+Print inspect.
 
 Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
 

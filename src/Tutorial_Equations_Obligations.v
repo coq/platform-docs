@@ -69,13 +69,13 @@ Definition vec A n := { l : list A | length l = n }.
     [vapp : vec A n -> vec A m -> vec A (n + m)], as done below, one has to:
     - specify that the concatenation of [l] and [l'] is [app l l'] and,
     - provide a proof term that [length (ln ++ lm) = n + m], which is done
-      below by the term [eq_trans (app_length ln lm) (f_equal2 Nat.add Hn Hm)].
+      below by the term [eq_trans (length_app ln lm) (f_equal2 Nat.add Hn Hm)].
 *)
 
 Equations vapp {A n m} (v1 : vec A n) (v2 : vec A m) : vec A (n + m) :=
 vapp (exist _ ln Hn) (exist _ lm Hm) :=
       (exist _ (app ln lm)
-               (eq_trans (app_length ln lm) (f_equal2 Nat.add Hn Hm))).
+               (eq_trans (length_app ln lm) (f_equal2 Nat.add Hn Hm))).
 
 (** Yet, in most cases, when defining a function, we do not want to write down
     the proofs directly as terms, as we did above.
@@ -108,7 +108,7 @@ vapp (exist _ ln Hn) (exist _ lm Hm) :=
 Equations vapp' {A n m} (v1 : vec A n) (v2 : vec A m) : vec A (n + m) :=
 vapp' (exist _ ln Hn) (exist _ lm Hm) := exist _ (app ln lm) _.
 Next Obligation.
-  apply app_length.
+  apply length_app.
 Qed.
 
 (** As you can see, this is very practical, however, you should be aware of
@@ -154,7 +154,7 @@ Obligations of vmap_obligations.
 *)
 
 Next Obligation.
-  apply map_length.
+  apply length_map.
 Qed.
 
 (** Using [Next Obligation] has the advantage that once an obligation has been
@@ -177,7 +177,7 @@ Qed.
 Equations? vmap' {A B n} (f : A -> B) (v : vec A n) : vec B n :=
 vmap' f (exist _ ln Hn) := exist _ (map f ln) _ .
 Proof.
-  apply map_length.
+  apply length_map.
 Defined.
 
 (** Though, note that [Equations?] triggers a warning when used on a definition

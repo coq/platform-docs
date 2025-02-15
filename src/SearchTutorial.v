@@ -1,11 +1,11 @@
 (** * Search tutorial for Coq
-    
+
     *** Summary
 
 	This tutorial is about the powerful [Search] vernacular command in Coq.
 	The [Search] command prints names and types of constants in the local or
 	global context satisfying a number of criteria.
-    
+
     *** Table of content
 
     - 1. Searching for lemmas
@@ -153,8 +153,8 @@ Locate "_ + _".
 
     As a side note, the ["+"] operator between types is the disjoint union. It's
     fine if you don't know what this means, our only concern here is that it
-    exists. 
-    
+    exists.
+
     Now, how does Coq choose between them? What is the current interpretation
     of ["+"]?. *)
 
@@ -183,12 +183,12 @@ Print Visibility.
 
 (** Here, the last scope is [nat_scope], we see all the notations associated
     to it: order relations ([<=], [<], ...) and operations ([+], [*], ...).
-  
+
     If we want to use [+] with its interpretation in [type_scope], without
     changing the opened scope order, we can do so with a scope delimiting key:
 *)
 Check (nat + bool)%type.
-About "_ + _"%type.
+About "_ + _".
 
 (** Scope delimiting keys are abbreviations of scope names, usually obtained by
     removing the [_scope] suffix.
@@ -439,7 +439,8 @@ Search _ in Init.Nat.
 
 (** We can even shadow [PeanoNat.Nat] module in this file: *)
 Module Nat.
-  Lemma foo : 21 + 21 = 42. Proof. reflexivity. Qed.
+  Lemma foo : 21 + 21 = 42.
+  Proof. reflexivity. Qed.
 End Nat.
 
 Search _ in Nat.
