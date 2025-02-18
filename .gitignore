@@ -18,7 +18,6 @@
 *.vrb
 *.bcf
 *.run.xml
-*.html
 *.css
 *~
 node_modules/
