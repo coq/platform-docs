@@ -392,8 +392,18 @@ Section Tactics.
 (** To explicit pattern-matching and control the naming of variables/hypotheses 
   introduced by an elimination, it is possible to use the 
   [dependent elimination] tactic, which provides access to the [Equations] 
-  pattern-matching notation inside proofs: *)
+  pattern-matching notation inside proofs.
+  Note that the syntax of the patterns for [dependent elimination] follows the 
+  syntax of Equation definitions clauses, rather than the Ltac tactics [as] clauses. *)
 
+  Goal forall n m, n + m = m + n.
+  Proof.
+    induction n as [|n' IH]; intros m.
+    dependent elimination m as [O|S m'].
+  Abort.
+
+  (** As for Equations definitions, the patterns should cover solely the possible 
+    values of the hypothesis. *)
   Goal forall a b (x : vec nat 2), (vcons a x = vcons b x) -> a = b.
   Proof. 
     intros a b x H.
@@ -418,24 +428,6 @@ Section Tactics.
     (* This pattern-matching contains an unused clause for [x : vec A 2]*)
     Fail dependent elimination x as [vcons hd (vcons tl vnil)|vcons hd vnil].
   Abort.
-
-(** A more low-level and fragile tactic [depelim] is also available, which can 
-  generate fresh names for the new variables and does not require patterns. *)
-
-  Context (A : Type).
-  Context (a b : A).
-
-  Goal forall (x y : vec A 2), (vcons a (vcons a x) = vcons a (vcons b y)) -> a = b /\ x = y.
-    intros x y H. depelim H. now split.
-  Qed.
-
-  Goal forall ( x : vec A 2) z, (vcons a x = z) -> vtail z = x.
-    intros x z H. depelim H. simp vtail. reflexivity.
-  Qed.
-
-  Goal forall (x : vec nat 2), (vcons 0 x = vcons 1 x) -> False.
-    intros x H. depelim H.
-  Qed.
 
 End Tactics.
 
