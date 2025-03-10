@@ -71,12 +71,12 @@ Arguments vnil {_}.
 Arguments vcons {_} _ _ _.
 
 (** The difference between a parameter and an index is that a parameter is
-    constant accros all the return types of the constructors, whereas an index
+    constant accross all the return types of the constructors, whereas an index
     changes in at least one of the return types.
     For instance, in the definition of vectors the type [A] is a parameter
     as it is constant across all the return types: [vec A 0] and [vec A (S n)]. 
     However, [n:nat] is an index as it is not constant in the returns types:
-    in the return type of [vnil] it is fixed to [0], and in the return type of  [vcons] it is [S n].
+    in the return type of [vnil] it is fixed to [0], and in the return type of [vcons] it is [S n].
     Indices always appear after the [:] in an inductive type declaration.
 
     Reasoning about indexed inductive types like vectors is a bit more
