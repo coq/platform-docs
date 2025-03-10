@@ -148,7 +148,7 @@ Equations app'' {A} (l l' : list A) : list A :=
   | []    , l' := l'
   | (a::l), l' := a :: (app'' l l').
 
-(** In this tutorial, we will keep to the first syntax but both are can be
+(** In this tutorial, we will keep to the first syntax but both can be
     used interchangeably.
 
     [Equations] enables us to pattern match on several different
