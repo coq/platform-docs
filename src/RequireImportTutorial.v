@@ -68,7 +68,7 @@
     be [Require]d in order to make its logical and computational content
     available in the current file.
 
-    If not stated otherwise (with the [-no-init] command-line flag), Coq's
+    If not stated otherwise (with the [-noinit] command-line flag), Coq's
     initial state is populated by a dozen library files called the [Prelude]
     (the interested reader can consult its
     #<a href="https://github.com/coq/coq/blob/master/theories/Init/Prelude.v">source code</a>#).
