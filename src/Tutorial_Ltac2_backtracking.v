@@ -361,34 +361,36 @@ Goal exists (n m : nat), n = m.
 Qed.
 
 (** This can easily make proof script hard to predict as a choice of success
-    affect which tactic will succeed next.
-    For instance, consider proving [nat \/ 2 = 2]. If we choose [left], we want
-    to choose next [exact 0], but if we choose [right], we want to choose next
-    [reflexivity].
+    affect which tactics can succeed next, and hence which will be picked next.
+    For instance, consider proving [nat \/ 2 = 2].
+    If we choose [left], we want to choose [exact 0] next, but if we choose [right],
+    we want to choose [reflexivity] next.
 *)
 
 Goal nat + (2 = 2).
   (left ++ right) ; reflexivity ++ (exact 0).
 Qed.
 
-(** That can quickly become hard to predict when dealing with non-trivial tactics.
-    For instance, with tactics that make a different choice depending on the
-    shape of an hypothesis or of the goal, which are affected in non trivial
-    ways by past choices.
-    Therefore, it can be difficult to predict which goals will results from
-    complex combined backtracking, and hence to scripts that are hard to debug
-    when failing.
+(** Consequently, we would like a variant of the [++] tactical that
+    applies the first tactics that succeeds, but will not backtrack to try
+    [tac2] if it has chosen [tac1] and that lead to a subsequent failure.
 
+    To do this, we use [Control.case] to compute [tac1] and check if it fails or not.
+    If it fails, we simply compute [tac2], and that is.
+    However, if does not fail,
 
-    We want instead to code a [||] tactical that for [tac1 || tac2] will apply
-    the first tactics that succeeds, but will not backtrack if the choice leads
-    to subsequent failure.
+    This satifies the specification as:
+    - It applies [tac1] and if it fails [tac2]
+    - This does not backtrack from [tac1] to [tac2] as in case of subsequent failure
+      either
+      needed, as backtracking is the default behaviour of [;], and we simply
+      added [tac2] to additionnaly try if [tac1] fails.
 
-    To do this, we need to use the [Control.case] to compute [tac1] and to
-    check whether it fails or not.
-
-    If it fails, we execute [tac2], and otherwise, we return the first success
-    of [tac1] that works using [Control.plus].
+    In terms of streams, this corresponds to using the stream [tac1]
+    if [tac1] is not empty, and the stream [tac2] otheriwse.
+    This case analysis naturally corresponds to [Control.Case tac1].
+    However, as [Control.case] returns a [result] and not directly a stream,
+    we need to use [Control.plus] to glue the result back into a stream.
 *)
 
 Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
@@ -397,11 +399,14 @@ Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
   | Val (x,k) => Control.plus (fun _ => x) k
   end.
 
+(** Now that we have define [orelse], let us define an infix notation for it.
+*)
+
 Ltac2 Notation tac1(thunk(self)) "||" tac2(thunk(self)) :=
   orelse tac1 tac2.
 
 (** We can now try the previous to tests that this still applies the first
-    tactic that succeeds.
+    tactic that succeeds, but will not backtrack:
 *)
 
 Goal exists n, n = 2 /\ n = 3.
@@ -414,24 +419,25 @@ Goal exists n, n = 2 /\ n = 3.
   - Fail assumption || (exact 4).
 Abort.
 
-(** Moreover, compared to [++], [||] will not backtrack on the choice [tac1] v.s. [tac2].
-    However, this does not disable the backtraking abilities of [tac1] and [tac2]
-    in case of subsequent failure.
-    If [tac1] or [tac2] is picked, it can still backtrack due to subsequent failure.
-*)
-
 Goal exists n, n = 2.
   unshelve econstructor.
   (* It picks [exact 1] and can not backtrack to try [exact 2] *)
   Fail all: only 1: (exact 1) || (exact 2); print_goals; reflexivity.
-  (* It picks [(exact 1) ++ (exact 2)] which can backtrack *)
+
+Abort.
+
+(** However, this does not disable the backtraking abilities of [tac1] and
+    [tac2]: if [tac1] or [tac2] is picked, it can still backtrack to its next
+    success in case of subsequent failure.
+    It only prevents backtracking to try [tac2] if [tac1] was picked.
+*)
+
+Goal exists n, n = 2.
+  unshelve econstructor.
+  (* It picks [(exact 1) ++ (exact 2)] then [excat 1] then backtrack to [exact 2] *)
   all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
 Abort.
 
-Goal 0 = 2 -> 0 = 2.
-Fail all: only 1: (exact 1) || (exact 2); print_goals; reflexivity.
-  all: only 1: ((exact 1) ++ (exact 2)) ++ (exact 3); print_goals; reflexivity.
-Abort.
 
 
 (* 3.3 Using [once] to control backtracking *)
