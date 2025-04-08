@@ -16,10 +16,10 @@
   - 3. Manipulating Backtracking with Ltac2 primitives
     - 3.1 Using [Control.Plus] to stack possibilities
     - 3.2 Using [Control.Case] to inspect backtracking
-    - 3.3 Backtracking and Goal focussing
     - 3.4 Implementing [once] with [Control.case] and [Control.zero]
           for a finer control of backtracking
-    - 3.5 Reimplementing [;]
+    - 3.4 Backtracking and Goal focussing
+    - 3.5 Reimplementing [;] using [zero],[plus] and [case]
 
   *** Prerequisites
 
@@ -141,120 +141,13 @@ Abort.
 
 (** ** 2. Backtracking in Ltac2
 
-  (* 2.1 Intuition *)
-
-    BEGIN --- CLARIFY
-
-    Backtracking is primitive to Ltac2.
-    This means that every object of the language has by default the possibility to backtrack.
-
-    Formally, what it means is that an object of type ['a] does not represent
-    one object ['a] but a stream of objects.
-    That is a potentially infinite list of objects of type ['a]
-
-    END --- CLARIFY
-
-
-  (* TO KEEP ??? *)
-    [tac1 ; tac2] is basically evaluates with the following workflow:
-    1. [tac1] is evaluated first, either:
-      - To a value [t] and the rest of the stream [x].
-        In this case it tries to apply [t], and if this fails it
-        evaluates recursively the stream [x] until it finds a value
-        that succeeds or reaches an error and fail.
-      - To an error [e] in which case [tac1 ; tac2] fails with error [e],
-
-    2. If step 1. succeeds, it starts evaluating [tac2], which proceeds like
-       evaluation of [tac1] up to managment of errors. Either it evaluates:
-       - To a value [t] and the rest of the stream [x].
-          In this case it tries to apply [t], and if this fails it
-          evaluates recursively the stream [x] until it finds a value
-          that succeeds or reaches an error and fail.
-       - If it fails on an error, it revert the action of [t],
-         and restart the evaluation provess at [x; tac2].
-
-
-  To understand this flow better, let us consider the tactic
-  [constructor; reflexivity] to solve the goal [0 = 1 \/ 1 = 1].
-
-  - 1. [constructor] evaluates to [apply left], which is a tactic that can be applied,
-        and a rest of the contination [x],
-  - 2. It evaluates [reflexivity] and tries to apply it
-  - 3. This fails has [0] is not equal to [1].
-  - 4. It reverts the action of [apply left], and start evaluating recursively [x; tac2]
-  - 5. [x] evalutes to [apply right], which is a tactic that can be applied,
-        and a continuation [y],
-  - 6. It evaluates [reflexivity] and tries to apply it, which solves the goal
-
-
-    Constructor => [apply left | apply right]
-      1. Evaluates constructor to [apply left | x]
-      2. Apply [apply left] => succeeds
-      3. Apply [reflexivity] => fail
-      4. Backtracks to [constructor], and evaluates the rest of the stream [x]
-         for next value which produces [apply right]
-      5.
-*)
-
-Goal 0 = 1 \/ 1 = 1.
-  constructor; print_goals; reflexivity.
-Qed.
-
-(* 2.2 Link with streams *)
-
-(** The intuition that this corresponds to stream can be seen by defining
-    stream as a Ltac2 type, and transforming any stream into a value,
-    and any term into a stream.
- *)
-
-Ltac2 Type rec 'a backtracking_stream :=
-  [ EmptyStream(exn)
-  | ConsStream('a, (exn -> 'a backtracking_stream)) ].
-
-(* To go from value to stream, we use the primitive [Control.case] to evaluate
-   a thunk value, and check whether it produces an error [e], or a value [v]
-   and a continuation [h].
-   If it produces an error, we just return the empty strem as there is nothing to evaluate.
-   If it produces a value, we just add it to the recursive evaluation of the continutation.
-*)
-
-Ltac2 rec to_stream (t : unit -> 'a) : 'a backtracking_stream :=
-  match Control.case t with
-  | Err e => EmptyStream e
-  | Val (v, h) => ConsStream v (fun e => to_stream (fun () => h e))
-  end.
-
-(** To go from a stream to a value, we check whether the stream is a Empty or not.
-    If it is empty, we return [Control.zero] that represents the non-empty value.
-    If it is a constant, we use [Control.plus] to add ? to ?
-*)
-
-Ltac2 rec from_stream (s : 'a backtracking_stream) : unit -> 'a := fun () =>
-match s with
-| EmptyStream e => Control.zero e
-| ConsStream hd tl => Control.plus (fun () => hd) (fun e => from_stream (tl e) ())
-end.
-
-(* Handling exceptions *)
-
-
-
-
-(*
-
-    Basically, every object ['a] is a stream of possibility
-
- ** Primitives to Handle Backtracking
-
-There are three simple but very powerful primitives to handle backtracking in Ltac2:
-
-- Control.zero : exn -> 'a
-- Control.plus : (unit -> 'a) -> (exn -> 'a) -> 'a
-- Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result
-
-
+  TO WRITE
 
 *)
+
+
+
+
 
 
 
@@ -451,17 +344,10 @@ Abort.
 
 
 
-(** *** 3.3 Backtracking and Goal Focusing *)
-
-(* TODOT WRITE TEXT *)
-
-Goal (True \/ False) /\ (False \/ True).
-  Fail split; left ++ right; print_goals; econstructor.
-
-
-
-(** *** 3.4 Implementing [once] with [Control.case] and [Control.zero]
+(** *** 3.3 Implementing [once] with [Control.case] and [Control.zero]
             for a finer control of backtrackin
+
+    TODO: write it
 
     To control backtracking further, Ltac2 comes with a primitive [once].
 
@@ -522,28 +408,28 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
     it adds more potential successes to try if [run] produces none.
 
     Given an error [e], another common source of confusion is the difference
-    between returning [Control.zero e] or [Control.throw e].
-    [Control.throw e] raises the error [e] and interrupts the computation.
+    between returning [Control.zero e] or [Control.raise e].
+    [Control.raise e] raises the error [e] and interrupts the computation.
     It will not look for any other success, not trigger backtracking,
     opposite to [Control.zero].
 *)
 
 Goal 0 = 1 -> 0 = 1.
-  (* When evaluated [Control.throw] raises an error and interrupts the computation *)
-  Fail intros H1; (Control.throw Not_found ++ assumption).
+  (* When evaluated [Control.raise] raises an error and interrupts the computation *)
+  Fail intros H1; (Control.raise Not_found ++ assumption).
   (* [Control.zero] fails, so it will just look for next success, here [assumption] *)
   intros H1; (Control.zero Not_found ++ assumption).
 Qed.
 
 Goal exists n, n = 2.
   unshelve econstructor.
-  (* [Control.throw] will not backtrack either: it stops computation *)
-  Fail all: only 1 : (exact 1) ++ (exact 2); Control.throw Not_found ++ reflexivity.
+  (* [Control.raise] will not backtrack either: it stops computation *)
+  Fail all: only 1 : (exact 1) ++ (exact 2); Control.raise Not_found ++ reflexivity.
   (* Whereas [Control.zero] will fail, trigerring braktracking as usual *)
   all: only 1 : (exact 1) ++ (exact 2); Control.zero Not_found ++ reflexivity.
 Qed.
 
-(** To implement [once], it is hence crucial to use [Control.zero] rather than [Control.throw].
+(** To implement [once], it is hence crucial to use [Control.zero] rather than [Control.raise].
     Otherwise, in the example below [once reflexivity] would fail without backtracking,
     which clearly not wanted as [once tac] is supposed to prevent backtracking
     of a [tac], not backtracking of all the previous tactics.
@@ -555,7 +441,57 @@ Goal exists n, n = 2.
 Qed.
 
 
-(** *** 3.5 Reimplementing [;]
+(** *** 3.4 Backtracking and Goal Focusing
+
+  In all previous sections, we have used our tactics with exactly one goal focused.
+  What happens if more than one goal is focused ? Does [tac1 ++ tac2]:
+  1. must choose [tac1] or [tac2], and apply it to all the goals
+  2. it can apply [tac1] or [tac2] independently for each goal
+
+  With the current implementation it must choose [tac1] or [tac2] and apply it everywhere.
+  For instance, the following example fails, even though it clearly works if
+  the tactic was evaluated independently for every goal.
+*)
+
+Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
+  split.
+  Fail all: left ++ right; print_goals; reflexivity.
+Abort.
+
+(** The reasons is that it tries to figure one computation path that will succed
+    for all the goals.
+    In particular, a failure in one goal will trigger backtracking to the first
+    goal and try the next success of the tactic for this goal and all the goals,
+    this until it has found a success that work in for goals, or exhaust all possibilities.
+
+    This can be seen by trying to prove [(0 = 0 \/ 1 = 1) /\ (1 = 0 \/ 1 = 1)].
+    Both [0 = 0] and [1 = 1] are provable, but if we pick [left] to solve the
+    first goal, and hence the second goal, we get stuck with [1 = 0] which is not
+    provable. It should hence backtrack to pick [right].
+*)
+
+Goal (0 = 0 \/ 0 = 0) /\ (1 = 0 \/ 1 = 1).
+  split. all: left ++ right; print_goals; reflexivity.
+Qed.
+
+(** If you want to apply a tactic independently to every goal, it must be wrapped in
+    [Control.enter : (unit -> unit) -> unit], it now works as expected.
+ *)
+
+Ltac2 or_backtrack_indep (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
+  Control.enter (fun _ => Control.plus tac1 (fun _ => tac2 ())).
+
+Ltac2 Notation tac1(thunk(self)) "++i" tac2(thunk(self)) :=
+  or_backtrack_indep tac1 tac2.
+
+Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
+  split. all: left ++i right; print_goals; reflexivity.
+Abort.
+
+
+
+
+(** *** 3.5 Reimplementing [;] using [zero],[plus] and [case]
 
     As it turns out, [zero], [plus] [case] are so powerful that when combined
     with recursion they enable us to reimplement the [;] operator.
@@ -565,7 +501,7 @@ Qed.
    2. Oherwise it should execute [tac2], and in case of failure backtracks to [tac1]
 
   This naturally leads to use [Control.Case] to inspect if [tac1] fails or not.
-  - If it fails, we return [Control.zero], rather than [Control.throw], in order
+  - If it fails, we return [Control.zero], rather than [Control.raise], in order
     to fail without breaking previous backtracking points.
   - If [tac1] succeds and return a value [x] and an handler [h],
     we want to execute [tac2] and if it fails backtrack to execute [h ; tac2]
