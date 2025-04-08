@@ -1,18 +1,19 @@
 (** * Tutorial Ltac2 : Backtracking
 
   *** Summary
-  In Ltac2, every value
 
-  Ltac2 offers powerful primitives to deal with backtracking,
-  While powerful this can be a bit unsetteling for newcommers.
-  In this tutorial, we introduce them, and explain how to use them
-  by recoding basic functionality of Ltac1.
-
+  Ltac2 has native support for backtracking, and powerful primitives to
+  manipulate it enabling us to write powerful automatisation proof script.
+  While powerful, backtracking and its primitives can be a bit unsetteling for newcommers.
+  In this tutorial, we explain how backtracking works in Ltac2, and
+  how to use the different primitives to manipulate bactracking by recoding
+  basics tactics that were hardcoded in Ltac1.
 
   *** Table of content
 
-  - 1. The concept of backtracking ???
-  - 2. Manipulating Backtracking with Ltac2
+  - 1. Manipulating Tactics with Ltac2, and Thunks
+  - 2. Backtracking in Ltac2
+  - 3. Manipulating Backtracking with Ltac2 primitives
 
   *** Prerequisites
 
@@ -22,11 +23,11 @@
   Installation:
   - Ltac2 and its core-library are available by default with Rocq
 
-  Disclamer:
-    You can go a **long way** with Ltac2 without ever needing to directly manipulate backtracking,
-    outside of backtracking tactics like [constructor], [only] and [match!].
-    This tutorial is for advanced users of Ltac2, or for users wanting a deeper
-    understanding of how backtracking works.
+  Disclamer: You can go a **long way** with Ltac2 without ever needing to
+    directly manipulate backtracking, outside of backtracking tactics like
+    [constructor], [only] and [match!]. This tutorial is for advanced users of
+    Ltac2, or for users wanting a deeper understanding of how backtracking
+    works.
 *)
 
 (** Let us start by importing Ltac2, and write a small function for
@@ -126,14 +127,113 @@ Abort.
 
 
 
-(** ** 1. Backtracking with Ltac2
+(** ** 2. Backtracking in Ltac2
 
-    *** 1.1 Working in a Backtracking Monad
+  (* 2.1 Intuition *)
 
-    TODOT TEXT
+
+    BEGIN --- CLARIFY
+
+    Backtracking is primitive to Ltac2.
+    This means that every object of the language has by default the possibility to backtrack.
+
+    Formally, what it means is that an object of type ['a] does not represent
+    one object ['a] but a stream of objects.
+    That is a potentially infinite list of objects of type ['a]
+
+    END --- CLARIFY
+
+
+  (* TO KEEP ??? *)
+    [tac1 ; tac2] is basically evaluates with the following workflow:
+    1. [tac1] is evaluated first, either:
+      - To a value [t] and the rest of the stream [x].
+        In this case it tries to apply [t], and if this fails it
+        evaluates recursively the stream [x] until it finds a value
+        that succeeds or reaches an error and fail.
+      - To an error [e] in which case [tac1 ; tac2] fails with error [e],
+
+    2. If step 1. succeeds, it starts evaluating [tac2], which proceeds like
+       evaluation of [tac1] up to managment of errors. Either it evaluates:
+       - To a value [t] and the rest of the stream [x].
+          In this case it tries to apply [t], and if this fails it
+          evaluates recursively the stream [x] until it finds a value
+          that succeeds or reaches an error and fail.
+       - If it fails on an error, it revert the action of [t],
+         and restart the evaluation provess at [x; tac2].
+
+
+  To understand this flow better, let us consider the tactic
+  [constructor; reflexivity] to solve the goal [0 = 1 \/ 1 = 1].
+
+  - 1. [constructor] evaluates to [apply left], which is a tactic that can be applied,
+        and a rest of the contination [x],
+  - 2. It evaluates [reflexivity] and tries to apply it
+  - 3. This fails has [0] is not equal to [1].
+  - 4. It reverts the action of [apply left], and start evaluating recursively [x; tac2]
+  - 5. [x] evalutes to [apply right], which is a tactic that can be applied,
+        and a continuation [y],
+  - 6. It evaluates [reflexivity] and tries to apply it, which solves the goal
+
+
+    Constructor => [apply left | apply right]
+      1. Evaluates constructor to [apply left | x]
+      2. Apply [apply left] => succeeds
+      3. Apply [reflexivity] => fail
+      4. Backtracks to [constructor], and evaluates the rest of the stream [x]
+         for next value which produces [apply right]
+      5.
 *)
 
-(** ** 1.2 Primitives to Handle Backtracking
+Goal 0 = 1 \/ 1 = 1.
+  constructor; print_goals; reflexivity.
+Qed.
+
+(* 2.2 Link with streams *)
+
+(** The intuition that this corresponds to stream can be seen by defining
+    stream as a Ltac2 type, and transforming any stream into a value,
+    and any term into a stream.
+ *)
+
+Ltac2 Type rec 'a backtracking_stream :=
+  [ EmptyStream(exn)
+  | ConsStream('a, (exn -> 'a backtracking_stream)) ].
+
+(* To go from value to stream, we use the primitive [Control.case] to evaluate
+   a thunk value, and check whether it produces an error [e], or a value [v]
+   and a continuation [h].
+   If it produces an error, we just return the empty strem as there is nothing to evaluate.
+   If it produces a value, we just add it to the recursive evaluation of the continutation.
+*)
+
+Ltac2 rec to_stream (t : unit -> 'a) : 'a backtracking_stream :=
+  match Control.case t with
+  | Err e => EmptyStream e
+  | Val (v, h) => ConsStream v (fun e => to_stream (fun () => h e))
+  end.
+
+(** To go from a stream to a value, we check whether the stream is a Empty or not.
+    If it is empty, we return [Control.zero] that represents the non-empty value.
+    If it is a constant, we use [Control.plus] to add ? to ?
+*)
+
+Ltac2 rec from_stream (s : 'a backtracking_stream) : unit -> 'a := fun () =>
+match s with
+| EmptyStream e => Control.zero e
+| ConsStream hd tl => Control.plus (fun () => hd) (fun e => from_stream (tl e) ())
+end.
+
+(* Handling exceptions *)
+
+
+
+
+(*
+
+    Basically, every object ['a] is a stream of possibility
+
+ ** Primitives to Handle Backtracking
 
 There are three simple but very powerful primitives to handle backtracking in Ltac2:
 
@@ -147,42 +247,53 @@ There are three simple but very powerful primitives to handle backtracking in Lt
 
 
 
-(*
--> plus
--> once
--> once_plus
--> orelse (||) and ++
-*)
+(** ** 3. Manipulating Backtracking with Ltac2 primitives
 
+    *** 3.1 Using Control.Plus
 
-(** *** 2.1 A Backtracking Or
+    To understand how [Control.plus] works, let us implement a [or] tactical
+    that given two tactics [tac1 or tac2] will:
 
-    To understand how [Control.plus] works, let us first consider how to implement
-    a [or] tactical that given two tactics [tac1 or tac2] will:
     1. Execute [tac1] until it produces a success, or run out of possibilities,
        in which case execute [tac2]
-    3. If [tac1 + tac2] succeeds but the value returned leads to a subsequent failure
-       when composed with another tactic, i.e. [tac1 + tac2 ; ... ; tac3],
-       then backtrack to [tac1 + tac2] to find another success,
-       possibly in [tac2] if they are none left in [tac1].
+    2. If [tac1 ++ tac2] succeeds but the value returned leads to a subsequent
+       failure when composed with another tactic, i.e. [tac1 ++ tac2 ; ... ; tac3],
+       then it backtracks to [tac1 ++ tac2] to find another success, possibly
+       trying [tac2] if they are no possible success left in [tac1].
 
-Defining an [or] that backtracks is a direct application of [Control.plus].
-Given two tactics [tac1 tac2: unit -> unit], [or_backtrack] simply uses [Control.plus]
-to install a backtracking point around [tac1], dealing with failure with [tac2] ignoring
-the exception that is raised.
+    This can be coded very simple using the [Control.plus] primitive.
+    Given two tactics [tac1 tac2: unit -> unit], [tac1 ++ tac2] consists in
+    using [Control.plus] to install a backtracking point around [tac1],
+    runnning [tac2] in case of exhaustion and failure of [tac1].
+
+    This does satify the specification as:
+    - This will indeed apply the first tactic that work first, as it tries
+      [tac1] first, and tries [tac2] onyl if [tac1] fails.
+    - This will indeed backtrack in case of subsequent failure and try [tac2] if
+      needed, as backtracking is the default behaviour of [;], and we simply
+      added [tac2] to additionnaly try if [tac1] fails.
+
+    If this feels confusing, a good practice is to see it from the perspective
+    of the stream model. In this particular case, it makes the problem easy.
+    Here, we want to try all the possibilities of [tac1], then all the
+    possibilities of [tac2] until one succeeds or none are remaining, and it fails.
+    In other words, we want to build the concatenation of the stream of [tac1]
+    and of the stream of [tac2]. That is exactly what [Control.plus] does.
+
 *)
-
 
 Ltac2 or_backtrack (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
   Control.plus tac1 (fun _ => tac2 ()).
 
-(** For redability, let us define an infix notation for it:
+(** Now that we have define [or_backtrack], let us define an infix notation for it.
 *)
 
 Ltac2 Notation tac1(thunk(self)) "++" tac2(thunk(self)) :=
-  or_backtrack tac1 (fun _ => tac2 ()).
+  or_backtrack tac1 tac2.
 
-(** We can easily check that the [++] does pick the first tactic to succeed.
+(** Now we have a nice notation to use it, let us tests it to ensure it works.
+    That is important because it is easy to make mistakes when dealing with
+    backtracking, for instance to forget side cases.
 *)
 
 Goal exists n, n = 2 /\ n = 3.
@@ -195,8 +306,8 @@ Goal exists n, n = 2 /\ n = 3.
   - Fail assumption ++ (exact 4).
 Abort.
 
-(** Moreover, it should backtrack to pick the next success of [tac1 ++ tac2]
-    if a choice leads to a subsequent failure.
+(** Moreover, [tac1 ++ tac2] should backtrack to pick the next success,
+    possibily trying [tac2], if a choice leads to a subsequent failure.
 
     To check it consider the example below that require a value [n] such that [n = 2].
     The first success is [exact 1] which leads to the goal [1 = 2].
@@ -212,23 +323,24 @@ Qed.
 
 (** Something important to understand about backtracking is that a tactic [tac1]
     can have more than one success, as [tac1] can backtrack itself.
-    That is why we talk about successes and not of results: everything can backtrack.
-    For instance, we could have [tac1 := tac1 ++ tac2], in which case
-    [(tac1 ++ tac2) ++ tac3] should exhaust all the successes of [tac1], before
-    considering the ones of [tac2], and finally the ones of [tac3].
+    That is why we talk about successes and not of the result: everything can backtrack.
+    For instance, our tactic could be [(tac1 ++ tac2) ++ tac3].
+    In this case, it should try all the successes of [ltac1 ++ ltac2], that is
+    all the ones of [ltac1] before the one of [ltac2], before trying [tac3].
 
     We can easily check that our implementation is correct and tries
     the successes in the good order by printing the goals.
  *)
 
 Goal exists n, n = 3.
- unshelve econstructor.
- (* The goals should be [1 = 3], [2 = 3], [3 = 3] *)
- all: only 1: (exact 1) ++ (exact 2) ++ (exact 3); print_goals; reflexivity.
+  unshelve econstructor.
+  (* The goals should be [1 = 3], [2 = 3], [3 = 3] *)
+  all: only 1: ((exact 1) ++ (exact 2)) ++ (exact 3); print_goals; reflexivity.
 Qed.
 
 
-(** *** 2.2 Writing a Or that does not backtrack
+
+(** *** 3.2 Using [Control.Case] to control backtracking
 
   In practice, backtracking on subsequent failure is not always wanted
   as it can make proof scripts costly, and hard to predict.
@@ -260,35 +372,23 @@ Goal nat + (2 = 2).
 Qed.
 
 (** That can quickly become hard to predict when dealing with non-trivial tactics.
-    For instance, when dealing with existential variables that can then be
-    unified differently, or pattern-matching that will make a different choice
-    depending on the shape of an hypothesis or a goal, which are affected in non
-    trivial ways by past choices.
+    For instance, with tactics that make a different choice depending on the
+    shape of an hypothesis or of the goal, which are affected in non trivial
+    ways by past choices.
     Therefore, it can be difficult to predict which goals will results from
     complex combined backtracking, and hence to scripts that are hard to debug
     when failing.
 
 
     We want instead to code a [||] tactical that for [tac1 || tac2] will apply
-    the first tactic that succeeds, but will not backtrack if the choice leads
+    the first tactics that succeeds, but will not backtrack if the choice leads
     to subsequent failure.
 
-    To do this, we need to use the [Control.case]
+    To do this, we need to use the [Control.case] to compute [tac1] and to
+    check whether it fails or not.
 
-
-
-%%% OLD TEXT
-
-To do so we consider
-
-We use [Control.case] to evaluates [tac] and see if returns an error or a value.
-1. If [tac] fails with an error [e], we want to try [tac2]. To do, we pass the
-   error to [tac2] that is free to ignore it or not. To check out, what has been
-   attempted, we additionally print the error message using [Message.of_exn].
-2. If [tac] returns a value [x] and a continuation [k]. In this case, we want to
-   return the value [x] but preserves the continuation to try. To do this, we
-   put the "stream" together with [Control.plus]:
-
+    If it fails, we execute [tac2], and otherwise, we return the first success
+    of [tac1] that works using [Control.plus].
 *)
 
 Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
@@ -297,48 +397,73 @@ Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
   | Val (x,k) => Control.plus (fun _ => x) k
   end.
 
-  Ltac2 Notation tac1(thunk(self)) "||" tac2(thunk(self)) :=
+Ltac2 Notation tac1(thunk(self)) "||" tac2(thunk(self)) :=
   orelse tac1 tac2.
 
-(** Because Lta2 is a call-by-value language, we must put tactic into a "thunk"
-    before passing to [orelse], otherwise it would be evaluated on the fly,
-    and all the work done by [orsele] by pointless.
-
-    In order not to have it to do it ourselves in the code, we define
-    the Ltac2 Notation calling the [orelse] to automatically insert "thunk"
-    around our tactics.
+(** We can now try the previous to tests that this still applies the first
+    tactic that succeeds.
 *)
 
 Goal exists n, n = 2 /\ n = 3.
   unshelve econstructor; only 2 : split.
-  (* Apply the first tactic that succeeds *)
+    (* If the first tactic succeed, it should be picked *)
   - (exact 2) || (exact 1).
+    (* If the first tactic failed, the second should be picked *)
   - assumption || reflexivity.
-  (* Fails if none of the tactic succeeds *)
+    (* If none works, it should fail returning the last error message *)
   - Fail assumption || (exact 4).
 Abort.
 
-(* However, [orlse] will not backtrack on the choice of the tactic to apply
-   in case of the choice causes subsequent failure
+(** Moreover, compared to [++], [||] will not backtrack on the choice [tac1] v.s. [tac2].
+    However, this does not disable the backtraking abilities of [tac1] and [tac2]
+    in case of subsequent failure.
+    If [tac1] or [tac2] is picked, it can still backtrack due to subsequent failure.
 *)
+
 Goal exists n, n = 2.
   unshelve econstructor.
-  (* It applies [exact 1] as it is the first tactic to succeeds, which leads to
-     [1 = 2], it then fails on [reflexivity] rather than backtracking to do [exact 2]. *)
-  Fail all: only 1: (exact 1) || (exact 2); reflexivity.
+  (* It picks [exact 1] and can not backtrack to try [exact 2] *)
+  Fail all: only 1: (exact 1) || (exact 2); print_goals; reflexivity.
+  (* It picks [(exact 1) ++ (exact 2)] which can backtrack *)
+  all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
+Abort.
+
+Goal 0 = 2 -> 0 = 2.
+Fail all: only 1: (exact 1) || (exact 2); print_goals; reflexivity.
+  all: only 1: ((exact 1) ++ (exact 2)) ++ (exact 3); print_goals; reflexivity.
 Abort.
 
 
+(* 3.3 Using [once] to control backtracking *)
+
+
+
+(*
+Explain the link with
+- once
+- control_plus
+
+*)
 
 
 
 
-(** 2. Backtracking and Goal Focusing *)
+
+(** *** 3.4. Backtracking and Goal Focusing *)
 
 
 Goal (True \/ False) /\ (False \/ True).
   Fail split; left ++ right; print_goals; econstructor.
 
+
+
+
+
+
+
+
+
+(* ELSE *)
 
     (* Reimplement ; *)
 
