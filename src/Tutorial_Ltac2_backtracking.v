@@ -522,28 +522,28 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
     it adds more potential successes to try if [run] produces none.
 
     Given an error [e], another common source of confusion is the difference
-    between returning [Control.zero e] or [Control.raise e].
-    [Control.raise e] raises the error [e] and interrupts the computation.
+    between returning [Control.zero e] or [Control.throw e].
+    [Control.throw e] raises the error [e] and interrupts the computation.
     It will not look for any other success, not trigger backtracking,
     opposite to [Control.zero].
 *)
 
 Goal 0 = 1 -> 0 = 1.
-  (* When evaluated [Control.raise] raises an error and interrupts the computation *)
-  Fail intros H1; (raise Not_found ++ assumption).
+  (* When evaluated [Control.throw] raises an error and interrupts the computation *)
+  Fail intros H1; (Control.throw Not_found ++ assumption).
   (* [Control.zero] fails, so it will just look for next success, here [assumption] *)
   intros H1; (Control.zero Not_found ++ assumption).
 Qed.
 
 Goal exists n, n = 2.
   unshelve econstructor.
-  (* [Control.raise] will not backtrack either: it stops computation *)
-  Fail all: only 1 : (exact 1) ++ (exact 2); Control.raise Not_found ++ reflexivity.
+  (* [Control.throw] will not backtrack either: it stops computation *)
+  Fail all: only 1 : (exact 1) ++ (exact 2); Control.throw Not_found ++ reflexivity.
   (* Whereas [Control.zero] will fail, trigerring braktracking as usual *)
   all: only 1 : (exact 1) ++ (exact 2); Control.zero Not_found ++ reflexivity.
 Qed.
 
-(** To implement [once], it is hence crucial to use [Control.zero] rather than [Control.raise].
+(** To implement [once], it is hence crucial to use [Control.zero] rather than [Control.throw].
     Otherwise, in the example below [once reflexivity] would fail without backtracking,
     which clearly not wanted as [once tac] is supposed to prevent backtracking
     of a [tac], not backtracking of all the previous tactics.
@@ -565,7 +565,7 @@ Qed.
    2. Oherwise it should execute [tac2], and in case of failure backtracks to [tac1]
 
   This naturally leads to use [Control.Case] to inspect if [tac1] fails or not.
-  - If it fails, we return [Control.zero], rather than [Control.raise], in order
+  - If it fails, we return [Control.zero], rather than [Control.throw], in order
     to fail without breaking previous backtracking points.
   - If [tac1] succeds and return a value [x] and an handler [h],
     we want to execute [tac2] and if it fails backtrack to execute [h ; tac2]
