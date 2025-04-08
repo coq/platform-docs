@@ -59,16 +59,16 @@ Ltac2 print_goals () :=
 Ltac2 Notation "print_goals" := print_goals ().
 
 Ltac2 only0 (startgoal : int) (endgoal : int option) (tac : unit -> 'a) : 'a :=
-let clamp i :=
-  if (Int.lt i 0)
-  then Int.add (Int.add i (Control.numgoals ())) 1
-  else i
-in
-let endgoal := Option.default startgoal endgoal in
-Control.focus (clamp startgoal) (clamp endgoal) tac.
+  let clamp i :=
+    if (Int.lt i 0)
+    then Int.add (Int.add i (Control.numgoals ())) 1
+    else i
+  in
+  let endgoal := Option.default startgoal endgoal in
+  Control.focus (clamp startgoal) (clamp endgoal) tac.
 
 Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(thunk(tactic)) :=
-only0 startgoal endgoal tac.
+  only0 startgoal endgoal tac.
 
 
 
