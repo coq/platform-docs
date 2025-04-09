@@ -408,7 +408,7 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
     it adds more potential successes to try if [run] produces none.
 
     Given an error [e], another common source of confusion is the difference
-    between returning [Control.zero e] or [Control.raise e].
+    between returning [Control.zero e] or [Control.throw e].
     [Control.raise e] raises the error [e] and interrupts the computation.
     It will not look for any other success, not trigger backtracking,
     opposite to [Control.zero].
