@@ -87,8 +87,10 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
   Being call-by-value is important for a functional programming language like Ltac2
   to be predicatable and intuitive.
 
-  However, this has an important side effect to manipulate tactics.
-  If we pass a tactic like [fail] **as is** to a Ltac2 function, it will be evaluated first.
+  However, this has an important side effect on manipulating tactics.
+  If we pass the tactic [fail] -- that corresponds to [Control.zero (Tactic_failure None)]
+  which stops computation and trigger backtracking --
+  **as is** to a Ltac2 function, it will be evaluated first.
   As [fail] fails, the whole Ltac2 tactic will then fail, even if [fail] is not used.
   For instance, consider a function ignoring its arguments, and doing nothing.
   Applying it directly to [fail] will fail, even though it should do nothing.
