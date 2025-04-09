@@ -49,14 +49,14 @@ From Ltac2 Require Import Ltac2.
 From Ltac2 Require Import Printf.
 From Ltac2 Require Import Notations.
 
-Ltac2 print_goals () :=
+Ltac2 print_goals0 () :=
   Control.enter (fun () =>
   match! goal with
   [ |- ?t] => printf "the goal is %t" t
   end
   ).
 
-Ltac2 Notation "print_goals" := print_goals ().
+Ltac2 Notation print_goals := print_goals0 ().
 
 Ltac2 only0 (startgoal : int) (endgoal : int option) (tac : unit -> 'a) : 'a :=
   let clamp i :=
@@ -110,23 +110,28 @@ Abort.
     A [good_ignore] function would hence have following type, and we can check it works:
 *)
 
-Ltac2 good_ignore (tac : unit -> unit) : unit := ().
+Ltac2 good_ignore0 (tac : unit -> unit) : unit := ().
 
 Goal (0 = 0).
   (* succeeds doing nothing  *)
-  good_ignore (fun () => fail).
+  good_ignore0 (fun () => fail).
 Abort.
 
 (** While this works, no one wants to write "thunk" by hand in proof scripts.
-    Thanfully, there is an easy not to have to. It suffices to define
-    a Ltac2 notation that directly inserts the thunks around tactics for us.
-    For instance, for [good_ignore], we declare a notation with the same
-    name that takes a tactic as argument that is "thunk", i.e. [tac(thunk(tactic))].
+    Thanfully, there is an easy not to have to. It suffices to define a
+    <a href="https://rocq-prover.org/doc/V9.0.0/refman/proof-engine/ltac2.html#abbreviations">Ltac2 Abreviation</a>
+    that directly inserts the thunks around tactics for us.
+    For instance, for [good_ignore], we declare an abreviation with the same
+    that takes a tactic as argument.
+
 *)
 
-Ltac2 Notation "good_ignore" tac(thunk(tactic)) := good_ignore tac.
+Ltac2 Notation good_ignore := good_ignore0.
 
-(** It is then possible to write clean proof script as usual, while having a
+(** Note, as we will later see, when using general notations and not just abreviations,
+    we have to specify ourself which argument are "thunk".
+
+    It is then possible to write clean proof script as usual, while having a
     meta-programming language with a clear semantics, opposite to Ltac1.
 *)
 
@@ -186,7 +191,7 @@ Abort.
 *)
 
 Ltac2 or_backtrack (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.plus tac1 (fun () => tac2 ()).
+  Control.plus tac1 (fun _ => tac2 ()).
 
 Ltac2 Notation tac1(thunk(self)) "++" tac2(thunk(self)) :=
   or_backtrack tac1 tac2.
@@ -373,13 +378,13 @@ Abort.
       the stream to prevent any backtracking.
 *)
 
-Ltac2 my_once (tac : unit -> 'a) : 'a :=
+Ltac2 my_once0 (tac : unit -> 'a) : 'a :=
   match Control.case tac with
   | Err e => Control.zero e
   | Val(x,_) => x
   end.
 
-Ltac2 Notation "my_once" tac1(thunk(self)) := my_once tac1.
+Ltac2 Notation my_once := my_once0.
 
 (** A common source of confusion using [Control.case], it to think that this
     will only try the first tactics in the stream of possibilities.
@@ -479,7 +484,7 @@ Qed.
  *)
 
 Ltac2 or_backtrack_indep (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.enter (fun () => Control.plus tac1 (fun () => tac2 ())).
+  Control.enter (fun () => Control.plus tac1 (fun _ => tac2 ())).
 
 Ltac2 Notation tac1(thunk(self)) "++i" tac2(thunk(self)) :=
   or_backtrack_indep tac1 tac2.
