@@ -352,19 +352,19 @@ Abort.
 
 
 (** *** 3.3 Implementing [once] with [Control.case] and [Control.zero]
-            for a finer control of backtrackin
+            for a finer control of backtracking
 
-    TODO: write it
+    Backtracking is allowed by default. To offer better control over it Rocq
+    comes with a primtive [once tac] that prevents [tac] to backtrack in case
+    of subsequent failure.
 
-    To control backtracking further, Ltac2 comes with a primitive [once].
-
-    In case f
-
+    This enables us to have a fine grain control, for instance, in the example before
+    we can add it around [(exact 1) ++ (exact 2)] to prevent backtracking.
 *)
 
 Goal exists n, n = 2.
   unshelve econstructor.
-  (* It picks [(exact 1) ++ (exact 2)] can not backtrack further due to [only]
+  (* It picks [(exact 1) ++ (exact 2)] can not backtrack further due to [once]
      hence backtrack to try [exact 3] *)
   Fail all: only 1: (once ((exact 1) ++ (exact 2))) ++ (exact 3); print_goals; reflexivity.
 Abort.
@@ -414,7 +414,22 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
     This does not add potential successes to backtrack to in case of subsequent failure,
     it adds more potential successes to try if [run] produces none.
 
-    Given an error [e], another common source of confusion is the difference
+    Simialry is [once (tac1 ++ tac2)] the same as [tac1 || tac2] ?
+    It is not the case. The reason is that [once] prevents backtracking all together.
+    Wheras, [tac1 || tac2] only prevents backtracking to try [tac2], if [tac1]
+    succeded first. It does not prevent to backtrack to try [tac1] again.
+    [once (tac1 ++ tac2)] corresponds to [once tac1 || once tac2].
+*)
+
+Goal exists n, n = 2.
+  unshelve econstructor.
+  (* this fails as no backtracking is allowed *)
+  Fail all: only 1: once (((exact 1) ++ (exact 2)) ++ (exact 3)); print_goals; reflexivity.
+  (* but this succeds *)
+  all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
+Abort.
+
+(** Given an error [e], another common source of confusion is the difference
     between returning [Control.zero e] or [Control.throw e].
     [Control.throw e] raises the error [e] and interrupts the computation.
     It will not look for any other success, not trigger backtracking,
@@ -446,6 +461,8 @@ Goal exists n, n = 2.
   unshelve econstructor.
   all: only 1 : (exact 1) ++ (exact 2); once reflexivity.
 Qed.
+
+
 
 
 (** *** 3.4 Backtracking and Goal Focusing
