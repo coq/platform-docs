@@ -50,7 +50,7 @@ From Ltac2 Require Import Printf.
 From Ltac2 Require Import Notations.
 
 Ltac2 print_goals () :=
-  Control.enter ( fun _ =>
+  Control.enter (fun () =>
   match! goal with
   [ |- ?t] => printf "the goal is %t" t
   end
@@ -102,10 +102,10 @@ Abort.
 
 (** Consequently, tactics must be "thunk" to be manipulated by a Ltac2 function.
     That is, rather than manipulating [tac : unit] directly, a Ltac2 function
-    manipulates it is "thunk" version instead [fun _ => tac : unit -> unit].
+    manipulates it is "thunk" version instead [fun () => tac : unit -> unit].
     As function are already fully-evaluated in call-by-value, "thunk" do
     not get reduced further when passed as arguments, and can hence be evaluated
-    on demand by Ltac2 functions applying it to [()], [(fun _ => tac) ()].
+    on demand by Ltac2 functions applying it to [()], [(fun () => tac) ()].
 
     A [good_ignore] function would hence have following type, and we can check it works:
 *)
@@ -114,7 +114,7 @@ Ltac2 good_ignore (tac : unit -> unit) : unit := ().
 
 Goal (0 = 0).
   (* succeeds doing nothing  *)
-  good_ignore (fun _ => fail).
+  good_ignore (fun () => fail).
 Abort.
 
 (** While this works, no one wants to write "thunk" by hand in proof scripts.
@@ -186,7 +186,7 @@ Abort.
 *)
 
 Ltac2 or_backtrack (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.plus tac1 (fun _ => tac2 ()).
+  Control.plus tac1 (fun () => tac2 ()).
 
 Ltac2 Notation tac1(thunk(self)) "++" tac2(thunk(self)) :=
   or_backtrack tac1 tac2.
@@ -284,14 +284,14 @@ Qed.
 Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
   match Control.case tac1 with
   | Err _ => tac2 ()
-  | Val (x,k) => Control.plus (fun _ => x) k
+  | Val (x,k) => Control.plus (fun () => x) k
   end.
 
 (*
     This satifies the specification as:
     - It applies [tac1] and if it fails [tac2]
     - This does not backtrack from [tac1] to [tac2] as in case of subsequent failure
-      it backtracks to [Control.plus (fun _ => x) k] i.e. [tac1].
+      it backtracks to [Control.plus (fun () => x) k] i.e. [tac1].
 
     In terms of streams, this corresponds to using the stream [tac1]
     if at has at least one success, and the stream [tac2] otheriwse.
@@ -479,7 +479,7 @@ Qed.
  *)
 
 Ltac2 or_backtrack_indep (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.enter (fun _ => Control.plus tac1 (fun _ => tac2 ())).
+  Control.enter (fun () => Control.plus tac1 (fun () => tac2 ())).
 
 Ltac2 Notation tac1(thunk(self)) "++i" tac2(thunk(self)) :=
   or_backtrack_indep tac1 tac2.
@@ -516,7 +516,7 @@ Ltac2 rec concat (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
   | Err e => Control.zero e
   | Val ( _ , f ) =>
       Control.plus tac2 (fun e' =>
-      concat (fun () => f e') (fun _ => tac2 ()))
+      concat (fun () => f e') (fun () => tac2 ()))
   end.
 
 Ltac2 Notation tac1(thunk(self)) "##" tac2(thunk(self)) :=
