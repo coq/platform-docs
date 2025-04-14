@@ -39,7 +39,7 @@ From Ltac2 Require Import Printf.
 
   Since tactics or raising exceptions have side effects, we have to keep in mind
   when things are evaluated as side-effects are computed at evaluation.
-  Opposite to Rocq that is call-by-name, Ltac2 is a call-by-value language.
+  Ltac2 is a call-by-value language.
   This means that in Ltac2 the arguments of a function are evaluated before
   the body of the function.
 
