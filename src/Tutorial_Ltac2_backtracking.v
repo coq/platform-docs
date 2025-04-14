@@ -11,7 +11,6 @@
 
   *** Table of content
 
-  - 1. Manipulating Tactics with Ltac2, and Thunks
   - 2. Backtracking in Ltac2
   - 3. Manipulating Backtracking with Ltac2 primitives
     - 3.1 Using [Control.Plus] to stack possibilities
@@ -72,74 +71,7 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
 
 
 
-(** 1. Manipulating Tactics with Ltac2, and Thunks
 
-  Before explaining how to manipualte backtracking with Ltac2,
-  let us recall how to manipulate tactics with Ltac2 functions.
-
-  Tactics such as [assumption] or [left] modify the proof state through side effects,
-  such as modifying hypotheses or resolving an existential variable.
-  They do not produces Ltac2 value, like an integer [Int] of Ltac2, and are
-  hence of type [unit].
-
-  Opposite to Rocq that is call-by-name, Ltac2 is language that is call-by-value.
-  This means that a Ltac2 function evaluates its arguments before evaluating the body of the function.
-  Being call-by-value is important for a functional programming language like Ltac2
-  to be predicatable and intuitive.
-
-  However, this has an important side effect on manipulating tactics.
-  If we pass the tactic [fail] -- that corresponds to [Control.zero (Tactic_failure None)]
-  which stops computation and trigger backtracking --
-  **as is** to a Ltac2 function, it will be evaluated first.
-  As [fail] fails, the whole Ltac2 tactic will then fail, even if [fail] is not used.
-  For instance, consider a function ignoring its arguments, and doing nothing.
-  Applying it directly to [fail] will fail, even though it should do nothing.
-*)
-
-Ltac2 bad_ignore (bad_tac : unit) : unit := ().
-
-Goal 0 = 0.
-  Fail bad_ignore fail.
-Abort.
-
-(** Consequently, tactics must be "thunk" to be manipulated by a Ltac2 function.
-    That is, rather than manipulating [tac : unit] directly, a Ltac2 function
-    manipulates it is "thunk" version instead [fun () => tac : unit -> unit].
-    As function are already fully-evaluated in call-by-value, "thunk" do
-    not get reduced further when passed as arguments, and can hence be evaluated
-    on demand by Ltac2 functions applying it to [()], [(fun () => tac) ()].
-
-    A [good_ignore] function would hence have following type, and we can check it works:
-*)
-
-Ltac2 good_ignore0 (tac : unit -> unit) : unit := ().
-
-Goal (0 = 0).
-  (* succeeds doing nothing  *)
-  good_ignore0 (fun () => fail).
-Abort.
-
-(** While this works, no one wants to write "thunk" by hand in proof scripts.
-    Thanfully, there is an easy not to have to. It suffices to define a
-    <a href="https://rocq-prover.org/doc/V9.0.0/refman/proof-engine/ltac2.html#abbreviations">Ltac2 Abreviation</a>
-    that directly inserts the thunks around tactics for us.
-    For instance, for [good_ignore], we declare an abreviation with the same
-    that takes a tactic as argument.
-
-*)
-
-Ltac2 Notation good_ignore := good_ignore0.
-
-(** Note, as we will later see, when using general notations and not just abreviations,
-    we have to specify ourself which argument are "thunk".
-
-    It is then possible to write clean proof script as usual, while having a
-    meta-programming language with a clear semantics, opposite to Ltac1.
-*)
-
-Goal 0 = 0.
-  good_ignore fail.
-Abort.
 
 
 
