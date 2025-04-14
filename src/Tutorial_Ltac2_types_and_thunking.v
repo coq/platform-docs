@@ -1,5 +1,9 @@
 (** * Tutorial Ltac2 : Type of Tactics and Thunking
 
+  *** Authors
+  - Thomas Lamiaux
+  - Josselin Poiret
+
   *** Summary
 
   This tutorial contains a small tutorial explaining the type of tactics in Ltac2,
