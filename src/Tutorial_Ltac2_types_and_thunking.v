@@ -16,7 +16,7 @@
 
   *** Prerequisites
 
-  Disclamer:
+  Disclaimer:
     - This is meant to be completed into a first introduction to Ltac2.
 
   Needed:
@@ -34,7 +34,7 @@ From Ltac2 Require Import Printf.
   Usual tactics like [assumption] or [left] are notations for Ltac2 functions.
   They modify  the proof state through side effects, such as modifying
   hypotheses or resolving an existential variable.
-  They do not produce Ltac2 value, like an integer [Int] of Ltac2, and are
+  They do not produce Ltac2 value, like an integer [int] of Ltac2, and are
   hence of type [unit].
 
   Since tactics or raising exceptions have side effects, we have to keep in mind
@@ -44,7 +44,7 @@ From Ltac2 Require Import Printf.
   the body of the function.
 
   Being call-by-value is important for a functional programming language like Ltac2
-  to be predicatable and intuitive.
+  to be predictable and intuitive.
   However, this has an important side effect on manipulating tactics.
   If we pass the tactic [fail] -- that corresponds to [Control.zero (Tactic_failure None)]
   which stops computation and trigger backtracking --
@@ -103,7 +103,7 @@ Abort.
 
 (** While this works, no one wants to write "thunk" by hand in proof scripts.
     Thankfully, there is an easy not to have to. It suffices to define a
-    <a href="https://rocq-prover.org/doc/V9.0.0/refman/proof-engine/ltac2.html#abbreviations">Ltac2 Abreviation</a>,
+    <a href="https://rocq-prover.org/doc/V9.0.0/refman/proof-engine/ltac2.html#abbreviations">Ltac2 Abbreviation</a>,
     a simple kind of notations, that directly inserts the thunks around tactics for us.
     For instance, for [good_ignore], we declare an abbreviation with the same
     name that takes a tactic as argument.
