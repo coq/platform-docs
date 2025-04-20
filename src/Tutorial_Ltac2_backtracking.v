@@ -75,11 +75,7 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
 
 (** 1. Introducing on Backtracking
 
-    In Ltac2 backtracking is primitive.
-
-    Every value is by default backtracking, in particular value of types [unit]
-    w
-
+  All tactics are potentially backtracking, in the sense that they may backtrack or
     The basic example is the tactic [constructor]:
 *)
 
@@ -90,17 +86,59 @@ Qed.
 
 
 
-(* In the stream perpective 
+(** In Ltac2 backtracking is primitive.
 
-  There are three main primitives to directly manipulate backtracking in Ltac2:
-  - [Control.zero : exn -> 'a]
-  - [Control.plus : (unit -> 'a) -> (exn -> 'a) -> 'a]
-  - [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result]
-  
-  
-  
+    This means that every Ltac2 term is potentially backtracking, and that there is no
+    distinction in the type of a term that can backtrack compared to one that can not.
+    For example, both tactics [constructor] and [left] are of type [unit],
+    even though the first one can backtrack, but not the second one.
+
+    Unlike typical programming languages, in Ltac2, a term should not be viewed
+    as a single value, but instead as stream of potential terms to be tried.
+
+    The first term gets tried, i.e. the head of the stream, and if this choice
+    leads to a subsequent failure and to backtracking, then it tries the second term,
+    i.e. the new head of the stream, and so on.
+    This goes on until either a value leads to a success, or all possibilities
+    have been exhausted in which case it trigger a backtraking error.
+    Note, that this can last forever as stream are potentially infinite.
+
+    To understand this better, consider using [constructor; exact I] to prove [False \/ True].
+    [constructor] can have two successes [left] and [right], are this are the
+    two constructors of [\/], and can hence be viewed as the stream [left;right].
+    When chained with [exact I], this will first try [left] as it is the head
+    of the stream. This leads to the goal [False] on which [exact I] fails.
+    It will hence backtrack and to try the next success [right], which this time
+    leads to [True I] on which [I] succeed. Consequently, the whole tactic succeed.
+*)
+
+Goal False \/ True.
+  constructor; print_goals; exact I.
+Qed.
+
+(** If we try [constructor; assumption] instead this will try [left] then [right]
+    which both leads to goals that can not be solved by [assumption].
+    It will hence reach the empty stream and trigger backtracking.
+    As they are no previous backtracking point to backtrack to,
+    it will just fail here returning the last error message.
+*)
+
+Goal False \/ True.
+  Fail constructor; print_goals; assumption.
+Abort.
+
+(** That terms represent streams is true for every term, not just for terms of type [unit].
+    For instance [n : nat], should not be viewed as a signle value like [3],
+    but instead as a potentially empty or infinite stream of integers like [3;4;3;4;9;...].
 
 
+    Ltac2 offers a complete set of primitive functions to manipulage backtracking:
+    - [Control.zero : exn -> 'a]
+    - [Control.plus : (unit -> 'a) -> (exn -> 'a) -> 'a]
+    - [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result]
+
+    We will now see how backtracking and this primitives works,
+    by recoding some of Ltac2 tactic combinators.
 *)
 
 
