@@ -77,13 +77,23 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
 
 (** ** 1. Introducing on Backtracking
 
-  In rocq, All tactics are potentially backtracking, in the sense that they may backtrack or
-    The basic example is the tactic [constructor]:
+  In Rocq, all tactics are potentially backtracking.
+  The most well known example is the [constructor] tactic that tries the
+  constructor one by one, until one leads to a success or all constructors
+  have been tried in which case it fails.
 *)
 
 Goal False \/ True.
   constructor; print_goals; exact I.
 Qed.
+
+(** In practice, most people needing backtracking only ever need pred-defined
+      function like [constructor], [first], [once], or the different versions of
+      match like [lazymatch!] that hanldes backtracking for us.
+
+    In this tutorial, we go further than this and explain how backtracking works
+    in Ltac2, and how it can be manipulated through set of three basic primitives.
+*)
 
 
 (** *** 1.1 The Strean Model
