@@ -11,7 +11,7 @@
 
   *** Table of content
 
-  - 1. ?
+  - 1. Introduction to Backtracking
   - 2. Using [Control.zero] to raise exceptions
   - 3. Using [Control.Plus] to stack possibilities
   - 4. Using [Control.Case] to inspect backtracking
@@ -90,7 +90,18 @@ Qed.
 
 
 
-(* In the stream perpective *)
+(* In the stream perpective 
+
+  There are three main primitives to directly manipulate backtracking in Ltac2:
+  - [Control.zero : exn -> 'a]
+  - [Control.plus : (unit -> 'a) -> (exn -> 'a) -> 'a]
+  - [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result]
+  
+  
+  
+
+
+*)
 
 
 (** 2. Using [Control.zero] to raise exceptions
