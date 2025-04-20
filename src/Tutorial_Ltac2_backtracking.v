@@ -12,15 +12,15 @@
   *** Table of content
 
   - 1. Introduction to Backtracking
-      1.1 The stream model
-      1.2 Backtraking and Goal Focusing
+    - 1.1 The stream model
+    - 1.2 Backtraking and Goal Focusing
   - 2. Using [Control.zero] to raise exceptions
   - 3. Using [Control.Plus] to stack possibilities
+    - 3.1 Reimplementing [+]
   - 4. Using [Control.Case] to inspect backtracking
-    - 4.1 Reimplementing [orselse]
+    - 4.1 Reimplementing [||]
     - 4.1 Reimplementing [once]
     - 4.3 Reimplementing [;] using [zero],[plus] and [case]
-  - 5. Backtracking and Goal focussing
 
   *** Prerequisites
 
@@ -286,20 +286,25 @@ Abort.
     In case of backtraking, it just try the next succees in the stream, so once again,
     what is left to try in [f], then [k].
 
+    *** 3.1 Reimplementing [+]
 
     To understand how [Control.plus] works in practice, let us define a or for
     tactics [tac1 ++ tac2], that should:
     1. Apply the first success of [tac1], and if there are none, try [tac2]
     2. In case of subsequent failure, backtrack to [tac1], and if all succeses
        of [tac1] are exhausted, try [tac2]
+    3. We want each of the goal to be tried independently
 
     This is a direct application of [Control.plus], as it consist in installing
     a backtraking point around [tac1], running [tac2 ()] in case of failure
     of [tac1] disregarding any exception returned by [tac1].
+    The whole thing being wrapped in [Control.enter] to focus the goals.
 *)
 
 Ltac2 or_backtrack (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.plus tac1 (fun _ => tac2 ()).
+  Control.enter (fun () =>
+    Control.plus tac1 (fun _ => tac2 ())
+  ).
 
 (* note, we need to specify thunk by hand with general notations *)
 Ltac2 Notation tac1(thunk(self)) "++" tac2(thunk(self)) :=
@@ -330,6 +335,10 @@ Goal exists n, n = 3.
   all: only 1: ((exact 1) ++ (exact 2)) ++ (exact 3); print_goals; reflexivity.
 Qed.
 
+Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
+  (* it picks [left] or [right] independently  *)
+  split; Control.enter (fun _ => left ++ right); print_goals; reflexivity.
+Abort.
 
 
 (** ** 4. Using [Control.Case] to inspect backtracking
@@ -348,7 +357,7 @@ Qed.
     if it is empty, and if not return the head with the rest of the stream.
 
 
-  *** 4.1 Reimplement [orelse]
+  *** 4.1 Reimplement [||]
 
   As a first example where [Control.case] is needed, consider [++] or section 3.
   In practice, backtracking on [tac2] in case subsequent failure of the choice of [tac1]
@@ -373,22 +382,30 @@ Qed.
     [tac2] if it has chosen [tac1] and that lead to a subsequent failure.
 
     To do this, we use [Control.case] to check the backtracking structure of [tac1].
-    - If it [tac1] fails, we try [tac2].
-    - If it succeds, then we return [tac1], which we have to reconstruct with
-      [Control.plus] as we have destructed it with [Control.Case].
+    1. If it [tac1] fails, we try [tac2].
+    2. If it succeds, then we return [tac1], which we have to reconstruct with
+       [Control.plus] as we have destructed it with [Control.Case].
+    3. We wrapped it in [Control.enter] so that the choice is independent for
+      every goal
 *)
 
-Ltac2 orelse (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
-  match Control.case tac1 with
-  | Err _ => tac2 ()
-  | Val (x,k) => Control.plus (fun () => x) k
-  end.
+Ltac2 or_no_backtrack (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
+  Control.enter (fun () =>
+    match Control.case tac1 with
+    | Err _ => tac2 ()
+    | Val (x,k) => Control.plus (fun () => x) k
+    end
+  ).
+
+(** Note, this is sligtly different from Ltac1 usual [||] which also checks for
+    progress on [tac1]
+*)
 
 
-(** Now that we have define [orelse], let us define an infix notation for it. *)
+(** Let us define an infix notation for it. *)
 
 Ltac2 Notation tac1(thunk(self)) "||" tac2(thunk(self)) :=
-  orelse tac1 tac2.
+  or_no_backtrack tac1 tac2.
 
 (** We can now try the previous to tests that this still applies the first
     tactic that succeeds, but will not backtrack to [tac2] if [tac1] fails:
@@ -404,17 +421,19 @@ Goal exists n, n = 2 /\ n = 3.
   - Fail assumption || (exact 4).
 Abort.
 
-Goal exists n, n = 2.
+Goal exists n, n = 3.
   unshelve econstructor.
   (* It picks [(exact 1) ++ (exact 2)] then [excat 1], it fails so backtracks
      to [exact 2] which fails, it stops here as it can not backtrack to [exact 3] *)
-  all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
+  Fail all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
 Abort.
 
-(** If you are surprised by the previous example, rememeber, that all tactics
-    are potentially backtracking by default. This does not disable this behaviour.
-    It only prevents backtraking to [tac2] if [tac1] succeeded before.
+(** If you are surprised by this example, rememeber, that all tactics are
+      potentially backtracking by default. [||] does not disable this behaviour.
+      It only prevents backtraking to [tac2] if [tac1] succeeded before.
 *)
+
+
 
 (** *** 4.2 Reimplement [once]
 
@@ -542,13 +561,4 @@ Goal 0 = 1 \/ 0 = 0.
   (* [##] does backtrack *)
   constructor ## reflexivity.
 Abort.
-
-
-
-(** ** 5. Backtracking and Goal Focusing
-
-Abort.
-
-
-
 
