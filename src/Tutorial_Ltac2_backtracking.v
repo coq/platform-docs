@@ -12,6 +12,8 @@
   *** Table of content
 
   - 1. Introduction to Backtracking
+      1.1 The stream model
+      1.2 Backtraking and Goal Focusing
   - 2. Using [Control.zero] to raise exceptions
   - 3. Using [Control.Plus] to stack possibilities
   - 4. Using [Control.Case] to inspect backtracking
@@ -73,9 +75,9 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
 
 
 
-(** 1. Introducing on Backtracking
+(** ** 1. Introducing on Backtracking
 
-  All tactics are potentially backtracking, in the sense that they may backtrack or
+  In rocq, All tactics are potentially backtracking, in the sense that they may backtrack or
     The basic example is the tactic [constructor]:
 *)
 
@@ -84,9 +86,9 @@ Goal False \/ True.
 Qed.
 
 
+(** *** 1.1 The Strean Model
 
-
-(** In Ltac2 backtracking is primitive.
+    In Ltac2 backtracking is primitive.
 
     This means that every Ltac2 term is potentially backtracking, and that there is no
     distinction in the type of a term that can backtrack compared to one that can not.
@@ -130,9 +132,67 @@ Abort.
 (** That terms represent streams is true for every term, not just for terms of type [unit].
     For instance [n : nat], should not be viewed as a signle value like [3],
     but instead as a potentially empty or infinite stream of integers like [3;4;3;4;9;...].
+*)
 
 
-    Ltac2 offers a complete set of primitive functions to manipulage backtracking:
+(** *** 1.2 Backtracking and Goal Focusing
+
+  In previous examples, we have used our tactics with exactly one focus goal.
+  How does backtracking works if more than one goal is focused?
+
+  To succeed, must it:
+  1. Find one unique term in the stream of possibilitites that leads to a success for all the goals,
+  2. Or for each goal independently, find one term in the strean that leads to a success.
+     Hence, possibly chosing different solutions for each goal.
+
+  To check how it works let us assume the following definition -- that will be
+  explained later in this tutorial -- which basically creates the stream [left;right].
+*)
+
+Ltac2 Notation left_or_right := Control.plus (fun () => left) (fun _ => right).
+
+(** If it must pick on term to succeed on all goals [left_or_right; reflexivity]
+    should fail to prove [(0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1)] as:
+    - picking [left] for both goals leads to [0 = 0] and [1 = 0], and [reflexivity]
+      fails on [1 = 0]
+    - picking [right] for both goals leads to [0 = 1] and [1 = 1], and [reflexivity]
+      fails on [0 = 1]
+
+    If it must pick on term independently for each goal it should succed,
+    as it can pick [left] for the first goal and [right] for the second leading
+    to the goals [0 = 0] and [1 = 1] which both can be solved by [reflexivity].
+*)
+
+Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
+  split.
+  Fail all: left_or_right; print_goals; reflexivity.
+Abort.
+
+(** As it can be seen above, this fails, consequently, by default backtracking
+    must pick one solution for every goals.
+    This can be suprising at first, but it actually makes perfect sense.
+    If you want one solution per goal, it suffices to focus the goal and to apply
+    the tactic one by one using [Control.enter : (unit -> unit) -> unit].
+    If you decide to focus several goals and apply a tactic at once,
+    it is because you want one solution for all the goals.
+*)
+
+Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
+  split.
+  all: Control.enter (fun _ => left_or_right); print_goals; reflexivity.
+Abort.
+
+(** In practice, most times, we want an independent choice for each goal.
+    Therefore, most basic tactics and tactic cominators like [constructor] or [first] are
+    already wrapped in [Control.enter] for us, so we don't have to think about it.
+
+    In the rest of the tutorial, we will recode basic constructor so
+    we need to think about it.
+ *)
+
+
+
+(** Ltac2 offers a complete set of primitive functions to manipulate backtracking:
     - [Control.zero : exn -> 'a]
     - [Control.plus : (unit -> 'a) -> (exn -> 'a) -> 'a]
     - [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result]
@@ -223,7 +283,7 @@ Abort.
     Viewing [f] and [k] as stream of success -- ignoring exceptions for simplicity --
     then [Control.plus f k] is the contatenation of the two streams.
     Indeed, it applies the first success that works, so first checking [f] for one, then [k].
-    I case of backtraking, it just try the next succees in the strem, so once again,
+    In case of backtraking, it just try the next succees in the stream, so once again,
     what is left to try in [f], then [k].
 
 
@@ -487,48 +547,6 @@ Abort.
 
 (** ** 5. Backtracking and Goal Focusing
 
-  In all previous sections, we have used our tactics with exactly one goal focused.
-  What happens if more than one goal is focused ? Does [tac1 ++ tac2]:
-  1. must choose [tac1] or [tac2], and apply it to all the goals
-  2. it can apply [tac1] or [tac2] independently for each goal
-
-  With the current implementation it must choose [tac1] or [tac2] and apply it everywhere.
-  For instance, the following example fails, even though it clearly works if
-  the tactic was evaluated independently for every goal.
-*)
-
-Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
-  split.
-  Fail all: left ++ right; print_goals; reflexivity.
-Abort.
-
-(** The reasons is that it tries to figure one computation path that will succed for all the goals.
-    In particular, a failure in one goal will trigger backtracking to the first
-    goal and try the next success of the tactic for this goal and all the goals,
-    this until it has found a success that work in for goals, or exhaust all possibilities.
-
-    This can be seen by trying to prove [(0 = 0 \/ 1 = 1) /\ (1 = 0 \/ 1 = 1)].
-    Both [0 = 0] and [1 = 1] are provable, but if we pick [left] to solve the
-    first goal, and hence the second goal, we get stuck with [1 = 0] which is not
-    provable. It should hence backtrack to pick [right].
-*)
-
-Goal (0 = 0 \/ 0 = 0) /\ (1 = 0 \/ 1 = 1).
-  split. all: left ++ right; print_goals; reflexivity.
-Qed.
-
-(** If you want to apply a tactic independently to every goal, it must be wrapped in
-    [Control.enter : (unit -> unit) -> unit], it now works as expected.
- *)
-
-Ltac2 or_backtrack_indep (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  Control.enter (fun () => Control.plus tac1 (fun _ => tac2 ())).
-
-Ltac2 Notation tac1(thunk(self)) "++i" tac2(thunk(self)) :=
-  or_backtrack_indep tac1 tac2.
-
-Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
-  split. all: left ++i right; print_goals; reflexivity.
 Abort.
 
 
