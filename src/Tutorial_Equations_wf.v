@@ -516,7 +516,7 @@ Instance wfR : WellFounded R := wf_R h.
 
 Definition inspect {A} (a : A) : {b | a = b} := exist _ a eq_refl.
 
-Notation "x 'eqn:' p" := (exist _ x p) (only parsing, at level 20).
+Notation "x 'eqn' ':' p" := (exist _ x p) (only parsing, at level 20).
 
 (** Even though we want to start a computation at 0, to define our function
     by well-founded recursion we need to start at a generic point [m : nat],
