@@ -108,7 +108,7 @@ Qed.
     even though the first one can backtrack, but not the second one.
 
     Unlike typical programming languages, in Ltac2, a term should not be viewed
-    as a single value, but instead as stream of potential terms to be tried.
+    as producing a single value, but instead as stream of possible values to be tried.
 
     The first term gets tried, i.e. the head of the stream, and if this choice
     leads to a subsequent failure and to backtracking, then it tries the second term,
