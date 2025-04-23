@@ -119,7 +119,7 @@ Qed.
 
     To understand this better, consider using [constructor; exact I] to prove [False \/ True].
     [constructor] can have two successes [left] and [right], are this are the
-    two constructors of [\/], and can hence be viewed as the stream [left;right].
+    two constructors of [\/], and can hence be viewed as the stream [left :: right].
     When chained with [exact I], this will first try [left] as it is the head
     of the stream. This leads to the goal [False] on which [exact I] fails.
     It will hence backtrack and to try the next success [right], which this time
