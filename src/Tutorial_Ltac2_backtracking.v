@@ -164,7 +164,7 @@ Abort.
 Ltac2 Notation left_or_right := Control.plus (fun () => left) (fun _ => right).
 
 (** If it must pick one term to succeed on all goals, [left_or_right; reflexivity]
-    should fail to prove [(0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1)] as:
+    should fail to prove [0 = 0 \/ 0 = 1] and [1 = 0 \/ 1 = 1] as:
     - picking [left] for both goals leads to [0 = 0] and [1 = 0], and [reflexivity]
       fails on [1 = 0]
     - picking [right] for both goals leads to [0 = 1] and [1 = 1], and [reflexivity]
