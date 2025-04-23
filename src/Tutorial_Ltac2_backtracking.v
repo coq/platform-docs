@@ -253,18 +253,23 @@ Qed.
 
 (** You may be accustomed to use [fail], for example, if you are a Ltac1 user.
     In Ltac2, [fail] is easy to understand as it is literaly defined as
-    [Control.zero (Tactic_failure None)].
+    [Control.enter (fun () => Control.zero (Tactic_failure None))].
     Therefore, [fail] is just failure raising the error [Tactic Failure]
     without any further error message.
-    It is recommended to use [Control.zero] rather than [fail] to give nice
-    error messages in case of failure.
+    The [Control.enter] being to ensure it will not fail if there are no longer
+    any goals to prove.
 *)
 
 Goal nat.
   Fail fail.
+  Fail exact 0; Control.zero (Tactic_failure None).
+  exact 0; fail.
 Abort.
 
-(** There is another primitive to raise exceptions [Control.throw : exn -> unit].
+(** It is recommended to use [Control.zero] rather than [fail] to give nice
+    error messages in case of failure.
+
+    There is another primitive to raise exceptions [Control.throw : exn -> unit].
     The key difference with [zero] is that [throw] raises a non-catchable exception.
     It means that [throw] will not trigger backtracking.
     It will stop the computation all together.
@@ -300,7 +305,7 @@ Abort.
 
     *** 3.1 Reimplementing [+]
 
-    To understand how [Control.plus] works in practice, let us define a or for
+    To understand how [Control.plus] works in practice, let us define an "or" for
     tactics [tac1 ++ tac2], that should:
     1. Apply the first success of [tac1], and if there are none, try [tac2]
     2. In case of subsequent failure, backtrack to [tac1], and if all successes
