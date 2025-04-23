@@ -463,6 +463,22 @@ Goal exists n, n = 2.
   Fail all: only 1: (once ((exact 1) ++ (exact 2))) ++ (exact 3); print_goals; reflexivity.
 Abort.
 
+(** Note, that [once (tac1 ++ tac2)] is not the same as [tac1 || tac2] ?
+    The reason is that [once] prevents backtracking all together.
+    However, [tac1 || tac2] only prevents backtracking to try [tac2], if [tac1] succeeded first.
+    It does not prevent to backtrack to try [tac1] again.
+    [once (tac1 ++ tac2)] actually corresponds to [once tac1 || once tac2].
+*)
+
+Goal exists n, n = 2.
+unshelve econstructor.
+(* this fails as no backtracking is allowed *)
+Fail all: only 1: once (((exact 1) ++ (exact 2)) ++ (exact 3)); print_goals; reflexivity.
+(* but this succeeds *)
+all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
+Abort.
+
+
 (** [once] can be coded easily with [Control.case] and [Control.zero].
     We inspect [tac] to check if it fails or produces a success.
     - If it fails, we return the original exception.
@@ -510,19 +526,4 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
 (** Well, as [Control.plus] corresponds to [++], this exactly to what was just exlained.
     This does not add potential successes to backtrack to in case of subsequent failure,
     it adds more potential successes to try if [run] produces none.
-
-    Similarly is [once (tac1 ++ tac2)] the same as [tac1 || tac2] ?
-    It is not the case. The reason is that [once] prevents backtracking all together.
-    However, [tac1 || tac2] only prevents backtracking to try [tac2], if [tac1] succeeded first.
-    It does not prevent to backtrack to try [tac1] again.
-    [once (tac1 ++ tac2)] actually corresponds to [once tac1 || once tac2].
 *)
-
-Goal exists n, n = 2.
-  unshelve econstructor.
-  (* this fails as no backtracking is allowed *)
-  Fail all: only 1: once (((exact 1) ++ (exact 2)) ++ (exact 3)); print_goals; reflexivity.
-  (* but this succeeds *)
-  all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
-Abort.
-
