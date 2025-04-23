@@ -92,7 +92,7 @@ Qed.
 
 (** In practice, most people needing backtracking only ever need predefined
     function like [constructor], [first], [once], or the different versions of
-    match like [lazymatch!] that hanlde backtracking for us.
+    match like [lazymatch!] that handle backtracking for us.
 
     In this tutorial, we go further than this and explain how backtracking works
     in Ltac2, and how it can be manipulated through set of three basic primitives.
@@ -116,7 +116,7 @@ Qed.
     i.e. the new head of the stream, and so on.
     This goes on until either a value leads to a success, or all possibilities
     have been exhausted in which case it triggers a backtracking error.
-    Note, that this can last forever as stream are potentially infinite.
+    Note that this can last forever as stream are potentially infinite.
 
     To understand this better, consider using [constructor; exact I] to prove [False \/ True].
     [constructor] can have two successes [left] and [right], are this are the
@@ -131,8 +131,8 @@ Goal False \/ True.
   constructor; print_goals; exact I.
 Qed.
 
-(** If we try [constructor; assumption] instead this will try [left] then [right]
-    which both leads to goals that can not be solved by [assumption].
+(** If we try [constructor; assumption] instead, this will try [left] then [right]
+    which both lead to goals that can not be solved by [assumption].
     It will hence reach the empty stream and trigger backtracking.
     As they are no previous backtracking point to backtrack to,
     it will just fail here returning the last error message.
@@ -153,7 +153,7 @@ Abort.
   In previous examples, we have used our tactics with exactly one focus goal.
   How does backtracking works if more than one goal is focused?
 
-  To succeed, must it:
+  Do you think it:
   1. Find one unique term in the stream of possibilitities that leads to a success for all the goals,
   2. Or for each goal independently, find one term in the stream that leads to a success.
      Hence, possibly choosing different solutions for each goal.
@@ -164,7 +164,7 @@ Abort.
 
 Ltac2 Notation left_or_right := Control.plus (fun () => left) (fun _ => right).
 
-(** If it must pick on term to succeed on all goals [left_or_right; reflexivity]
+(** If it must pick one term to succeed on all goals, [left_or_right; reflexivity]
     should fail to prove [(0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1)] as:
     - picking [left] for both goals leads to [0 = 0] and [1 = 0], and [reflexivity]
       fails on [1 = 0]
@@ -193,7 +193,7 @@ Abort.
 Goal (0 = 0 \/ 0 = 1) /\ (1 = 0 \/ 1 = 1).
   split.
   all: Control.enter (fun _ => left_or_right); print_goals; reflexivity.
-Abort.
+Qed.
 
 (** In practice, most times, we want an independent choice for each goal.
     Therefore, most basic tactics and tactic cominators like [constructor] or [first] are
@@ -255,7 +255,7 @@ Qed.
 (** You may be accustomed to use [fail], for example, if you are a Ltac1 user.
     In Ltac2, [fail] is easy to understand as it is literaly defined as
     [Control.zero (Tactic_failure None)].
-    Therefore, [fail] just is just failure raising the error [Tactic Failure]
+    Therefore, [fail] is just failure raising the error [Tactic Failure]
     without any further error message.
     It is recommended to use [Control.zero] rather than [fail] to give nice
     error messages in case of failure.
@@ -306,7 +306,7 @@ Abort.
     1. Apply the first success of [tac1], and if there are none, try [tac2]
     2. In case of subsequent failure, backtrack to [tac1], and if all successes
        of [tac1] are exhausted, try [tac2]
-    3. We want each of the goal to be tried independently
+    3. We want each of the focused goals to be tried independently
 
     This is a direct application of [Control.plus], as it consist in installing
     a backtracking point around [tac1], running [tac2 ()] in case of failure
@@ -319,7 +319,7 @@ Ltac2 or_backtrack (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
     Control.plus tac1 (fun _ => tac2 ())
   ).
 
-(* note, we need to specify thunk by hand with general notations *)
+(* Note that we need to specify thunk by hand with general notations *)
 Ltac2 Notation tac1(thunk(self)) "++" tac2(thunk(self)) :=
   or_backtrack tac1 tac2.
 
@@ -339,7 +339,7 @@ Goal exists n, n = 2 /\ n = 3.
 Abort.
 
 (** In case of subsequent failure, it should backtrack to [tac1] until it has
-    exhausted all its success, in which case it should try [tac2]:
+    exhausted all its successes, in which case it should try [tac2]:
  *)
 
 Goal exists n, n = 3.
@@ -359,11 +359,11 @@ Abort.
     [Control.plus] enables us to add a backtracking point to the backtracking structure.
 
     As a counterpart, we would like to be able to inspect the backtracking structure,
-    to check if it is empty so [Control.zero], or there is at least one success,
+    to check if it is empty, that is, [Control.zero], or there is at least one success,
     and do something different in each case.
 
     To do so, we have the primitive [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result],
-    which given a thunk returns either an error [Err e], or a pair of a value [x :'a] and
+    which given a thunk returns either an error [Err e] where [e] is an exception, or a pair of a value [x :'a] and
     the backtracking continuation [k : exn -> 'a] to try in case of failure [Res (x,k)].
 
     In the stream model, this basically consists in matching the stream checking
@@ -392,10 +392,10 @@ Qed.
 
 (** Consequently, we would like a variant of the [++] tactical that
     applies the first tactics that succeeds, but will not backtrack to try
-    [tac2] if it has chosen [tac1] and that lead to a subsequent failure.
+    [tac2] if it has chosen [tac1] and that leads to a subsequent failure.
 
     To do this, we use [Control.case] to check the backtracking structure of [tac1].
-    1. If it [tac1] fails, we try [tac2].
+    1. If [tac1] fails, we try [tac2].
     2. If it succeeds, then we return [tac1], which we have to reconstruct with
        [Control.plus] as we have destructed it with [Control.Case].
     3. We wrapped it in [Control.enter] so that the choice is independent for
@@ -410,7 +410,7 @@ Ltac2 or_no_backtrack (tac1 : unit -> 'a) (tac2 : unit -> 'a) : 'a :=
     end
   ).
 
-(** Note, this is slightly different from Ltac1 usual [||] which also checks for
+(** Note that this is slightly different from Ltac1 usual [||] which also checks for
     progress on [tac1]
 *)
 
@@ -436,7 +436,7 @@ Abort.
 
 Goal exists n, n = 3.
   unshelve econstructor.
-  (* It picks [(exact 1) ++ (exact 2)] then [excat 1], it fails so backtracks
+  (* It picks [(exact 1) ++ (exact 2)] then [exact 1], it fails so backtracks
      to [exact 2] which fails, it stops here as it can not backtrack to [exact 3] *)
   Fail all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
 Abort.
@@ -452,7 +452,7 @@ Abort.
 
     Backtracking is allowed by default. To offer better control over it Rocq
     comes with a predefined function [once tac] that prevents [tac] to backtrack
-    in case of subsequent failure. This enables us to have a fine grain control.
+    in case of subsequent failure. This enables us to have a fine-grained control.
 
     For instance, we can add [once] around [(exact 1) ++ (exact 2)] to prevent backtracking.
 *)
@@ -486,9 +486,9 @@ Goal exists n, n = 2.
   Fail all: only 1: (my_once ((exact 1) ++ (exact 2))) ++ (exact 3); print_goals; reflexivity.
 Abort.
 
-(** A common source of confusion using [Control.case], it to think that this
+(** A common source of confusion using [Control.case] is to think that this
     will only try the first tactic.
-    This is not the case, it applies the first tactic that succeeds.
+    This is not the case: it applies the first tactic that succeeds.
     This is because [Control.case] returns the first success.
 
     For instance, if we try to solve [0 = 0] with [assumption ++ reflexivity]
@@ -500,7 +500,7 @@ Goal (0 = 0).
   my_once (assumption ++ reflexivity).
 Abort.
 
-(** A logical question in now what does the Ltac2 function [once_plus] do?
+(** A logical question in now what does the below Ltac2 function [once_plus] do?
     It can seem weird at first to add a continuation to try in case of failure
     to use [once] and disable backtracking.
 *)
@@ -514,7 +514,7 @@ Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
 
     Similarly is [once (tac1 ++ tac2)] the same as [tac1 || tac2] ?
     It is not the case. The reason is that [once] prevents backtracking all together.
-    Whereas, [tac1 || tac2] only prevents backtracking to try [tac2], if [tac1] succeded first.
+    However, [tac1 || tac2] only prevents backtracking to try [tac2], if [tac1] succeeded first.
     It does not prevent to backtrack to try [tac1] again.
     [once (tac1 ++ tac2)] actually corresponds to [once tac1 || once tac2].
 *)
@@ -532,11 +532,11 @@ Abort.
 
   Chaining tactics [tac1 ; tac2] corresponds to [let _ := tac1 in tac2].
   As it turns out, [zero], [plus], and [case] are powerful enough when
-  combined with recursion that we can reimplement it using only this constructions.
+  combined with recursion that we can reimplement it using only those constructions.
 
   Specifically [tac1 ; tac2] should execute [tac1]:
   1. If [tac1] fails it should fail
-  2. Otherwise it should execute [tac2], and in case of failure backtracks to [tac1]
+  2. Otherwise it should execute [tac2], and in case of failure, backtrack to [tac1]
 
   This naturally leads to use [Control.Case] to inspect if [tac1] fails or not.
   - If it fails, we return [Control.zero]
