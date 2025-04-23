@@ -45,6 +45,7 @@
 
 (** Let us start by importing Ltac2, and write a small function for
     printing the current goals to check out what is going on.
+    Understanding what is going on is not important for the rest of the tutorial.
 *)
 
 From Ltac2 Require Import Ltac2.
@@ -80,9 +81,18 @@ Ltac2 Notation "only" startgoal(tactic) endgoal(opt(seq("-", tactic))) ":" tac(t
 (** ** 1. Introducing on Backtracking
 
   In Rocq, all tactics are potentially backtracking.
+
+  For instance, when chained with another tactic [tac1 ; tac2], [tac1] can
+  succeed but can lead to subsequent failure of [tac2], e.g. because [tac1] pick
+  the wrong branch of [False \/ True].
+  In this case, if [tac2] fails triggering backtracking, it will backtrack to
+  [tac1], try its next success if there is one, then try [tac2] again.
+  This until either all possibilities have been exhausted or [tac2] succeeds for
+  one of the success procuded by [tac1].
+
   The most well known example is the [constructor] tactic that tries the
-  constructors one by one, until one leads to a success or all constructors
-  have been tried in which case it fails.
+  constructors one by one, until one leads to a success or all constructors have
+  been tried in which case it fails.
 *)
 
 Goal False \/ True.
