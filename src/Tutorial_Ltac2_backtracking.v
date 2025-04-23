@@ -23,7 +23,6 @@
   - 4. Using [Control.Case] to Inspect Backtracking
     - 4.1 Reimplementing [||]
     - 4.1 Reimplementing [once]
-    - 4.3 Reimplementing [;] using [zero],[plus] and [case]
 
   *** Prerequisites
 
@@ -525,52 +524,5 @@ Goal exists n, n = 2.
   Fail all: only 1: once (((exact 1) ++ (exact 2)) ++ (exact 3)); print_goals; reflexivity.
   (* but this succeeds *)
   all: only 1: ((exact 1) ++ (exact 2)) || (exact 3); print_goals; reflexivity.
-Abort.
-
-
-(** ** 4.3 Reimplementing [;] using [zero], [plus] and [case]
-
-  Chaining tactics [tac1 ; tac2] corresponds to [let _ := tac1 in tac2].
-  As it turns out, [zero], [plus], and [case] are powerful enough when
-  combined with recursion that we can reimplement it using only those constructions.
-
-  Specifically [tac1 ; tac2] should execute [tac1]:
-  1. If [tac1] fails it should fail
-  2. Otherwise it should execute [tac2], and in case of failure, backtrack to [tac1]
-
-  This naturally leads to use [Control.Case] to inspect if [tac1] fails or not.
-  - If it fails, we return [Control.zero]
-  - If [tac1] succeeds and return a value [x] and an handler [h],
-    we want to execute [tac2] and if it fails backtrack to execute [h ; tac2]
-    This corresponds to the [Control.plus] primitive, with recursively calling [concat].
-
-    Note, that here, we do not care about [x] as it has already been evaluated,
-    and its side effect, so the tactic already be executed.
-*)
-
-Ltac2 rec concat (tac1 : unit -> unit) (tac2 : unit -> unit) : unit :=
-  match Control.case tac1 with
-  | Err e => Control.zero e
-  | Val ( _ , f ) =>
-      Control.plus tac2 (fun e' =>
-      concat (fun () => f e') (fun () => tac2 ()))
-  end.
-
-Ltac2 Notation tac1(thunk(self)) "##" tac2(thunk(self)) :=
-  concat tac1 tac2.
-
-(** Let us now check that it works *)
-
-Goal 0 = 0 \/ 1 = 2.
-  (* [##] fails if [tac1] fails *)
-  Fail (fail ## reflexivity).
-  (* it does chain tactics *)
-  left ## reflexivity.
-Abort.
-
-
-Goal 0 = 1 \/ 0 = 0.
-  (* [##] does backtrack *)
-  constructor ## reflexivity.
 Abort.
 
