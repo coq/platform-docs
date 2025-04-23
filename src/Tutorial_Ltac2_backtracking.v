@@ -377,8 +377,10 @@ Abort.
     and do something different in each case.
 
     To do so, we have the primitive [Control.case : (unit -> 'a) -> ('a * (exn -> 'a)) result],
-    which given a thunk returns either an error [Err e] where [e] is an exception, or a pair of a value [x :'a] and
-    the backtracking continuation [k : exn -> 'a] to try in case of failure [Res (x,k)].
+    which given a thunk [h] returns either:
+    1. an error [Err e] where [e] is an exception
+    2. or a pair [Res (x,k)] where [x : 'a] is the first succes of [h], and
+       [k : exn -> 'a] is the  backtracking continuation to try in case of subsequent failure.
 
     In the stream model, this basically consists in matching the stream checking
     if it is empty, and if not return the head with the rest of the stream.
