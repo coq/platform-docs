@@ -449,11 +449,13 @@ Abort.
 
 (** *** 4.2 Reimplement [once]
 
-    Backtracking is allowed by default. To offer better control over it Rocq
-    comes with a predefined function [once tac] that prevents [tac] to backtrack
-    in case of subsequent failure. This enables us to have a fine-grained control.
+    Backtracking is allowed by default. To offer better control over it, the
+    standard library of tactics offers the tactic combinator [once tac] that
+    prevents [tac] from backtracking This enables us to have a fine-grained
+    control.
 
-    For instance, we can add [once] around [(exact 1) ++ (exact 2)] to prevent backtracking.
+    For instance, we can add [once] around [(exact 1) ++ (exact 2)] to prevent
+    backtracking.
 *)
 
 Goal exists n, n = 2.
