@@ -516,14 +516,15 @@ Goal (0 = 0).
 Abort.
 
 (** A logical question in now what does the below Ltac2 function [once_plus] do?
-    It can seem weird at first to add a continuation to try in case of failure
-    to use [once] and disable backtracking.
+    It can seem weird at first to add a continuation to try in case of failure,
+    and to use [once] and disable backtracking.
 *)
 
 Ltac2 once_plus (run : unit -> 'a) (handle : exn -> 'a) : 'a :=
   once (Control.plus run handle).
 
-(** Well, as [Control.plus] corresponds to [++], this exactly to what was just exlained.
-    This does not add potential successes to backtrack to in case of subsequent failure,
-    it adds more potential successes to try if [run] produces none.
+(** As [once] disable backtracking it is disable, nothing surpising there.
+    The subtility is that as [Control.case] returns the first success, this
+    adds more potential successes to try if [run] produces none, while
+    preventing backtracking.
 *)
