@@ -324,7 +324,7 @@ Abort.
 
     This is a direct application of [Control.plus], as it consist in installing
     a backtracking point around [tac1], running [tac2 ()] in case of failure
-    of [tac1] disregarding any exception returned by [tac1].
+    of [tac1] whatever the exception is raised.
     The whole thing being wrapped in [Control.enter] to focus the goals.
 *)
 
