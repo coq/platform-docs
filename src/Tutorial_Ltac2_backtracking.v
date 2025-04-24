@@ -240,7 +240,7 @@ Qed.
 
 Ltac2 my_eassumption0 () :=
   match! goal with
-  | [ h : ?_a |- ?_a ] => let h := Control.hyp h in exact $h
+  | [ h : _ |- _ ] => let h := Control.hyp h in exact $h
   | [ |- _ ] => Control.zero (Tactic_failure (Some (fprintf "No such assumption")))
   end.
 
