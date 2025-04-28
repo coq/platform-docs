@@ -10,10 +10,13 @@
 
   *** Table of contents
 
-      - 1. Mixins and structures
-      - 2. Instances
-      - 3. Factories and builders
+      - 1. Mixins and structures : declaring a structure
+      - 2. Instances : building an instance of a structure
+      - 3. Factories and builders : alternative representations of structures
       - 4. Options, parameters, visibility of instances
+        - 4.1. Short names
+        - 4.2. Parameters and primitive records
+        - 4.3. Visibility of instances
       - 5. Non-forgetful inheritance
 
   *** Prerequisites
@@ -29,16 +32,53 @@
 
 *)
 
+(** ** Introduction
+
+  We would like to describe hierarchies of structures. Usual examples include
+  the algebraic hierarchy (containing e.g. groups, rings, fields and
+  vector spaces), the order hierarchy (containing e.g. preorders, orders,
+  well-founded orders, and total orders), the category theory hierarchy
+  (containing e.g. precategories, categories, cartesian closed categories).
+  These sets of structures form hierarchies in the sense that they contain a lot
+  of relations of the form `X is Y` (e.g. a vector space is a commutative
+  group).
+
+  However, describing such hierarchies using Coq/Rocq commands takes a
+  lot of effort, is prone to errors and leads to code that is hard to maintain.
+  Hierarchy Builder prodives commands that declare all the required objects
+  automatically. It also guarantees a few properties, like the compatibility of
+  coercion paths. If there are several ways to build an instance of a structure,
+  HB ensures that they all yield the same resulting instance. HB also has
+  support for several descriptions of the same structure. For instance, to
+  promote a type with an associative and commutative law into a monoid, we only
+  need to find a left-neutral element, whereas with the commutativity assumption
+  we would have needed a left- and right-neutral element.
+
+  In order to guarantee good properties, the developers of HB chose a
+  representation of structures as sets of mixins. A structure is an object
+  equipped with some data. The set of data that makes a structure is cut into
+  pieces, which we call mixins. These mixins are meant to be shared between
+  structures. In particular, a substructure of a structure S contains all the
+  mixins of S (e.g. the set of mixins that make up a commutative group is a
+  subset of the set of mixins that make up a vector space). This makes it so
+  that a coercion in the inheritance graph is defined by throwing away the
+  mixins that are not constituent of the target structure.
+*)
+
 From HB Require Import structures.
 From Coq Require Import PeanoNat.
 
-(** ** 1. Mixins and structures
+(** ** 1. Mixins and structures : declaring a structure
 
   By structure, we mean an object (which we call structure) equipped with some
   data (usually operations) and properties. The basic building bloc of a
   structure is the mixin, which is a record that regroups an "interesting" part
-  of the content of a structure. We declare a record as a mixin by prefixing the
-  definition of the record with the [HB.mixin] command.
+  of the content of a structure. The point of mixins is that they can be reused
+  in several structures. In this sense, a structure can be thought of as a set
+  of mixins on a common subject. 
+   
+  We declare a record as a mixin by prefixing the definition of the record with
+  the [HB.mixin] command.
 *)
 
 HB.mixin Record hasOp (T : Type) := {op : T -> T -> T}.
@@ -52,15 +92,14 @@ HB.about hasOp.
 (** This tells us that [hasOp] is a factory (more on that later) which contains
   one field named [op], which has no dependency and which can be used to
   obtain an [hasOp] mixin (obviously).
-*)
 
-(** Now that we have a mixin, let us build a structure out of it. We describe a
+  Now that we have a mixin, let us build a structure out of it. We describe a
   structure using a sigma type by giving a name to the subject and then all the
   mixins it is equipped with. We use the [{X of mixin_1 X & ... & mixin_k X}]
   notation and prefix the definition with the [HB.structure] command.
 *)
 
-HB.structure Definition Magma := {T of hasOp T & hasOp T}.
+HB.structure Definition Magma := {T of hasOp T}.
 
 (** We see that HB declares a lot of things. The ones we are interested in
   are [type] and [sort]. But let us first see what [HB.about] has to say.
@@ -91,16 +130,14 @@ About op.
 
 (** Given [s : Magma.type], [op] is indeed an operation on the underlying
   [Magma.sort s] type.
-*)
 
-(** The point of mixins is that they can be reused in several structures. In
-  this sense, a structure can be thought of as a set of mixins on a common
-  subject. Let us define a structure of semigroup. A semigroup is a type with
-  an associative operation. We already have a mixin for the operation, let us
-  add a mixin for the associativity property. We will need for the underlying
-  set to already be equipped with a [hasOp] mixin, but the subject has to be
-  the same as the one of the [hasOp] mixin, so we declare the dependencies with
-  the syntax [Record newMixin X of mixin_1 X & ... & mixin_k X := ...].
+  Let us define a structure of semigroup. A semigroup is a type with an
+  associative operation. We already have a mixin for the operation, let us add a
+  mixin for the associativity property. We will need for the underlying set to
+  already be equipped with an [hasOp] mixin, but the subject has to be the same
+  as the one of the [hasOp] mixin, so we can not use [Magma.type] as the type of
+  the subject. We declare the dependencies with the syntax
+  [Record newMixin X of mixin_1 X & ... & mixin_k X := ...].
 *)
 
 HB.mixin Record isAssoc T of hasOp T := {
@@ -109,7 +146,7 @@ HB.mixin Record isAssoc T of hasOp T := {
 
 HB.about isAssoc.
 
-(** The only noticeable difference with [HB.about hasOp] is that now, HB teels
+(** The only noticeable difference with [HB.about hasOp] is that now, HB tells
   us about the dependency between [hasOp] and [isAssoc].
 *)
 
@@ -125,17 +162,18 @@ HB.about Semigroup.
 
 Check fun (T : Semigroup.type) => T : Magma.type.
 
-(** ** 2. Instances *)
+(** ** 2. Instances : building an instance of a structure
 
-(** Let us now build actual magmas. The important thing to know here is that
-  when Coq/Rocq will try to elaborate a magma out of any given type, it will
-  only look at the "head" of the subject, which we call its key. For instance,
-  if the subject is [nat], then the key is [nat]. If the subject is
-  [prod nat bool], then the key is [prod]. This means that we should not declare
-  two instances of the same structure on the same key. For instance, we should
-  not declare an instance of [Magma] on [prod nat nat] and on [prod bool bool].
-  Now, in order to know what to do to declare an instance on a given key, we can
-  use the [HB.howto] command.
+  Let us now build actual magmas. to find an instance for a given type, Coq/Rocq
+  only looks at the "head of the subject, which we call its key.
+  For instance,
+  - if the subject is [nat], then the key is [nat] and
+  - if the subject is [prod nat bool], then the key is [prod]
+
+  This means that we should not declare two instances of the same structure on
+  the same key. For instance, we should not declare an instance of [Magma] on
+  [prod nat nat] and on [prod bool bool]. Now, in order to know what to do to
+  declare an instance on a given key, we can use the [HB.howto] command.
 *)
 
 HB.howto nat Magma.type.
@@ -186,9 +224,8 @@ Check eq_refl : @op nat_mul 1 1 = 1.
 
 HB.howto nat Semigroup.type.
 
-(** In order to build a semigroup, we need to instantiate the [hasOp] and
-  [isAssoc] mixins. Since we already have an instance for [hasOp], let us do the
-  other one.
+(** Since we already have an instance of [hasOp] on [nat], HB tells us that we
+  are only mixin an instance of [isAssoc].
 *)
 
 HB.about isAssoc.Build.
@@ -201,15 +238,17 @@ rewrite (@opA nat).
 reflexivity.
 Qed.
 
-(** ** 3. Factories and builders *)
+(** ** 3. Factories and builders : alternative representations of structures
 
-(** There may be several ways to describe the same structure. For example, when
+  There may be several ways to describe the same structure. For example, when
   dealing with orders, giving either of the large operator and the strict
-  operator are enough to describe the order. We pick one of those
-  representations as the canonical one, which drives the definition of mixins
-  and we declare the others as factories. A factory is, just like mixins, a
-  record containing operations and properties about a given subject. In this
-  sense, a mixin is a factory. Let us see a very silly example. *)
+  operator is enough to describe the order. We pick one of those
+  representations as the canonical one, which we write as a mixin and we declare
+  the others as factories. A factory is, just like mixins, a record containing
+  operations and properties about a given subject. In this sense, a mixin is a
+  factory. For the sake of example, let us give an alternate representation of
+  semigroups, where we package all the relevant data into one factory.
+*)
 
 HB.factory Record isSemigroup T := {
   op : T -> T -> T;
@@ -224,7 +263,8 @@ HB.about isSemigroup.
   we call builders. We start a section of code declaring builders using the
   [HB.builders] command. It expects a context containing a subject and the
   factory we start from.
-*)
+*
+   )
 
 HB.builders Context T of isSemigroup T.
 
@@ -266,16 +306,24 @@ HB.mixin Record isComm T of hasOp T := {
 
 HB.structure Definition ComSemigroup := {T of isSemigroup T & isComm T}.
 
-(** Remember that [HB.about Magma] said that [Magma] is a factory. With a bit
-  of generalization, this means we can also write
-  HB.structure Definition ComSemigroup' := {T of Semigroup T & isComm T}.
+(**
+  Now, [ComSemigroup] is a structure containing the mixins [hasOp], [isAssoc]
+  and [isComm].
+
+  Remember that [HB.about Semigroup] said that [Semigroup] is a factory for
+  the mixins [hasOp] and [isAssoc]. This means we could also have written
+  [HB.structure Definition ComSemigroup := {T of Semigroup T & isComm T}.]
   Right now, this command would fail because HB does not accept several
-  structures with the same mixins.
+  structures with the same set of mixins.
 *)
 
-(** 4. Options, scope *)
+(** ** 4. Options, scope
 
-(** HB lets us customize a few things. First, we can give a short name for a
+  HB lets us customize a few things.
+
+    *** 4.1. Short names
+
+  First, we can give a short name for a
   structure with the [short] attribute.
 *)
 
@@ -283,7 +331,9 @@ HB.mixin Record hasPoint T := {pt : T}.
 #[short(type="ptType")]
 HB.structure Definition Pointed := {T of hasPoint T}.
 
-(** We can ask for HB to use primitive records with the [primitive] attribute.
+(** *** 4.2. Parameters and primitive records
+
+  We can ask for HB to use primitive records with the [primitive] attribute.
   This is only visible when the structure has parameters, let us try with magma
   morphisms. This will be the occasion to see what happens when we have 
   parameters.
@@ -302,7 +352,9 @@ Check fun (T : Magma.type) (f : MagmaMorphism.type T T) =>
   MagmaMorphism.sort T T f.
 Unset Printing Coercions.
 
-(** Now, let us talk about the visibility of instances. An instance is visible
+(** *** 4.3. Visibility of instances
+
+  Now, let us talk about the visibility of instances. An instance is visible
   only when it is declared in the current module.
 *)
 
