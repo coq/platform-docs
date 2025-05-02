@@ -268,7 +268,7 @@ Ltac2 match_PnP_unification_v2 () :=
   match! goal with
   | [p : ?t1, np : ?t2 |- _ ] =>
         printf "Matching succeeded";
-        printf "Hypotheses are [%I : %t], and %I : %t" p t1 np t2;
+        printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
         Std.unify t2 '($t1 -> False);
         printf "Unification Worked!";
         let p := Control.hyp p in
@@ -319,15 +319,15 @@ Ltac2 decompose_app (c : constr) :=
     | _ => (c,[| |])
   end.
 
-(* empty types *)
+  (* empty types *)
 Ltac2 is_empty_inductive (t : constr) : bool :=
-  let (i, _) := decompose_app t in
-  match Unsafe.kind i with
-  | (Unsafe.Ind x _) => Int.equal (Ind.nconstructors (Ind.data x)) = 0
+  let (i, _) := decompose_app (Std.eval_hnf t) in
+  match Unsafe.kind (Std.eval_hnf i) with
+  | (Unsafe.Ind x _) => Int.equal (Ind.nconstructors (Ind.data x)) 0
   | _ => false
   end.
 
-Ltac2 match_empty_types () :=
+Ltac2 match_P_empty () :=
   match! goal with
   | [ p : ?t |- _ ] =>
         if is_empty_inductive (Std.eval_hnf t)
@@ -338,47 +338,168 @@ Ltac2 match_empty_types () :=
   end.
 
 Goal False -> False.
-  intros. match_empty_types ().
+  intros. match_P_empty ().
 Qed.
 
 Goal True -> False.
-  intros. Fail match_empty_types ().
+  intros. Fail match_P_empty ().
 Abort.
 
 
+(** For the moment, we are lacking a primitive to check the number of arguments
+    of a constructor, but we can already check that it has only one constructor.
+*)
+Ltac2 decompose_prod (c : constr) :=
+  match Unsafe.kind c with
+    | Unsafe.Prod b c => (Binder.type b, c)
+    | _ => Control.throw (Tactic_failure None)
+  end.
 
-(* singletong types *)
-Ltac2 singleton_type (t : constr) : bool :=
-  let (i, _) := decompose_app t in
-  match Unsafe.kind i with
-  | (Unsafe.Ind x _) => Int.equal (Ind.nblocks (Ind.data x)) 1
+Ltac2 is_singleton_type (t : constr) : bool :=
+  let (i, _) := decompose_app (Std.eval_hnf t) in
+  match Unsafe.kind (Std.eval_hnf i) with
+  | (Unsafe.Ind ind _) =>
+        let def_ind := Ind.data ind in
+        (Int.equal (Ind.nconstructors def_ind) 1)
   | _ => false
   end.
 
-Ltac2 contradiction_empty_v2_ : unit -> unit := fun () =>
+Ltac2 match_nP_singleton () :=
   match! goal with
-  | [ p : ?t, np : ?t -> False |- _ ] =>
+  | [ np : ?t |- _ ] =>
+        match! (Std.eval_hnf t) with
+        | ?x -> ?b =>
+            printf "Arrow type";
+            Std.unify b 'False;
+            printf "Unified to False";
+            if is_singleton_type x
+            then let np := Control.hyp np in
+                 solve [destruct ($np ltac2:(constructor 1))]
+            else fail
+        | _ => fail
+        end
+  | [ |- _ ] => fail
+  end.
+
+Goal ~True -> False.
+  intros. match_nP_singleton ().
+Qed.
+
+Goal ~(0 = 0) -> False.
+  intros. match_nP_singleton ().
+Qed.
+
+Goal ~(0 = 1) -> False.
+  intros. Fail match_nP_singleton ().
+Abort.
+
+
+(** *** 3. Putting it all together *)
+
+(** It took a few explanations, but in the end the code of [contradiction_empty] is
+    rather short using Ltac2.
+*)
+
+Ltac2 contradiction_empty () :=
+  intros;
+  match! goal with
+  | [p : ?t1, np : ?t2 |- _ ] =>
+        Std.unify t2 '($t1 -> False);
         let p := Control.hyp p in
         let np := Control.hyp np in
-        exact (False_rect _ ($np $p))
-  | [ np : ~(?t) |- _] =>
-        if singleton_type t
-        then let np := Control.hyp np in
-             exact (False_rect _ ($np ltac:(constructor)))
-        else fail
+        destruct ($np $p)
   | [ p : ?t |- _ ] =>
-        if empty_types t
+        if is_empty_inductive t
         then let p := Control.hyp p in
              destruct $p
         else fail
-  | [ |- _] => let err_message := fprintf "No hypothesis is an obvious contradiction" in
-               Control.zero (Tactic_failure (Some err_message))
+  | [ np : ?t |- _ ] =>
+        match! (Std.eval_hnf t) with
+        | ?x -> ?b =>
+            printf "Arrow type";
+            Std.unify b 'False;
+            printf "Unified to False";
+            if is_singleton_type x
+            then let np := Control.hyp np in
+                 solve [destruct ($np ltac2:(constructor 1))]
+            else fail
+        | _ => fail
+        end
+  | [ |- _ ] => (printf "the terms are not equal"; fail)
   end.
 
-Ltac2 Notation contradiction_empty_v2 := contradiction_empty_v2_ ().
+(** We also need to do contraction when it takes an argument *)
 
-(** 3. [contradition_arg] *)
+Ltac2 contradiction_arg (t : constr) :=
+  match! Std.eval_hnf (type t) with
+  | ?x -> ?b =>
+      Std.unify b 'False ;
+      match! goal with
+      | [p : ?t2 |- _ ] =>
+            Std.unify x t2;
+            let p := Control.hyp p in
+            destruct ($t $p)
+      | [ |- _ ] => assert (f : False) > [apply $t | destruct f]
+      end
+  | _ => Control.zero (Tactic_failure (Some (fprintf "%t : %t is not a negation" t (type t))))
+  end.
 
+Goal forall P, P -> ~P -> 0 = 1.
+  intros P p np. contradiction_arg 'np.
+Qed.
 
+Goal forall P, ~P -> 0 = 1.
+  intros P np. contradiction_arg 'np.
+Abort.
 
+Goal forall P, P -> 0 = 1.
+  intros P p. Fail contradiction_arg 'p.
+Abort.
 
+(** Finally, we can define a wrapper for it :  *)
+
+Ltac2 contradiction0 (t : constr option) :=
+  match t with
+  | None => contradiction_empty ()
+  | Some x => contradiction_arg x
+  end.
+
+(** We can use it directly, writing the quoting and [Some] constructor by hand *)
+
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  intros. contradiction0 None.
+Qed.
+
+Goal False -> False.
+  intros. contradiction0 None.
+Qed.
+
+Goal forall P, P -> ~P -> 0 = 1.
+  intros P p np. contradiction0 (Some 'np).
+Qed.
+
+Goal forall P, ~P -> 0 = 1.
+  intros P np. contradiction0 (Some 'np).
+Abort.
+
+(** If we want we can further write a notation to do deal witht the option and
+    the quoting for us, but be aware it can complicate parsing as it reserves a name.
+*)
+
+Ltac2 Notation "contradiction" t(opt(constr)) := contradiction0 t.
+
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  intros. contradiction.
+Qed.
+
+Goal False -> False.
+  intros. contradiction.
+Qed.
+
+Goal forall P, P -> ~P -> 0 = 1.
+  intros P p np. contradiction np.
+Qed.
+
+Goal forall P, ~P -> 0 = 1.
+  intros P np. contradiction np.
+Abort.
