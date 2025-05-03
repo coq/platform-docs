@@ -6,8 +6,8 @@
   *** Summary
 
   This tutorial explains how to write a contradiction tactic using Ltac2.
-  In particular, it showcase how to use quoting, and match goal with
-  the Constr API to check properties on terms.
+  In particular, it showcase how to use match goal, quoting, and
+  the Constr and Ind API to check properties on inductive types.
 
   *** Table of content
 
@@ -299,40 +299,100 @@ Abort.
 (* TODO  *)
 
 
-(** ** 2. Using Constr.Unsafe to add syntactic check  *)
+(** ** 3. Using Constr.Unsafe and Ind to add syntactic check
+
+    We need to check for hypotheses that are either empty like [False], or
+    of form [~t] where [t] is an inductive type with one constructor without
+    arguments like [nat] or [0 = 0] that we can prove with [constructor 1].
+
+    We can do so very directly by trying to solve the goal assuming we have
+    found the good hypotheses wrapping it in [solve] to ensure it works.
+    In this case, for [p : t] and [p : ~t] that would mean doing
+    [solve [destruct $p]] and [destruct ($np ltac2(constructor 1))].
+    However, that would be very inefficient as we would do [destruct] on
+    any hypothesis, which and can be expensive.
+
+    A better approach is to add a syntax check that verify that [t] is of the
+    appropriate form. It is much cheapear as it is basically matching syntax.
+    We can do so by using the API [Constr.Unsafe] that enables to access the
+    internal syntax of Rocq terms, and [Ind] to access inductive types.
+
+    The API "unsafe" is named this way because as soon as you start manipulating
+    internal syntax, there is no longer any garantee you create well-scoped terms.
+    Here, we will only use it to match the syntax so there is nothing to worry about.
+*)
 
 
-(*
-- need for the test
-- intro to unsafe
-- empty
-- singleton
+(** *** 3.1 Checking for Empty and Singletong Types
 
+    In both case, the first step is to check the term is an inductive type.
+    Internally, a type like [list A] is represented as [App (Ind ind u) A]
+    where [ind] is the the name of the inductive and the position of the block,
+    and [u] represents universe constrains.
 
+    Consequently, the first step is to decompose the application to separate
+    the inductive from its arguments.
+    This can be done very easily by using [Unsafe.kind : constr -> kind] to
+    convert a [constr] to the internal syntax represented by a Ltac2 inductive type.
+    We can then match it and decompose it with a usual [match]:
 *)
 
 Import Unsafe Ind.
 
-Ltac2 decompose_app (c : constr) :=
-  match Unsafe.kind c with
+Ltac2 decompose_app (t : constr) :=
+  match Unsafe.kind t with
     | Unsafe.App f cl => (f, cl)
-    | _ => (c,[| |])
+    | _ => (t,[| |])
   end.
 
-  (* empty types *)
-Ltac2 is_empty_inductive (t : constr) : bool :=
-  let (i, _) := decompose_app (Std.eval_hnf t) in
-  match Unsafe.kind (Std.eval_hnf i) with
-  | (Unsafe.Ind x _) => Int.equal (Ind.nconstructors (Ind.data x)) 0
-  | _ => false
+(** Getting the inductive block is similar. We first use [decompose_app] to recover
+    the inductive type then convert to the syntax to check it is an inductive.
+    If it is not, we return an exception.
+    In each case, something important to understand is the use of [Std.eval_hnf].
+ *)
+
+
+Ltac2 get_inductive_body (t : constr) : data :=
+  let (x, _) := decompose_app (Std.eval_hnf t) in
+  match Unsafe.kind (Std.eval_hnf x) with
+  | (Unsafe.Ind ind _) => Ind.data ind
+  | _ => Control.zero (Tactic_failure (Some (fprintf "%t is not an inductive" t)))
   end.
+
+(** We are ready to check if a type is empty or not, which is now fairly easy.
+    Given the definition of an inductive type, it suffices to get the number
+    of constructor with [nconstructors : data -> int], and check it is zero.
+*)
+
+Ltac2 is_empty_inductive (t : constr) : bool :=
+  let ind_body := get_inductive_body t in
+  Int.equal (Ind.nconstructors ind_body) 0.
+
+(** We can check an inductive type is a singleton similarly, except to one small issue.
+    The primitive to access the arguments of a constructor is only availble in
+    Rocq 9.2 or above. So for now, we will hence only check that it has only one constructor.
+    Though this is not perfect and forces us to wrap [destruct ($np ltac2:(constructor 1)]
+    in [solve], it still rules out a lot of potential terms.
+*)
+
+Ltac2 is_singleton_type (t : constr) : bool :=
+  let ind_body := get_inductive_body t in
+  Int.equal (Ind.nconstructors ind_body) 1.
+
+
+(** *** 3.2 Writing tactics for it
+
+    Writing a tactic to check for empty hypothesis is very easy.
+    We just match the goal using [match!] as the syntax check is not complete,
+    then check if it is empty, and if it is prove the goal with [destruct $p]/
+*)
+
 
 Ltac2 match_P_empty () :=
   match! goal with
   | [ p : ?t |- _ ] =>
-        if is_empty_inductive (Std.eval_hnf t)
-        then let p := Control.hyp p in
-             destruct $p
+        if is_empty_inductive t
+        then let p := Control.hyp p in destruct $p
         else fail
   | [ |- _ ] => fail
   end.
@@ -346,32 +406,16 @@ Goal True -> False.
 Abort.
 
 
-(** For the moment, we are lacking a primitive to check the number of arguments
-    of a constructor, but we can already check that it has only one constructor.
+(** Checking for the negation of an inductve type is a little bit more involved.
+    TODO: Some text
 *)
-Ltac2 decompose_prod (c : constr) :=
-  match Unsafe.kind c with
-    | Unsafe.Prod b c => (Binder.type b, c)
-    | _ => Control.throw (Tactic_failure None)
-  end.
-
-Ltac2 is_singleton_type (t : constr) : bool :=
-  let (i, _) := decompose_app (Std.eval_hnf t) in
-  match Unsafe.kind (Std.eval_hnf i) with
-  | (Unsafe.Ind ind _) =>
-        let def_ind := Ind.data ind in
-        (Int.equal (Ind.nconstructors def_ind) 1)
-  | _ => false
-  end.
 
 Ltac2 match_nP_singleton () :=
   match! goal with
   | [ np : ?t |- _ ] =>
         match! (Std.eval_hnf t) with
         | ?x -> ?b =>
-            printf "Arrow type";
             Std.unify b 'False;
-            printf "Unified to False";
             if is_singleton_type x
             then let np := Control.hyp np in
                  solve [destruct ($np ltac2:(constructor 1))]
@@ -394,10 +438,10 @@ Goal ~(0 = 1) -> False.
 Abort.
 
 
-(** *** 3. Putting it all together *)
+(** *** 4. Putting it all together *)
 
-(** It took a few explanations, but in the end the code of [contradiction_empty] is
-    rather short using Ltac2.
+(** It took a few explanations, but in the end the code of [contradiction_empty]
+    is rather short using Ltac2.
 *)
 
 Ltac2 contradiction_empty () :=
@@ -416,9 +460,7 @@ Ltac2 contradiction_empty () :=
   | [ np : ?t |- _ ] =>
         match! (Std.eval_hnf t) with
         | ?x -> ?b =>
-            printf "Arrow type";
             Std.unify b 'False;
-            printf "Unified to False";
             if is_singleton_type x
             then let np := Control.hyp np in
                  solve [destruct ($np ltac2:(constructor 1))]
@@ -428,7 +470,9 @@ Ltac2 contradiction_empty () :=
   | [ |- _ ] => (printf "the terms are not equal"; fail)
   end.
 
-(** We also need to do contraction when it takes an argument *)
+(** We also need to write a [contraction] when it takes an argument.
+    TODO TEXT
+*)
 
 Ltac2 contradiction_arg (t : constr) :=
   match! Std.eval_hnf (type t) with
@@ -456,7 +500,7 @@ Goal forall P, P -> 0 = 1.
   intros P p. Fail contradiction_arg 'p.
 Abort.
 
-(** Finally, we can define a wrapper for it :  *)
+(** Finally, we define a wrapper for it :  *)
 
 Ltac2 contradiction0 (t : constr option) :=
   match t with
@@ -464,7 +508,7 @@ Ltac2 contradiction0 (t : constr option) :=
   | Some x => contradiction_arg x
   end.
 
-(** We can use it directly, writing the quoting and [Some] constructor by hand *)
+(** We can now use it directly, writing the quoting and [Some] constructor by hand *)
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
   intros. contradiction0 None.
@@ -482,8 +526,8 @@ Goal forall P, ~P -> 0 = 1.
   intros P np. contradiction0 (Some 'np).
 Abort.
 
-(** If we want we can further write a notation to do deal witht the option and
-    the quoting for us, but be aware it can complicate parsing as it reserves a name.
+(** If we want we can further write a notation to do deal witht the [option] and
+    the quoting for us, but be aware it may complicate parsing.
 *)
 
 Ltac2 Notation "contradiction" t(opt(constr)) := contradiction0 t.
