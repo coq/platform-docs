@@ -1,4 +1,4 @@
-(** * How to write a tactic Contradiction with Ltac2
+(** * How to write a contradiction tactic with Ltac2
 
   *** Authors
   - Thomas Lamiaux
@@ -6,7 +6,7 @@
   *** Summary
 
   This tutorial explains how to write a contradiction tactic using Ltac2.
-  In particular, it showcase how to use match goal, quoting, and
+  In particular, it showcases how to use match goal, quoting, and
   the Constr and Ind API to check properties on inductive types.
 
   *** Table of content
@@ -16,7 +16,7 @@
     - 2.1 Choosing [lazy_match!], [match!] or [multi_match!]
     - 2.2 Matching Syntactically or Semantically
     - 2.3 Error message
-  - 3. Using Constr.Unsafe and Ind to Add Syntactic Checks
+  - 3. Using Constr.Unsafe and Ind API to Add Syntactic Checks
     - 3.1 Checking for Empty and Singleton Types
     - 3.2 Checking for Empty and Singleton Hypotheses
   - 4. Putting it All Together
@@ -43,7 +43,7 @@ From Ltac2 Require Import Ltac2 Constr Printf.
     1. First introduces all variables,
     2. Try to prove the goal by checking the hypothesis for:
       - A pair of hypotheses [p : P] and [np :~P], such that any goal can be
-        proven by [destrct (np p)]
+        proven by [destruct (np p)]
       - An hypothesis [i : I] such that [I] is an inductive type without any constructor
         like [False], i.e. such that any goal can be proven by [destruct i]
       - An hypothesis [ni : ~I] such that [I] is an inductive type with
@@ -53,8 +53,8 @@ From Ltac2 Require Import Ltac2 Constr Printf.
     If [contradiction] takes an argument [t] then, the type of [t] must either be:
     1. An empty like [False], in which case the goal is proven
     2. Or a negation [~P], in which case:
-        - There is an hypotheis [P] in the context, then the goal is proven
-        - Othewise, the goal is replace by [P]
+        - There is a hypothesis [P] in the context, then the goal is proven
+        - Otherwise, the goal is replaced by [P]
 
 
     In this how-to we will see how to code it using Ltac.
@@ -74,7 +74,7 @@ From Ltac2 Require Import Ltac2 Constr Printf.
     regarding backtracking. The first step is to understand which one we want to use.
 
   - [lazy_match! goal with] is the easiest command to understand and to use.
-    [lazy_match!] picks a branch, and stick to even if this lead to a failure.
+    [lazy_match!] picks a branch, and sticks to it to even if this leads to a failure.
     It will not backtrack to pick another branch if a choice leads to a failure.
     In practice, it is sufficient for all applications where matching the syntax
     is enough and deterministic.
@@ -99,8 +99,8 @@ Abort.
       In this case, a test can fail, and we hence look for another hypothesis
       with the good syntax.
 
-      In the example bellow the first branch is picked and fails,
-      it hence backtrack to its choice, pick the second which this time succeeds.
+      In the example below the first branch is picked and fails, it hence
+      backtracks to its choice, pick the second branch which this time succeeds.
 *)
 
 Goal False.
@@ -111,11 +111,11 @@ Goal False.
   end.
 Abort.
 
-(** - [multi_match! goal with] is more complex and subtile. It basically behaves
+(** - [multi_match! goal with] is more complex and subtle. It basically behaves
       like [match!] except that it will further backtrack if the choice of a
       branch leads to a subsequent failure when linked with another tactic.
       [multi_match!] can be hard to predict and should only be used by people
-      that understand what is going on, and for tactics meant be linked with
+      that understand what is going on, and for tactics meant to be linked with
       other tactics like [constructor].
       We have no use for it here, as [contradiction] is meant to solve goals.
 *)
@@ -132,7 +132,7 @@ Abort.
 
     Matching is by default syntactic. Consequently, if we want to match for [P] and
     [~P] syntactic, we can do so directly by using the pattern [p : ?t, np : ~(?t)].
-    This pattern is works, then we we can prove [False] out of it.
+    This pattern is works, then we can prove [False] out of it.
     Consequently, we can use [lazy_match!] for it.
 
     Getting [p : ident] and [np : ident], we can not prove the goal directly
@@ -202,7 +202,7 @@ Abort.
     [$np $p] is well-typed only if the type of [np], [t2] is of the form [t1 -> X].
     We also need to ensure [X] is [False], otherwise, [destruct ($np $p)] we
     could just pattern matching on [nat], which would not solve the goal.
-    We can ensure it does solve the goal by wraping it in [solve].
+    We can ensure it does solve the goal by wrapping it in [solve].
     However, it is not an efficient solution, as we would still do [destruct] for
     every pair of hypotheses until we found one that works, which can be costly.
     A better solution, is to use a type annotation [$np $p : False] to force the
@@ -212,7 +212,7 @@ Abort.
     check is no longer sufficient to be able to prove [False], as we match for
     any pair of hypotheses.
     We hence need to switch from [lazy_match!] to [match!] to be able to
-    backtrack and try the next hypotheses, if we have picked the wrongones.
+    backtrack and try the next hypotheses, if we have picked the wrong ones.
 *)
 
 Ltac2 match_PnP_unification_v1 () :=
@@ -243,11 +243,11 @@ Goal forall P Q, P -> ~Q -> False.
   match_PnP_unification_v1 ().
 Abort.
 
-(** While this technically works, a better and more principaled approach is to
+(** While this technically works, a better and more principled approach is to
     directly us the primitive [Std.unify : constr -> constr -> unit] that
     that unifies two terms, and raises an exception if it is not possible.
 
-    With this approach there are much less chances to make an error,
+    With this approach, there are much less chances to make an error,
     like misunderstanding how unification is done by the tactics, or
     forgetting the type annotation [: False].
 
@@ -301,7 +301,7 @@ Abort.
   We can then raise a custom error message using [Tactic_failure : message option -> exn]
   that returns an error for any given message.
   We can then write complex error message using [fprintf] that behaves as [printf]
-  excepts that it returns a [message] rather than printing it it.
+  excepts that it returns a [message] rather than printing it.
 *)
 
 Goal forall P, P -> (P -> nat) -> False.
@@ -310,8 +310,8 @@ Goal forall P, P -> (P -> nat) -> False.
   end.
 Abort.
 
-(** If wanted, we can go even finer. The error type [exn] is an open type,
-    which mean we can a constructor to it, i.e. a new exception at any point.
+(** The error type [exn] is an open type, which mean we can a constructor to it,
+    i.e. a new exception at any point.
     We can hence create a new exception just for contradiction.
 *)
 
@@ -324,7 +324,7 @@ Goal forall P, P -> (P -> nat) -> False.
 Abort.
 
 
-(** ** 3. Using Constr.Unsafe and Ind to Add Syntactic Checks
+(** ** 3. Using Constr.Unsafe and Ind API to Add Syntactic Checks
 
     We need to check for hypotheses that are either empty like [False], or
     of form [~t] where [t] is an inductive type with one constructor without
@@ -338,12 +338,12 @@ Abort.
     any hypothesis, which and can be expensive.
 
     A better approach is to add a syntax check that verify that [t] is of the
-    appropriate form. It is much cheapear as it is basically matching syntax.
+    appropriate form. It is much cheapar as it is basically matching syntax.
     We can do so by using the API [Constr.Unsafe] that enables to access the
     internal syntax of Rocq terms, and [Ind] to access inductive types.
 
     The API "unsafe" is named this way because as soon as you start manipulating
-    internal syntax, there is no longer any garantee you create well-scoped terms.
+    internal syntax, there is no longer any guarantee you create well-scoped terms.
     Here, we will only use it to match the syntax so there is nothing to worry about.
 *)
 
@@ -352,9 +352,9 @@ Abort.
 
     In both case, the first step is to check the term is an inductive type.
     Internally, a type like [list A] is represented as [App (Ind ind u) args]
-    where [ind] is the the name of the inductive and the position of the block,
+    where [ind] is the name of the inductive and the position of the block,
     and [u] represents universe constrains.
-    Consequently, given a [t : constr] we need decompose the application
+    Consequently, given a [t : constr] we need to decompose the application
     [App x args], then match [x] for [Ind ind u].
 
     This can be done using [Unsafe.kind : constr -> kind] that converts a [constr]
@@ -370,7 +370,7 @@ Abort.
    Let us first write a function [decompose_map] that translates a [constr] to
    [kind], then match it for [Unsafe.App]. Notice, we use [match] and not
    [match!] as we are matching a Ltac2 inductive [kind] and not a [constr].
-   Note it is available by default with Rocq 9.2 or above.
+   Note it is available by default with Rocq 9.1 or above.
 *)
 
 Import Ind.
@@ -386,7 +386,7 @@ Ltac2 decompose_app (t : constr) :=
     we then convert to the syntax to check if it is an inductive, in which case
     we recover the inductive definition with [Ind.data : inductive -> data].
 
-    A subtility to understand is that [Unsafe.kind] converts the syntax without
+    A subtlety to understand is that [Unsafe.kind] converts the syntax without
     reducing terms. So if we want [(fun _ => True) 0] to be considered as an
     inductive, we need to reduce it first to a head normal form with
     [Std.eval_hnf : constr -> constr].
@@ -409,8 +409,8 @@ Ltac2 is_empty_inductive (t : constr) : bool :=
   Int.equal (Ind.nconstructors ind_body) 0.
 
 (** We can check an inductive type is a singleton similarly, except to one small issue.
-    The primitive to access the arguments of a constructor is only availble in
-    Rocq 9.2 or above. So for now, we will hence only check that it has only one constructor.
+    The primitive to access the arguments of a constructor is only available in
+    Rocq 9.1 or above. So for now, we will hence only check that it has only one constructor.
     Though this is not perfect and forces us to wrap [destruct ($np ltac2:(constructor 1)]
     in [solve], it still rules out a lot of potential terms like [nat].
 *)
@@ -424,7 +424,7 @@ Ltac2 is_singleton_type (t : constr) : bool :=
 
     Writing a tactic to check for empty hypothesis is very easy.
     We just match the goal using [match!] as the syntax check is not complete,
-    then check if it is empty, and if it is prove the goal with [destruct $p].
+    then check if it is empty, and if it is, prove the goal with [destruct $p].
 *)
 
 Ltac2 match_P_empty () :=
@@ -444,9 +444,9 @@ Goal True -> False.
   intros. Fail match_P_empty ().
 Abort.
 
-(** Checking for the negation of an inductve type is a little bit more involved
+(** Checking for the negation of an inductive type is a little bit more involved
     as we need to check the type of [?] is of the form [?X -> False].
-    We can do by creating an fresh evariable of type [Type] with
+    We can do by creating a fresh evariable of type [Type] with
     [open_constr:(u :> Type)] then using [Std.unfiy]:
 *)
 
@@ -509,7 +509,7 @@ Ltac2 contradiction_empty () :=
 (** We also need to write a [contraction] when it takes an argument.
     We create an evariable as before with [open_constr:(_ :> Type)],
     and check the type of [t], [type t} is a negation [$x -> False].
-    If it is, we look for an hypothesis of type [$x].
+    If it is, we look for a hypothesis of type [$x].
     If there is one, we prove the goal, otherwise, we replace the goal with [$x].
 *)
 
@@ -562,7 +562,7 @@ Goal forall P, ~P -> 0 = 1.
   intros P np. contradiction0 (Some 'np).
 Abort.
 
-(** If we want we can further write a notation to do deal witht the [option] and
+(** If we want we can further write a notation to do deal with the [option] and
     the quoting for us, but be aware it may complicate parsing.
 *)
 
