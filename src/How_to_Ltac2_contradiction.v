@@ -392,11 +392,11 @@ Ltac2 decompose_app (t : constr) :=
     [Std.eval_hnf : constr -> constr].
  *)
 
-Ltac2 get_inductive_body (t : constr) : data :=
+Ltac2 get_inductive_body (t : constr) : data option :=
   let (x, _) := decompose_app (Std.eval_hnf t) in
   match Unsafe.kind (Std.eval_hnf x) with
-  | (Unsafe.Ind ind _) => Ind.data ind
-  | _ => Control.zero (Tactic_failure (Some (fprintf "%t is not an inductive" t)))
+  | (Unsafe.Ind ind _) => Some (Ind.data ind)
+  | _ => None
   end.
 
 (** We are ready to check if a type is empty or not, which is now fairly easy.
@@ -405,8 +405,10 @@ Ltac2 get_inductive_body (t : constr) : data :=
 *)
 
 Ltac2 is_empty_inductive (t : constr) : bool :=
-  let ind_body := get_inductive_body t in
-  Int.equal (Ind.nconstructors ind_body) 0.
+ match get_inductive_body t with
+ | Some ind_body => Int.equal (Ind.nconstructors ind_body) 0
+ | None => false
+ end.
 
 (** We can check an inductive type is a singleton similarly, except to one small issue.
     The primitive to access the arguments of a constructor is only available in
@@ -416,8 +418,10 @@ Ltac2 is_empty_inductive (t : constr) : bool :=
 *)
 
 Ltac2 is_singleton_type (t : constr) : bool :=
-  let ind_body := get_inductive_body t in
-  Int.equal (Ind.nconstructors ind_body) 1.
+  match get_inductive_body t with
+  | Some ind_body => Int.equal (Ind.nconstructors ind_body) 1
+  | None => false
+  end.
 
 
 (** *** 3.2 Checking for Empty and Singleton Hypotheses
