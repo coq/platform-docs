@@ -132,13 +132,14 @@ Abort.
 
     Matching is by default syntactic. Consequently, if we want to match for [P] and
     [~P] syntactic, we can do so directly by using the pattern [p : ?t, np : ~(?t)].
-    This pattern is works, then we can prove [False] out of it.
+    If this pattern is matched, then we can prove [False].
     Consequently, we can use [lazy_match!] for it.
 
     Getting [p : ident] and [np : ident], we can not prove the goal directly
     with [destuct (np p)] as [destruct] expects a Rocq term, whereas
-    [p] and [np] are identifier, the names of the hypothesis.
-    To get the term associated to [p] and [np], we must use [Control.hyp : ident -> contr].
+    [p] and [np] are identifiers of Ltac2, the Ltac2 names of the hypotheses.
+    To get the term associated to [p] and [np], we must use
+    [Control.hyp : ident -> contr].
     We must then use [$] to go back to a Rocq term.
 *)
 
@@ -197,11 +198,11 @@ Abort.
     To match up conversion or unification, we must match for a pair of hypotheses
     [p : ?t1, np : ?t2 |- _], then check that [t2] is of the form [t1 -> False].
 
-    Checking terms up to unification can be done exploiting that tactics
-    check terms up to unification.
-    [$np $p] is well-typed only if the type of [np], [t2] is of the form [t1 -> X].
-    We also need to ensure [X] is [False], otherwise, [destruct ($np $p)] we
-    could just pattern matching on [nat], which would not solve the goal.
+    To unify the types, we can exploit that tactics do unification.
+    For instance, we can ensure [t2] is of the shape [t1 -> X] by applying
+    [$np] to [$p]; i.e. [$np $p], as otherwise it would be ill-typed.
+    We also need to ensure [X] is [False], otherwise, [destruct ($np $p)]
+    could do pattern matching on [nat] which would not solve the goal.
     We can ensure it does solve the goal by wrapping it in [solve].
     However, it is not an efficient solution, as we would still do [destruct] for
     every pair of hypotheses until we found one that works, which can be costly.
@@ -222,7 +223,7 @@ Ltac2 match_PnP_unification_v1 () :=
         printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
         let p := Control.hyp p in
         let np := Control.hyp np in
-        exact (False_rect _ ($np $p : False))
+        destruct ($np $p : False)
   | [ |- _ ] => fail
   end.
 
@@ -244,7 +245,7 @@ Goal forall P Q, P -> ~Q -> False.
 Abort.
 
 (** While this technically works, a better and more principled approach is to
-    directly us the primitive [Std.unify : constr -> constr -> unit] that
+    directly use the primitive [Std.unify : constr -> constr -> unit] that
     that unifies two terms, and raises an exception if it is not possible.
 
     With this approach, there are much less chances to make an error,
@@ -252,9 +253,9 @@ Abort.
     forgetting the type annotation [: False].
 
     Moreover, it scales much better. There is currently no conversion primitive
-    in Ltac2 (it is comming), but if they were  once, we could basically replace
+    in Ltac2 (it is comming), but if there were one, we could basically replace
     [Std.unify] by [Std.conversion] to get the other version.
-    Once could even consider parametrising the code by a check that could later
+    One could even consider parametrising the code by a check that could later
     be instantiated with unification, conversion or some syntax check up to
     reduction, like to head normal form.
 *)
@@ -310,8 +311,8 @@ Goal forall P, P -> (P -> nat) -> False.
   end.
 Abort.
 
-(** The error type [exn] is an open type, which mean we can a constructor to it,
-    i.e. a new exception at any point.
+(** The error type [exn] is an open type, which mean we can add a constructor to it,
+    i.e. a new exception, at any point.
     We can hence create a new exception just for contradiction.
 *)
 
@@ -338,7 +339,7 @@ Abort.
     any hypothesis, which and can be expensive.
 
     A better approach is to add a syntax check that verify that [t] is of the
-    appropriate form. It is much cheapar as it is basically matching syntax.
+    appropriate form. It is much cheaper as it is basically matching syntax.
     We can do so by using the API [Constr.Unsafe] that enables to access the
     internal syntax of Rocq terms, and [Ind] to access inductive types.
 
@@ -450,7 +451,7 @@ Abort.
 
 (** Checking for the negation of an inductive type is a little bit more involved
     as we need to check the type of [?] is of the form [?X -> False].
-    We can do by creating a fresh evariable of type [Type] with
+    We can do so by creating a fresh evariable of type [Type] with
     [open_constr:(u :> Type)] then using [Std.unfiy]:
 *)
 
@@ -510,7 +511,7 @@ Ltac2 contradiction_empty () :=
   | [ |- _ ] => Control.zero (Contradiction_Failed (Some (fprintf "No such contradiction")))
   end.
 
-(** We also need to write a [contraction] when it takes an argument.
+(** We also need to write a [contradiction] when it takes an argument.
     We create an evariable as before with [open_constr:(_ :> Type)],
     and check the type of [t], [type t} is a negation [$x -> False].
     If it is, we look for a hypothesis of type [$x].
