@@ -51,8 +51,8 @@
   HB ensures that they all yield the same resulting instance. HB also has
   support for several descriptions of the same structure. For instance, to
   promote a type with an associative and commutative law into a monoid, we only
-  need to find a left-neutral element, whereas with the commutativity assumption
-  we would have needed a left- and right-neutral element.
+  need to find a left-neutral element, whereas without the commutativity
+  assumption we would have needed a left- and right-neutral element.
 
   In order to guarantee good properties, the developers of HB chose a
   representation of structures as sets of mixins. A structure is an object
@@ -165,7 +165,7 @@ Check fun (T : Semigroup.type) => T : Magma.type.
 (** ** 2. Instances : building an instance of a structure
 
   Let us now build actual magmas. to find an instance for a given type, Coq/Rocq
-  only looks at the "head of the subject, which we call its key.
+  only looks at the "head" of the subject, which we call its key.
   For instance,
   - if the subject is [nat], then the key is [nat] and
   - if the subject is [prod nat bool], then the key is [prod]
@@ -263,8 +263,7 @@ HB.about isSemigroup.
   we call builders. We start a section of code declaring builders using the
   [HB.builders] command. It expects a context containing a subject and the
   factory we start from.
-*
-   )
+*)
 
 HB.builders Context T of isSemigroup T.
 
