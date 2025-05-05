@@ -17,6 +17,9 @@ dependencies:
 - description: Equations
   opam:
     name: coq-equations
+- description: Hierarchy Builder
+  opam:
+    name: coq-hierarchy-builder
 opam-file-maintainer: "Théo Zimmermann <theo.zimmermann@telecom-paris.fr>"
 tested_coq_opam_versions:
 - version: "8.20.1"
