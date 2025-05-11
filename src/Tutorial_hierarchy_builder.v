@@ -10,9 +10,9 @@
 
   *** Table of contents
 
-      - 1. Mixins and structures : declaring a structure
-      - 2. Instances : building an instance of a structure
-      - 3. Factories and builders : alternative representations of structures
+      - 1. Mixins and structures: declaring a structure
+      - 2. Instances: building an instance of a structure
+      - 3. Factories and builders: alternative representations of structures
       - 4. Options, parameters, visibility of instances
         - 4.1. Short names
         - 4.2. Parameters and primitive records
@@ -68,10 +68,10 @@
 From HB Require Import structures.
 From Coq Require Import PeanoNat.
 
-(** ** 1. Mixins and structures : declaring a structure
+(** ** 1. Mixins and structures: declaring a structure
 
   By structure, we mean an object (which we call structure) equipped with some
-  data (usually operations) and properties. The basic building bloc of a
+  data (usually operations) and properties. The basic building block of a
   structure is the mixin, which is a record that regroups an "interesting" part
   of the content of a structure. The point of mixins is that they can be reused
   in several structures. In this sense, a structure can be thought of as a set
@@ -238,7 +238,7 @@ rewrite (@opA nat).
 reflexivity.
 Qed.
 
-(** ** 3. Factories and builders : alternative representations of structures
+(** ** 3. Factories and builders: alternative representations of structures
 
   There may be several ways to describe the same structure. For example, when
   dealing with orders, giving either of the large operator and the strict
