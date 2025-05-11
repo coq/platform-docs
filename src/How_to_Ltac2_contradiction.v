@@ -368,7 +368,7 @@ Abort.
     The reason is that it is much faster than fully converting terms and
     sufficient for most applications.
 
-   Let us first write a function [decompose_map] that translates a [constr] to
+   Let us first write a function [decompose_app] that translates a [constr] to
    [kind], then match it for [Unsafe.App]. Notice, we use [match] and not
    [match!] as we are matching a Ltac2 inductive [kind] and not a [constr].
    Note it is available by default with Rocq 9.1 or above.
