@@ -5,9 +5,9 @@
 
   *** Summary
 
-  This tutorial explains how to write a contradiction tactic using Ltac2.
-  In particular, it showcases how to use match goal, quoting, and
-  the Constr and Ind API to check properties on inductive types.
+  This tutorial explains how to write a variant of the [contradiction] tactic using Ltac2.
+  In particular, it showcases how to use match goal and choose among [lazy_match!]
+  or [match!], quoting, and the Constr and Ind API to check properties on inductive types.
 
   *** Table of content
 
@@ -37,18 +37,19 @@ From Ltac2 Require Import Ltac2 Constr Printf.
 
 (** ** 1. Introduction
 
-    According to its specification the [contradiction] can take an argument or not.
+    We write a variant of the [contradiction] tactic up to small differences.
+    The overall specification [contradiction] is that it can take an argument or not:
 
     If [contradiction] does not take an argument, then [contradiction]:
-    1. First introduces all variables,
+    1. First introduces all the variables,
     2. Try to prove the goal by checking the hypothesis for:
-      - A pair of hypotheses [p : P] and [np :~P], such that any goal can be
+      - A pair of hypotheses [p : P] and [np : ~P], such that any goal can be
         proven by [destruct (np p)]
       - An hypothesis [i : I] such that [I] is an inductive type without any constructor
         like [False], i.e. such that any goal can be proven by [destruct i]
       - An hypothesis [ni : ~I] such that [I] is an inductive type with
         one constructor without arguments, like [True] or [0 = 0].
-        In other word, such [I] is provable by [constructor 1].
+        In other words, such [I] is provable by [constructor 1].
 
     If [contradiction] takes an argument [t] then, the type of [t] must either be:
     1. An empty like [False], in which case the goal is proven
@@ -56,8 +57,7 @@ From Ltac2 Require Import Ltac2 Constr Printf.
         - There is a hypothesis [P] in the context, then the goal is proven
         - Otherwise, the goal is replaced by [P]
 
-
-    In this how-to we will see how to code it using Ltac.
+    In this how-to we will see how to code it using Ltac2.
 
 *)
 
@@ -74,7 +74,8 @@ From Ltac2 Require Import Ltac2 Constr Printf.
     regarding backtracking. The first step is to understand which one we want to use.
 
   - [lazy_match! goal with] is the easiest command to understand and to use.
-    [lazy_match!] picks a branch, and sticks to it to even if this leads to a failure.
+    [lazy_match!] picks a branch, and sticks to it to even if the code excuted
+    after picking this branch (the body of the branch) leads to a failure.
     It will not backtrack to pick another branch if a choice leads to a failure.
     In practice, it is sufficient for all applications where matching the syntax
     is enough and deterministic.
@@ -92,12 +93,12 @@ Goal False.
 Abort.
 
 (** - [match! goal with] picks the first branch that succeeds.
-      If it picks a branch, and evaluation of it fails, then it backtracks and
-      look for next hypothesis fitting the syntax.
-      [match!] is useful as soon as matching the syntax is not enough,
-      and we need additional tests to see if we picked the good hypothesis or not.
-      In this case, a test can fail, and we hence look for another hypothesis
-      with the good syntax.
+      If it picks a branch, and evaluation of its body fails, then it backtracks
+      and look for the next hypotheses fitting the syntax.
+      [match!] is useful as soon as matching the syntax is not enough, and we
+      need additional tests to see if we have picked the good hypotheses or not.
+      Indeed, provide the tests fail raising an exception (or we make it so),
+      then [match!] will backtrack and try the new hypotheses with the good syntax.
 
       In the example below the first branch is picked and fails, it hence
       backtracks to its choice, pick the second branch which this time succeeds.
@@ -114,44 +115,92 @@ Abort.
 (** - [multi_match! goal with] is more complex and subtle. It basically behaves
       like [match!] except that it will further backtrack if the choice of a
       branch leads to a subsequent failure when linked with another tactic.
-      [multi_match!] can be hard to predict and should only be used by people
-      that understand what is going on, and for tactics meant to be linked with
-      other tactics like [constructor].
-      We have no use for it here, as [contradiction] is meant to solve goals.
+      [multi_match!] is meant to write tactics performing a choice that we want
+      to link with other tactics, like the [constructor] tactic.
+      It is **not meant** to be used as "a most general match", as it can be
+      hard to understand and predict, in particular for newcommers, and costly.
+
+      The [constradiction] tactics is meant to solve goals with a simple enough
+      inconsistent context. It is not meant to be linked.
+      Consequently, we have no use for [multimatch!] here.
+
+
+    Choosing betwen [lazy_match!] and [match!] really depends if we need
+    more than a syntax check as we will see in the rest of this how-to guide.
 *)
 
 
 (** *** 2.2 Matching Syntactically or Semantically *)
 
 (** Whether we choose to use [lazy_match!] or [match!], there are different
-    way to match for [P] and [~P]. We can match the syntax directly, or match it
-    semantically that is up to some reduction, conversion or unification.
+    way to match for [P] and [~P]. We can match the syntax directly, or match
+    it semantically that is up to some reduction, conversion or unification.
+
+    This different options have different levels of expressiveness, allowing them
+    to match hypotheses to varying degrees. They also have different cost and side
+    effects, for instance, conversion does not unify evariables opposite to unify.
+
+    Understanding which strategy to choose is not easy. We will now discuss
+    the different options, and their pros and cons, before choosing one.
 
 
-    **** 2.2.1 Matching Syntax
+    **** 2.2.1 Matching Syntactically
 
-    Matching is by default syntactic. Consequently, if we want to match for [P] and
-    [~P] syntactic, we can do so directly by using the pattern [p : ?t, np : ~(?t)].
-    If this pattern is matched, then we can prove [False].
-    Consequently, we can use [lazy_match!] for it.
+    Except for non-linear matching, matching is by default syntactic.
+    That is, terms are matched and compared only up to α-conversion and evar expansion.
+    Consequently, if we want to match for [P] and [~P] syntactically, we can do
+    so directly by using the pattern [p : ?t, np : ~(?t)].
+    If we have found hypotheses [P] and [~P], then we can prove [False].
+    Consequently, this is deterministic and we can use [lazy_match!] for it.
+*)
 
-    Getting [p : ident] and [np : ident], we can not prove the goal directly
-    with [destuct (np p)] as [destruct] expects a Rocq term, whereas
-    [p] and [np] are identifiers of Ltac2, the Ltac2 names of the hypotheses.
-    To get the term associated to [p] and [np], we must use
-    [Control.hyp : ident -> contr].
-    We must then use [$] to go back to a Rocq term.
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  intros.
+  lazy_match! goal with
+  | [p : ?t, np : ~(?t) |- _ ] => printf "Hypotheses are %I,%I,%t" p np t
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
+  end.
+Abort.
+
+(** Once we have found [P] and [~P], we want to prove [False] using [destuct (np p)].
+    However, this is not possible as though, as [p : ident] and [np : ident] are
+    identifiers, i.e. the name of the hypotheses [P] and [~P], wheras [destruct X]
+    expects [X] to be a Rocq term.
+
+    To get the term associated to [p] and [np], we must use [Control.hyp : ident -> contr].
+    which transforms an [ident] corresponding to an hypothesis into a Rocq term
+    we can manipulate in Ltac2, that is, into an object of type [constr].
+    If there are no such hypotheses then it raises an error.
+    For [p] and [np], this gives us:
+
+    [[  let p := Control.hyp p in
+        let np := Control.hyp np in
+        ...
+    ]]
+
+    Once, we have gotten the term associated to the hypotheses with [Control.hyp],
+    we must go back to Rocq's world to be able to use [destruct].
+    We do so with [$], which leads to:
+
+    [[
+      let p := Control.hyp p in
+      let np := Control.hyp np in
+      destruct ($np $p)
+    ]]
+
+    Note, there is currently no notation to do [Control.hyp] and [$] at once.
+
+    This leads us to the following script:
 *)
 
 Ltac2 match_PnP_syntax () :=
   lazy_match! goal with
   | [p : ?t, np : ~(?t) |- _ ] =>
-        printf "Matching succeeded";
         printf "Hypotheses are %I,%I,%t" p np t;
         let p := Control.hyp p in
         let np := Control.hyp np in
         destruct ($np $p)
-  | [ |- _ ] => printf "Matching failed"; fail
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
   end.
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
@@ -171,15 +220,8 @@ Goal forall P, P -> (P -> False) -> False.
   intros. Fail match_PnP_syntax ().
 Abort.
 
-(** It can not solve evariables either, as it is purely syntactic *)
-
-Goal forall P, P -> False.
-  intros. eassert (X4 : _) by admit.
-  Fail match_PnP_syntax ().
-Abort.
-
 (** To deal with [?t -> False], we could be tempted to add an extra-pattern in
-    the definition, but this would not scale. Any variations around [~] would fail.
+    the definition, but this would not scale as any variations around [~] would fail.
 *)
 
 Goal forall P, P -> ((fun _ => ~P) 0) -> False.
@@ -187,16 +229,24 @@ Goal forall P, P -> ((fun _ => ~P) 0) -> False.
 Abort.
 
 (** Checking terms up to syntax is not a good notion of equality in type theory.
-    For instance, [4 + 1] is not syntactically equal to [1]
-    What we really want is to compare type semantically, i.e. up to conversion
-    or unification.
+    For instance, [4 + 1] is not syntactically equal to [1].
+    What we really want here is to compare type semantically, i.e. up to
+    some reduction, conversion or unification.
 *)
 
 
 (** **** 2.2.2 Matching up to Unification
 
-    To match up conversion or unification, we must match for a pair of hypotheses
+    Before considering finer way to match syntax sematically, let us first
+    consider how to match terms up to unification as it is what comes up first.
+
+    To match semantically, we must match for a pair of hypotheses
     [p : ?t1, np : ?t2 |- _], then check that [t2] is of the form [t1 -> False].
+    Something fundamental to understand, here, is that with this approach the
+    syntax check is no longer sufficient to be able to prove [False], as we match
+    for any pair of hypotheses then check we have picked the good ones.
+    We hence need to switch from [lazy_match!] to [match!] to be able to
+    backtrack and try the next hypotheses, if we have picked the wrong ones.
 
     To unify the types, we can exploit that tactics do unification.
     For instance, we can ensure [t2] is of the shape [t1 -> X] by applying
@@ -209,22 +259,17 @@ Abort.
     A better solution, is to use a type annotation [$np $p : False] to force the
     type of [$np $p] to be [False].
 
-    Something fundamental to understand, is that with this approach the syntax
-    check is no longer sufficient to be able to prove [False], as we match for
-    any pair of hypotheses.
-    We hence need to switch from [lazy_match!] to [match!] to be able to
-    backtrack and try the next hypotheses, if we have picked the wrong ones.
+    This leads to the script:
 *)
 
 Ltac2 match_PnP_unification_v1 () :=
   match! goal with
   | [p : ?t1, np : ?t2 |- _ ] =>
-        printf "Matching succeeded";
         printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
         let p := Control.hyp p in
         let np := Control.hyp np in
         destruct ($np $p : False)
-  | [ |- _ ] => fail
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
   end.
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
@@ -239,10 +284,9 @@ Goal forall P, P -> (P -> False) -> False.
   intros. match_PnP_unification_v1 ().
 Qed.
 
-Goal forall P Q, P -> ~Q -> False.
-  intros. eassert (X4 : _) by admit.
-  match_PnP_unification_v1 ().
-Abort.
+Goal forall P, P -> ((fun _ => ~P) 0) -> False.
+  intros. match_PnP_unification_v1 ().
+Qed.
 
 (** While this technically works, a better and more principled approach is to
     directly use the primitive [Std.unify : constr -> constr -> unit] that
@@ -263,14 +307,13 @@ Abort.
 Ltac2 match_PnP_unification_v2 () :=
   match! goal with
   | [p : ?t1, np : ?t2 |- _ ] =>
-        printf "Matching succeeded";
         printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
         Std.unify t2 '($t1 -> False);
         printf "Unification Worked!";
         let p := Control.hyp p in
         let np := Control.hyp np in
         destruct ($np $p)
-  | [ |- _ ] => fail
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
   end.
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
@@ -285,12 +328,167 @@ Goal forall P, P -> (P -> False) -> False.
   intros. match_PnP_unification_v2 ().
 Qed.
 
+Goal forall P, P -> ((fun _ => ~P) 0) -> False.
+  intros. match_PnP_unification_v2 ().
+Qed.
+
+(** An issue with unification is that it can unify evariables.
+    For instance [match_PnP_unification_v2] can solve the following goal
+    which is not the case for the usual [contradiction] tactic.
+*)
+
 Goal forall P Q, P -> ~Q -> False.
   intros. eassert (X4 : _) by admit.
   match_PnP_unification_v2 ().
 Abort.
 
-(** We will use this version in this how-to guide.  *)
+(** This is costly, but also not a very good practice for automatisation tactics
+    which should not unify evariables in the back of the users, as it can
+    unify them in an unpected way getting the users stuck latter.
+    Users should have control on whetehr evariables are unified or not, hence
+    the different e-variants like [assumption] and [eassumption].
+
+*)
+
+(** **** 2.2.3 Matching up to Reduction
+
+    To have a finer control on what happens and reduce the cost of unification,
+    we can instead reduce our types to a head normal form to check it is of the
+    form [X -> Y] as [->] is a head symbol (without notations it is [-> X Y]).
+    We can then check that [X] is [t1], and [Y] is [False].
+
+    To reduce terms, there are many primitives in [Std]. We want to reduce to the
+    head normal form so we can use directly [Std.eval_hnf : constr -> constr].
+    We can then match the head with [lazy_match!] with the pattern [?x -> ?y].
+    We use [lazy_match!] as this is deterministic, either our term is a product
+    or it is not.
+
+  [[
+    match! goal with
+    | [p : ?t1, np : ?t2 |- _ ] =>
+          let t2' := Std.eval_hnf t2 in
+          lazy_match! t2' with
+          | ?x -> ?y => printf "(%I : %t) is a product %t -> %t" np t2 x y;
+          | _ => printf "(%I : %t) is not product" np t2;
+          end
+    | [ |- _ ] => printf "There are no hypotheses left to try"; fail
+  ]]
+
+    We then have to compare [X] with [t1], and [Y] with [False]. We would like to
+    compare terms up to conversion as it is reasonnably costly, but still
+    very expressive. Unfortunately, there is no primitive for it at the moment.
+
+    Consequently, we compare them up to syntactic equality which is still very
+    expressive when combine with reduction [Constr.equal : term -> term -> bool].
+    This is gives us the following script to which we add some printing functions
+    to see what is going on.
+*)
+
+Ltac2 match_PnP_unification_v3 () :=
+  match! goal with
+  | [p : ?t1, np : ?t2 |- _ ] =>
+        printf "-----";
+        printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
+        let t2' := Std.eval_hnf t2 in
+        lazy_match! t2' with
+        | ?x -> ?y =>
+            printf "(%I : %t) is a product %t -> %t" np t2 x y;
+            if Bool.and (Constr.equal (Std.eval_hnf x) t1)
+                        (Constr.equal (Std.eval_hnf y) 'False)
+            then printf "(%I : %t) is a contradiction of (%I : %t)" np t2 p t1;
+                 let p := Control.hyp p in
+                 let np := Control.hyp np in
+                 destruct ($np $p)
+            else (printf "(%I : %t) is not a contradiction of (%I : %t)" np t2 p t1;
+                  printf "-----"; printf "Backtracking"; fail)
+        | _ => printf "(%I : %t) is not product" np t2;
+               printf "-----"; printf "Backtracking"; fail
+        end
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
+  end.
+
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  intros. match_PnP_unification_v3 ().
+Qed.
+
+Goal forall P, P -> (P -> nat) -> False.
+  intros. Fail match_PnP_unification_v3 ().
+Abort.
+
+Goal forall P, P -> (P -> False) -> False.
+  intros. match_PnP_unification_v3 ().
+Qed.
+
+Goal forall P, P -> ((fun _ => ~P) 0) -> False.
+  intros. match_PnP_unification_v3 ().
+Qed.
+
+(** However, this now fails as evariables are no longer unified. *)
+
+Goal forall P Q, P -> ~Q -> False.
+  intros. eassert (X4 : _) by admit.
+  Fail match_PnP_unification_v3 ().
+Abort.
+
+(** **** 2.2.4 Optimisation
+
+    Using reduction already provide us with a fine control over what is going on
+    but it still is a bit inefficient as we try to compare every pair of hypotheses.
+    What we can instead is look for a negation [~P], and only if we found check
+    for an hypothesis [P]. This basically amounts to spliting the match in
+    two parts. As it can be seen, it matches much less hypotheses in case of failure.
+*)
+
+Ltac2 match_PnP_unification_v4 () :=
+  match! goal with
+  | [np : ?t2 |- _ ] =>
+      printf "-----";
+      printf "Hypothesis is %I : %t" np t2;
+      let t2' := Std.eval_hnf t2 in
+      lazy_match! t2' with
+      | ?x -> ?y =>
+        printf "  (%I : %t) is a product %t -> %t" np t2 x y;
+        match! goal with
+        | [p : ?t1 |- _ ] =>
+          printf "  #####";
+          printf "  Hypotheses are %I : %t, and %I : %t" p t1 np t2;
+          if Bool.and (Constr.equal (Std.eval_hnf x) t1)
+                      (Constr.equal (Std.eval_hnf y) 'False)
+          then printf "  (%I : %t) is a contradiction of (%I : %t)" np t2 p t1;
+            let p := Control.hyp p in
+            let np := Control.hyp np in
+            destruct ($np $p)
+          else (printf "  (%I : %t) is not a contradiction of (%I : %t)" np t2 p t1;
+                printf "  #####"; printf "  Backtracking"; fail)
+        | [ |- _ ] => printf "  #####"; printf "Backtracking"; fail
+        end
+      | _ => printf "(%I : %t) is not product" np t2;
+             printf "-----"; printf "Backtracking"; fail
+      end
+  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
+  end.
+
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  intros. match_PnP_unification_v4 ().
+Qed.
+
+Goal forall P, P -> (P -> nat) -> False.
+  intros. Fail match_PnP_unification_v4 ().
+Abort.
+
+Goal forall P, P -> (P -> False) -> False.
+  intros. match_PnP_unification_v4 ().
+Qed.
+
+Goal forall P, P -> ((fun _ => ~P) 0) -> False.
+  intros. match_PnP_unification_v4 ().
+Qed.
+
+Goal forall P Q, P -> ~Q -> False.
+  intros. eassert (X4 : _) by admit.
+  Fail match_PnP_unification_v4 ().
+Abort.
+
 
 
 (** *** 2.3 Error Messages
