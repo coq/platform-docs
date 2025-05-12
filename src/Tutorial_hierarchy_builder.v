@@ -15,8 +15,9 @@
       - 3. Factories and builders: alternative representations of structures
       - 4. Options, parameters, visibility of instances
         - 4.1. Short names
-        - 4.2. Parameters and primitive records
-        - 4.3. Visibility of instances
+        - 4.2. Parameters
+        - 4.3. Primitive records
+        - 4.4. Visibility of instances
       - 5. Non-forgetful inheritance
 
   *** Prerequisites
@@ -330,28 +331,57 @@ HB.mixin Record hasPoint T := {pt : T}.
 #[short(type="ptType")]
 HB.structure Definition Pointed := {T of hasPoint T}.
 
-(** *** 4.2. Parameters and primitive records
-
-  We can ask for HB to use primitive records with the [primitive] attribute.
-  This is only visible when the structure has parameters, let us try with magma
-  morphisms. This will be the occasion to see what happens when we have 
-  parameters.
+(** *** 4.2. Parameters
+  
+  Sometimes, a structure depends on other objects for its definition, which we
+  call parameters. For instance, when the subject of a structure S is a Type, a
+  morphism between two instances T and U of S is a function between the
+  underlying types of T and U which "preserves" the structure. Such a structure
+  of morphism has two parameters, namely T and U. Parameters are represented as
+  first arguments of the mixins and structures.
 *)
 
 HB.mixin Record isMagmaMorphism (T U : Magma.type) (f : T -> U) := {
   op_morph : forall x y, f (op x y) = op (f x) (f y)
 }.
 
-#[primitive]
 HB.structure Definition MagmaMorphism (T U : Magma.type) :=
   {f of isMagmaMorphism T U f}.
+
+Definition idfun (T : Type) (x : T) := x.
+HB.instance Definition _ (T : Magma.type) :=
+  isMagmaMorphism.Build T T (idfun T) (fun _ _ => eq_refl).
+
+(** *** 4.3 Primitive records
+
+  We can ask for HB to use primitive records with the [primitive] attribute.
+  Primitive records satisfy the eta-contraction rule, stating that for a
+  primitive record with projections p_1, ..., p_n, then an instance T of the
+  record and {| p_1 T; ...; p_n T |} are the same term. Primitive records also
+  optimize their use of parameters, meaning that their projections apply
+  directly to the instance of the record, skipping the parameters.
+  To observe the difference with non-primitive records, let us define a copy of
+  [MagmaMorphism] declared above. Since HB does not allow having several
+  structures with the same set of mixins, we also declare a copy of
+  [isMagmaMorphism].
+*)
+
+HB.mixin Record isMagmaMorphism' (T U : Magma.type) (f : T -> U) := {
+  op_morph : forall x y, f (op x y) = op (f x) (f y)
+}.
+
+#[primitive]
+HB.structure Definition MagmaMorphism' (T U : Magma.type) :=
+  {f of isMagmaMorphism' T U f}.
 
 Set Printing Coercions.
 Check fun (T : Magma.type) (f : MagmaMorphism.type T T) =>
   MagmaMorphism.sort T T f.
+Check fun (T : Magma.type) (f : MagmaMorphism'.type T T) =>
+  MagmaMorphism'.sort T T f.
 Unset Printing Coercions.
 
-(** *** 4.3. Visibility of instances
+(** *** 4.4. Visibility of instances
 
   Now, let us talk about the visibility of instances. An instance is visible
   only when it is declared in the current module.
