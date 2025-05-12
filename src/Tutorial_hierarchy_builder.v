@@ -348,10 +348,6 @@ HB.mixin Record isMagmaMorphism (T U : Magma.type) (f : T -> U) := {
 HB.structure Definition MagmaMorphism (T U : Magma.type) :=
   {f of isMagmaMorphism T U f}.
 
-Definition idfun (T : Type) (x : T) := x.
-HB.instance Definition _ (T : Magma.type) :=
-  isMagmaMorphism.Build T T (idfun T) (fun _ _ => eq_refl).
-
 (** *** 4.3 Primitive records
 
   We can ask for HB to use primitive records with the [primitive] attribute.
@@ -388,6 +384,7 @@ Unset Printing Coercions.
 *)
 
 Definition idfun (T : Type) (x : T) := x.
+
 Lemma idfun_op_morph (T : Magma.type) (x y : T) :
   idfun T (op x y) = op (idfun T x) (idfun T y).
 Proof. reflexivity. Qed.
