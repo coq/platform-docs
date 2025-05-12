@@ -387,10 +387,8 @@ Abort.
 Ltac2 match_PnP_unification_v3 () :=
   match! goal with
   | [p : ?t1, np : ?t2 |- _ ] =>
-        printf "-----";
         printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
-        let t2' := Std.eval_hnf t2 in
-        lazy_match! t2' with
+        lazy_match! (Std.eval_hnf t2) with
         | ?x -> ?y =>
             printf "(%I : %t) is a product %t -> %t" np t2 x y;
             if Bool.and (Constr.equal (Std.eval_hnf x) t1)
@@ -400,9 +398,9 @@ Ltac2 match_PnP_unification_v3 () :=
                  let np := Control.hyp np in
                  destruct ($np $p)
             else (printf "(%I : %t) is not a contradiction of (%I : %t)" np t2 p t1;
-                  printf "-----"; printf "Backtracking"; fail)
+                  printf "----- Backtracking -----"; fail)
         | _ => printf "(%I : %t) is not product" np t2;
-               printf "-----"; printf "Backtracking"; fail
+               printf "----- Backtracking -----"; fail
         end
   | [ |- _ ] => printf "There are no hypotheses left to try"; fail
   end.
@@ -442,30 +440,32 @@ Abort.
 Ltac2 match_PnP_unification_v4 () :=
   match! goal with
   | [np : ?t2 |- _ ] =>
-      printf "-----";
       printf "Hypothesis is %I : %t" np t2;
-      let t2' := Std.eval_hnf t2 in
-      lazy_match! t2' with
+      let np := Control.hyp np in
+      (* Check [t2] is a negation ~P *)
+      lazy_match! (Std.eval_hnf t2) with
       | ?x -> ?y =>
-        printf "  (%I : %t) is a product %t -> %t" np t2 x y;
-        match! goal with
-        | [p : ?t1 |- _ ] =>
-          printf "  #####";
-          printf "  Hypotheses are %I : %t, and %I : %t" p t1 np t2;
-          if Bool.and (Constr.equal (Std.eval_hnf x) t1)
-                      (Constr.equal (Std.eval_hnf y) 'False)
-          then printf "  (%I : %t) is a contradiction of (%I : %t)" np t2 p t1;
-            let p := Control.hyp p in
-            let np := Control.hyp np in
-            destruct ($np $p)
-          else (printf "  (%I : %t) is not a contradiction of (%I : %t)" np t2 p t1;
-                printf "  #####"; printf "  Backtracking"; fail)
-        | [ |- _ ] => printf "  #####"; printf "Backtracking"; fail
-        end
-      | _ => printf "(%I : %t) is not product" np t2;
-             printf "-----"; printf "Backtracking"; fail
+        if Constr.equal (Std.eval_hnf y) 'False then
+          printf "%t is a negation %t -> %t" t2 x y;
+          printf "Search for %t:" x;
+          printf "    ------------------------";
+          (* Check for an hypothesis P *)
+          match! goal with
+          | [p : ?t1 |- _ ] =>
+            printf "    Hypothesis is %I : %t" p t1;
+            if Constr.equal (Std.eval_hnf x) t1
+            then printf "    %t is a contradiction of %t" t2 t1;
+                 let p := Control.hyp p in destruct ($np $p)
+            else (printf "    ----- Backtracking -----"; fail)
+          | [ |- _ ] => printf "    There are no hypotheses left to try";
+                        printf "----- Backtracking -----"; fail
+          end
+        else ( printf "%t is not a negation" t2;
+               printf "----- Backtracking -----"; fail)
+      | _ => printf "%t is not a negation" t2;
+             printf "----- Backtracking -----"; fail
       end
-  | [ |- _ ] => printf "There are no hypotheses left to try"; fail
+  | [ |- _ ] => printf "Failure: There are no hypotheses left to try"; fail
   end.
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
@@ -549,30 +549,39 @@ Abort.
 
 (** *** 3.1 Checking for Empty and Singleton Types
 
-    In both case, the first step is to check the term is an inductive type.
+    In both case, the first step is to check if the term is an inductive type.
     Internally, a type like [list A] is represented as [App (Ind ind u) args]
     where [ind] is the name of the inductive and the position of the block,
     and [u] represents universe constrains.
     Consequently, given a [t : constr] we need to decompose the application
     [App x args], then match [x] for [Ind ind u].
 
-    This can be done using [Unsafe.kind : constr -> kind] that converts a [constr]
-    to a shallow embedding of the internal syntax, which is represented by a Ltac2
-    inductive type [kind] that we can then match.
-    It is said to be shallowed embedding a [constr] is not fully converted to
-    a representation of the internal syntax, only its head.
-    For instance, the type of [Unsafe.App] is [constr -> constr array -> kind]
-    rather than [kind -> kind constr -> kind].
-    The reason is that it is much faster than fully converting terms and
-    sufficient for most applications.
+    This can be done using [Unsafe.kind : constr -> kind] which converts a
+    [constr] to a shallow embedding of the internal syntax, which is defined
+    as a Ltac2 inductive type [kind].
+    [kind] is a shallowed embedding which means a [constr] is not fully
+    converted to a representation of the internal syntax, only its head.
+    For example, the type of [Unsafe.App] is [constr -> constr array -> kind].
+    That is, [u] and [v] in [Unsafe.App u v] remain regular [constr] elements
+    and are not recursively converted to [kind], which characterizes it as shallow.
+    In contrast, if we had a deep embedding, the arguments of [Unsafe.App] would be
+    recursively converted to [kind], resulting in the type [kind -> kind array -> kind].
+    The reason for using a shallow embedding is that it is much faster than fully
+    converting terms to the interal syntax, yet sufficient for most applications.
 
-   Let us first write a function [decompose_app] that translates a [constr] to
-   [kind], then match it for [Unsafe.App]. Notice, we use [match] and not
-   [match!] as we are matching a Ltac2 inductive [kind] and not a [constr].
-   Note it is available by default with Rocq 9.1 or above.
+    Let us first write a function [decompose_app] that translates a [constr] to
+    [kind], then match it for [Unsafe.App] and returns the arguments.
+    It is already available starting Rocq 9.1, but it still is good to recode it.
+
+    There are two things to understand here:
+    - 1. We match [kind] using [match] and not with [match!] as [kind] is an
+         inductive type of Ltac2. [match!] is to match [constr] and goals.
+    - 2. We really need the shallow embedding: we can not match the type of a
+         term as we did for [X -> Y]. Indeed, we can match [X -> Y] with [match!]
+         as we know there are exactly 2 arguments, so the syntax is fully specified.
+         In constrasts, an application like an inductive type could have arbitrary
+         many arguments, and we can hence not match it with [match!]
 *)
-
-Import Ind.
 
 Ltac2 decompose_app (t : constr) :=
   match Unsafe.kind t with
@@ -590,6 +599,8 @@ Ltac2 decompose_app (t : constr) :=
     inductive, we need to reduce it first to a head normal form with
     [Std.eval_hnf : constr -> constr].
  *)
+
+Import Ind.
 
 Ltac2 get_inductive_body (t : constr) : data option :=
   let (x, _) := decompose_app (Std.eval_hnf t) in
@@ -613,7 +624,7 @@ Ltac2 is_empty_inductive (t : constr) : bool :=
     The primitive to access the arguments of a constructor is only available in
     Rocq 9.1 or above. So for now, we will hence only check that it has only one constructor.
     Though this is not perfect and forces us to wrap [destruct ($np ltac2:(constructor 1)]
-    in [solve], it still rules out a lot of potential terms like [nat].
+    in [solve], it still rules out most inductives like [nat].
 *)
 
 Ltac2 is_singleton_type (t : constr) : bool :=
@@ -625,7 +636,7 @@ Ltac2 is_singleton_type (t : constr) : bool :=
 
 (** *** 3.2 Checking for Empty and Singleton Hypotheses
 
-    Writing a tactic to check for empty hypothesis is very easy.
+    Writing a tactic to check for empty hypothesis is now fairly easy.
     We just match the goal using [match!] as the syntax check is not complete,
     then check if it is empty, and if it is, prove the goal with [destruct $p].
 *)
@@ -633,9 +644,8 @@ Ltac2 is_singleton_type (t : constr) : bool :=
 Ltac2 match_P_empty () :=
   match! goal with
   | [ p : ?t |- _ ] =>
-        if is_empty_inductive t
-        then let p := Control.hyp p in destruct $p
-        else fail
+        let p := Control.hyp p in
+        if is_empty_inductive t then destruct $p else fail
   | [ |- _ ] => Control.zero (Contradiction_Failed (Some (fprintf "No such contradiction")))
   end.
 
@@ -655,14 +665,15 @@ Abort.
 
 Ltac2 match_nP_singleton () :=
   match! goal with
-  | [ np : ?t |- _ ] =>
-        let x := open_constr:(_ :> Type) in
-        Std.unify t '($x -> False);
-        printf "%t was unified with %t" t '($x -> False);
-        if is_singleton_type x
-        then let np := Control.hyp np in
-              solve [destruct ($np ltac2:(constructor 1))]
-        else printf "%t is not a singeleton" x ; fail
+  | [ np : ?t2 |- _ ] =>
+      let np := Control.hyp np in
+      lazy_match! (Std.eval_hnf t2) with
+      | ?x -> ?y =>
+        if Bool.and (is_singleton_type x) (Constr.equal (Std.eval_hnf y) 'False)
+        then solve [destruct ($np ltac2:(constructor 1))]
+        else printf "%t is not a singeleton or %t is not False" x y ; fail
+      | _ => printf "%t is not product" t2; fail
+      end
   | [ |- _ ] => Control.zero (Contradiction_Failed (Some (fprintf "No such contradiction")))
   end.
 
@@ -682,49 +693,60 @@ Abort.
 
 (** ** 4. Putting it All Together *)
 
-(** It took a few explanations, but in the end the code of
-    [contradiction_empty] is rather short using Ltac2.
+(** It took a few explanations, but in the end the code of [contradiction_empty]
+    is rather short using Ltac2.
+
+    To be efficient, we first perform the syntax check as there are very cheap.
+    We hence first check for an empty hypotheses, then if it is a negation,
+    in particular of a singletion inductive type. If it is none of these,
+    check for [P] and [~P] which we perform last in order not to check
+    the whole context for nothing.
+
 *)
 
 Ltac2 contradiction_empty () :=
   intros;
   match! goal with
-  | [p : ?t1, np : ?t2 |- _ ] =>
-        Std.unify t2 '($t1 -> False);
-        let p := Control.hyp p in
-        let np := Control.hyp np in
-        destruct ($np $p)
-  | [ p : ?t |- _ ] =>
-        if is_empty_inductive t
-        then let p := Control.hyp p in
-             destruct $p
-        else fail
-  | [ np : ?t |- _ ] =>
-        let x := open_constr:(_ :> Type) in
-        Std.unify t '($x -> False);
-        if is_singleton_type x
-        then let np := Control.hyp np in
-              solve [destruct ($np ltac2:(constructor 1))]
-        else fail
-  | [ |- _ ] => Control.zero (Contradiction_Failed (Some (fprintf "No such contradiction")))
+  | [np : ?t2 |- _ ] =>
+      let np := Control.hyp np in
+      (* Check if [t2] is empty  *)
+      if is_empty_inductive t2 then destruct $np else
+      (* If it is not, check if [t2] is a negation ~P *)
+      lazy_match! (Std.eval_hnf t2) with
+      | ?x -> ?y =>
+          if Constr.equal (Std.eval_hnf y) 'False then
+            (* If so check if [x] is empty *)
+            if is_singleton_type x
+            then solve [destruct ($np ltac2:(constructor 1))]
+            (* If not, check for an hypothesis P *)
+            else (match! goal with
+              | [p : ?t1 |- _ ] =>
+                if Constr.equal (Std.eval_hnf x) t1
+                then let p := Control.hyp p in destruct ($np $p)
+                else fail
+              | [ |- _ ] => fail
+            end)
+          else fail
+      | _ => fail
+      end
+  | [ |- _ ] => fail
   end.
 
-(** We also need to write a [contradiction] when it takes an argument.
-    We create an evariable as before with [open_constr:(_ :> Type)],
-    and check the type of [t], [type t} is a negation [$x -> False].
-    If it is, we look for a hypothesis of type [$x].
-    If there is one, we prove the goal, otherwise, we replace the goal with [$x].
-*)
+(** We also need to write a [contradiction] when it takes an argument. *)
 
 Ltac2 contradiction_arg (t : constr) :=
-  let x := open_constr:(_ :> Type) in
-  Std.unify (type t) '($x -> False);
-  match! goal with
-  | [p : ?t2 |- _ ] =>
-        Std.unify x t2;
-        let p := Control.hyp p in
-        destruct ($t $p)
-  | [ |- _ ] => assert (f : False) > [apply $t | destruct f]
+  lazy_match! (Std.eval_hnf (type t)) with
+  | ?x -> ?y =>
+      if Constr.equal (Std.eval_hnf y) 'False
+      then match! goal with
+        | [p : ?t1 |- _ ] =>
+            if Constr.equal (Std.eval_hnf x) t1
+            then let p := Control.hyp p in destruct ($t $p)
+            else fail
+        | [ |- _ ] => assert (f : False) > [apply $t | destruct f]
+        end
+      else fail
+  | _ => Control.zero (Contradiction_Failed (Some (fprintf "%t is not a negation" t)))
   end.
 
 Goal forall P, P -> ~P -> 0 = 1.
@@ -747,42 +769,89 @@ Ltac2 contradiction0 (t : constr option) :=
   | Some x => contradiction_arg x
   end.
 
-(** We can now use it directly, writing the quoting and [Some] constructor by hand *)
+(** We can now use [contradiction0] directly writing [None] and [Some], and
+    the quoting constructor by hand.
+*)
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
-  intros. contradiction0 None.
-Qed.
-
-Goal False -> False.
-  intros. contradiction0 None.
+  contradiction0 None.
 Qed.
 
 Goal forall P, P -> ~P -> 0 = 1.
   intros P p np. contradiction0 (Some 'np).
 Qed.
 
-Goal forall P, ~P -> 0 = 1.
-  intros P np. contradiction0 (Some 'np).
-Abort.
-
-(** If we want we can further write a notation to do deal with the [option] and
+(** Alternatively, we can define a notation to do deal insert [None], [Some] and
     the quoting for us, but be aware it may complicate parsing.
 *)
 
 Ltac2 Notation "contradiction" t(opt(constr)) := contradiction0 t.
 
 Goal forall P Q, P -> ~Q -> ~P -> False.
-  intros. contradiction.
-Qed.
-
-Goal False -> False.
-  intros. contradiction.
+  contradiction.
 Qed.
 
 Goal forall P, P -> ~P -> 0 = 1.
   intros P p np. contradiction np.
 Qed.
 
+(** Finally, just to be sure everything is alright, let us check [contradiction]
+    on all the examples we have seen so far.
+*)
+
+(* pairs of hypotheses *)
+Goal forall P Q, P -> ~Q -> ~P -> False.
+  contradiction.
+Qed.
+
+Goal forall P, P -> (P -> nat) -> False.
+  Fail contradiction.
+Abort.
+
+Goal forall P, P -> (P -> False) -> False.
+  contradiction.
+Qed.
+
+Goal forall P, P -> ((fun _ => ~P) 0) -> False.
+  contradiction.
+Qed.
+
+Goal forall P Q, P -> ~Q -> False.
+  intros. eassert (X4 : _) by admit.
+  Fail contradiction.
+Abort.
+
+(* empty hypotheses *)
+Goal False -> False.
+  contradiction.
+Qed.
+
+Goal True -> False.
+  Fail contradiction.
+Abort.
+
+(* Negation of a singleton *)
+Goal ~True -> False.
+  contradiction.
+Qed.
+
+Goal ~(0 = 0) -> False.
+  contradiction.
+Qed.
+
+Goal ~(0 = 1) -> False.
+  Fail contradiction.
+Abort.
+
+(* negation given as an argument *)
+Goal forall P, P -> ~P -> 0 = 1.
+  intros P p np. contradiction np.
+Qed.
+
 Goal forall P, ~P -> 0 = 1.
   intros P np. contradiction np.
+Abort.
+
+Goal forall P, P -> 0 = 1.
+  intros P p. Fail contradiction p.
 Abort.
