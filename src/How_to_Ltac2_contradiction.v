@@ -94,14 +94,19 @@ Abort.
 
 (** - [match! goal with] picks the first branch that succeeds.
       If it picks a branch, and evaluation of its body fails, then it backtracks
-      and look for the next hypotheses fitting the syntax.
+      and choose the next branch where the pattern matches the hypotheses and goal,
+      potentially the same one if all the hypotheses have not been exhausted yet.
+
       [match!] is useful as soon as matching the syntax is not enough, and we
       need additional tests to see if we have picked the good hypotheses or not.
-      Indeed, provide the tests fail raising an exception (or we make it so),
-      then [match!] will backtrack and try the new hypotheses with the good syntax.
+      Indeed, if such a test fail raising an exception (or we make it so),
+      then [match!] will backtrack, and look for the next hypotheses matching the pattern.
 
       In the example below the first branch is picked and fails, it hence
-      backtracks to its choice, pick the second branch which this time succeeds.
+      backtracks to its choice.
+      There is only one possibility for the pattern [ |- _] as it matches any goal.
+      As it has already been tried, it hence switch to the second pattern which is [ |- _].
+      This branch now succeeds, the whole [match!] hence succeeds.
 *)
 
 Goal False.
@@ -115,14 +120,46 @@ Abort.
 (** - [multi_match! goal with] is more complex and subtle. It basically behaves
       like [match!] except that it will further backtrack if the choice of a
       branch leads to a subsequent failure when linked with another tactic.
-      [multi_match!] is meant to write tactics performing a choice that we want
-      to link with other tactics, like the [constructor] tactic.
-      It is **not meant** to be used as "a most general match", as it can be
-      hard to understand and predict, in particular for newcommers, and costly.
 
-      The [constradiction] tactics is meant to solve goals with a simple enough
-      inconsistent context. It is not meant to be linked.
-      Consequently, we have no use for [multimatch!] here.
+      For instance, in the example below we link the [match!] with [fail],
+      hence the composition of will hence fail.
+      In the [match!] case, it will try the first branch, then the second that
+      succeeds, then try [fail] which fails, hence fails. It will hence
+      print [branch 1] and [branch 2] then fails.
+*)
+Goal False.
+  Fail match! goal with
+  | [ |- _ ] => printf "branch 1"; fail
+  | [ |- _ ] => printf "branch 2"
+  | [ |- _ ] => printf "branch 3"
+  end; fail.
+Abort.
+
+(** In contrast, when failing on [fail], [multi_match!] will further bracktrack
+    to its choice of the second branch, and try the next branch.
+    The idea is that picking a different branch could have led to the subsequent
+    tactic to succeed, as can happen when using [constructor].
+    Here, as [fail] always fails, it will still failed but we can see it did
+    backtrack and that the third branch as been tried as it will print [branch 3].
+*)
+
+Goal False.
+  Fail multi_match! goal with
+  | [ |- _ ] => printf "branch 1"; fail
+  | [ |- _ ] => printf "branch 2"
+  | [ |- _ ] => printf "branch 3"
+  end; fail.
+Abort.
+
+(**   [multi_match!] is meant to write tactics performing a choice, and that
+      we want to link with other tactics, like the [constructor] tactic.
+      It is **not meant** to be used by default.
+      Yes, it is the more powerful in terms of backtracking, but it can can be
+      hard to understand and predict in particular for newcomers, and costly.
+
+      The [contradiction] tactics is meant to solve goals with a simple enough
+      inconsistent context. It is not meant to be linked with other tactics.
+      Consequently, we have no use for [multimatch!] to implement [contradiction].
 
 
     Choosing betwen [lazy_match!] and [match!] really depends if we need
@@ -148,8 +185,11 @@ Abort.
 
     Except for non-linear matching, matching is by default syntactic.
     That is, terms are matched and compared only up to α-conversion and evar expansion.
-    Consequently, if we want to match for [P] and [~P] syntactically, we can do
-    so directly by using the pattern [p : ?t, np : ~(?t)].
+    To match for [P] and [~P], we can use the pattern [p : ?t, np : ~(?t)].
+    In this pattern, [t] is non-linear so it will be matched up to conversion.
+    However, matching for a term of the form [~(_)] will be syntactically,
+    i.e. up to α-conversion.
+
     If we have found hypotheses [P] and [~P], then we can prove [False].
     Consequently, this is deterministic and we can use [lazy_match!] for it.
 *)
@@ -162,12 +202,13 @@ Goal forall P Q, P -> ~Q -> ~P -> False.
   end.
 Abort.
 
-(** Once we have found [P] and [~P], we want to prove [False] using [destuct (np p)].
+(** Once we have found [P] and [~P], we want to prove [False] using the usual
+    [destruct] tactic that expects a Rocq term, that write [destuct (np p)].
     However, this is not possible as though, as [p : ident] and [np : ident] are
     identifiers, i.e. the name of the hypotheses [P] and [~P], wheras [destruct X]
     expects [X] to be a Rocq term.
 
-    To get the term associated to [p] and [np], we must use [Control.hyp : ident -> contr].
+    To get the terms associated to [p] and [np], we must use [Control.hyp : ident -> contr],
     which transforms an [ident] corresponding to an hypothesis into a Rocq term
     we can manipulate in Ltac2, that is, into an object of type [constr].
     If there are no such hypotheses then it raises an error.
@@ -212,7 +253,8 @@ Goal forall P, P -> (P -> nat) -> False.
 Abort.
 
 (** It has the advantage to be fast but the downside is that it will not match
-    [?t -> False], even though it is convertible to [~(?t)].
+    [?t -> False], even though it is convertible to [~(?t)], as [~(_)] is
+    match syntactically.
     It is not what we want for a [contradiction] tactic.
 *)
 
@@ -229,16 +271,24 @@ Goal forall P, P -> ((fun _ => ~P) 0) -> False.
 Abort.
 
 (** Checking terms up to syntax is not a good notion of equality in type theory.
-    For instance, [4 + 1] is not syntactically equal to [1].
+    For instance, [4 + 1] is not syntactically equal to [5].
     What we really want here is to compare type semantically, i.e. up to
     some reduction, conversion or unification.
 *)
 
+(** Note, however, that it would match [~((fun _ => P) 0)] as [t] in [~t] is
+    matched up to conversion.
+*)
+
+Goal forall P, P -> ~ ((fun _ => P) 0) -> False.
+  intros. match_PnP_syntax ().
+Abort.
 
 (** **** 2.2.2 Matching up to Unification
 
-    Before considering finer way to match syntax sematically, let us first
-    consider how to match terms up to unification as it is what comes up first.
+    Before considering a finer way to match syntax semantically, let us first
+    consider how to match terms up to unification as it is what comes up
+    first to mind when trying to write meta-programming.
 
     To match semantically, we must match for a pair of hypotheses
     [p : ?t1, np : ?t2 |- _], then check that [t2] is of the form [t1 -> False].
@@ -256,7 +306,7 @@ Abort.
     We can ensure it does solve the goal by wrapping it in [solve].
     However, it is not an efficient solution, as we would still do [destruct] for
     every pair of hypotheses until we found one that works, which can be costly.
-    A better solution, is to use a type annotation [$np $p : False] to force the
+    A better solution, is to use a type annotation [$np $p :> False] to force the
     type of [$np $p] to be [False].
 
     This leads to the script:
@@ -268,7 +318,7 @@ Ltac2 match_PnP_unification_v1 () :=
         printf "Hypotheses are %I : %t, and %I : %t" p t1 np t2;
         let p := Control.hyp p in
         let np := Control.hyp np in
-        destruct ($np $p : False)
+        destruct ($np $p :> False)
   | [ |- _ ] => printf "There are no hypotheses left to try"; fail
   end.
 
@@ -296,12 +346,13 @@ Qed.
     like misunderstanding how unification is done by the tactics, or
     forgetting the type annotation [: False].
 
-    Moreover, it scales much better. There is currently no conversion primitive
-    in Ltac2 (it is comming), but if there were one, we could basically replace
-    [Std.unify] by [Std.conversion] to get the other version.
+    Moreover, it scales much better. Conversion is only available for
+    Rocq 9.1 and later versions, so we will not utilize it in this how-to guide.
+    However, if it were available, we could essentially replace [Std.unify]
+    with [Std.conversion] to obtain the alternative version.
     One could even consider parametrising the code by a check that could later
     be instantiated with unification, conversion or some syntax check up to
-    reduction, like to head normal form.
+    reduction, like to the head normal form.
 *)
 
 Ltac2 match_PnP_unification_v2 () :=
@@ -342,19 +393,19 @@ Goal forall P Q, P -> ~Q -> False.
   match_PnP_unification_v2 ().
 Abort.
 
-(** This is costly, but also not a very good practice for automatisation tactics
-    which should not unify evariables in the back of the users, as it can
-    unify them in an unpected way getting the users stuck latter.
-    Users should have control on whetehr evariables are unified or not, hence
+(** This is costly, but also not a very good practice for automation tactics
+    which should not unify evariables in the behind the scene as it can
+    unify them in an unexpected way getting the users stuck later.
+    Users should have control on whether evariables are unified or not, hence
     the different e-variants like [assumption] and [eassumption].
 
 *)
 
 (** **** 2.2.3 Matching up to Reduction
 
-    To have a finer control on what happens and reduce the cost of unification,
+    To have finer control on what happens and reduce the cost of unification,
     we can instead reduce our types to a head normal form to check it is of the
-    form [X -> Y] as [->] is a head symbol (without notations it is [-> X Y]).
+    form [X -> Y] as [->] is a infix notation, (it should be seen as [-> X Y]).
     We can then check that [X] is [t1], and [Y] is [False].
 
     To reduce terms, there are many primitives in [Std]. We want to reduce to the
@@ -375,7 +426,7 @@ Abort.
   ]]
 
     We then have to compare [X] with [t1], and [Y] with [False]. We would like to
-    compare terms up to conversion as it is reasonnably costly, but still
+    compare terms up to conversion as it is reasonably inexpensive, but still
     very expressive. Unfortunately, there is no primitive for it at the moment.
 
     Consequently, we compare them up to syntactic equality which is still very
@@ -430,11 +481,11 @@ Abort.
 
 (** **** 2.2.4 Optimisation
 
-    Using reduction already provide us with a fine control over what is going on
+    Using reduction already provides us with a fine control over what is going on
     but it still is a bit inefficient as we try to compare every pair of hypotheses.
     What we can instead is look for a negation [~P], and only if we found check
     for an hypothesis [P]. This basically amounts to spliting the match in
-    two parts. As it can be seen, it matches much less hypotheses in case of failure.
+    two parts. As it can be seen, it matches much fewer hypotheses in case of failure.
 *)
 
 Ltac2 match_PnP_unification_v4 () :=
@@ -493,12 +544,12 @@ Abort.
 
 (** *** 2.3 Error Messages
 
-  So far, we have been returning a [fail] in case of failure, which return
+  So far, we have been using [fail] to trigger failure, which returns
   the error message [Tactic_failure None].
 
   We can be finer using the primitive [Control.zero : exn -> 'a] to raise an error.
   We can then raise a custom error message using [Tactic_failure : message option -> exn]
-  that returns an error for any given message.
+  that raises an error for any given message.
   We can then write complex error message using [fprintf] that behaves as [printf]
   excepts that it returns a [message] rather than printing it.
 *)
@@ -511,7 +562,7 @@ Abort.
 
 (** The error type [exn] is an open type, which mean we can add a constructor to it,
     i.e. a new exception, at any point.
-    We can hence create a new exception just for contradiction.
+    We can hence create a new exception just for [contradiction].
 *)
 
 Ltac2 Type exn ::= [ Contradiction_Failed (message option) ].
@@ -531,10 +582,10 @@ Abort.
 
     We can do so very directly by trying to solve the goal assuming we have
     found the good hypotheses wrapping it in [solve] to ensure it works.
-    In this case, for [p : t] and [p : ~t] that would mean doing
-    [solve [destruct $p]] and [destruct ($np ltac2(constructor 1))].
+    In this case, for [p : t] and [np : ~t] that would mean doing
+    [solve [destruct $p]] and [destruct ($np ltac2:(constructor 1))].
     However, that would be very inefficient as we would do [destruct] on
-    any hypothesis, which and can be expensive.
+    any hypothesis, which can be expensive.
 
     A better approach is to add a syntax check that verify that [t] is of the
     appropriate form. It is much cheaper as it is basically matching syntax.
@@ -552,14 +603,14 @@ Abort.
     In both case, the first step is to check if the term is an inductive type.
     Internally, a type like [list A] is represented as [App (Ind ind u) args]
     where [ind] is the name of the inductive and the position of the block,
-    and [u] represents universe constrains.
+    and [u] represents universe constraints.
     Consequently, given a [t : constr] we need to decompose the application
     [App x args], then match [x] for [Ind ind u].
 
     This can be done using [Unsafe.kind : constr -> kind] which converts a
     [constr] to a shallow embedding of the internal syntax, which is defined
     as a Ltac2 inductive type [kind].
-    [kind] is a shallowed embedding which means a [constr] is not fully
+    [kind] is a shallow embedding which means a [constr] is not fully
     converted to a representation of the internal syntax, only its head.
     For example, the type of [Unsafe.App] is [constr -> constr array -> kind].
     That is, [u] and [v] in [Unsafe.App u v] remain regular [constr] elements
@@ -567,7 +618,7 @@ Abort.
     In contrast, if we had a deep embedding, the arguments of [Unsafe.App] would be
     recursively converted to [kind], resulting in the type [kind -> kind array -> kind].
     The reason for using a shallow embedding is that it is much faster than fully
-    converting terms to the interal syntax, yet sufficient for most applications.
+    converting terms to the internal syntax, yet sufficient for most applications.
 
     Let us first write a function [decompose_app] that translates a [constr] to
     [kind], then match it for [Unsafe.App] and returns the arguments.
@@ -660,7 +711,7 @@ Abort.
 (** Checking for the negation of an inductive type is a little bit more involved
     as we need to check the type of [?] is of the form [?X -> False].
     We can do so by creating a fresh evariable of type [Type] with
-    [open_constr:(u :> Type)] then using [Std.unfiy]:
+    [open_constr:(u :> Type)] then using [Std.unifiy]:
 *)
 
 Ltac2 match_nP_singleton () :=
