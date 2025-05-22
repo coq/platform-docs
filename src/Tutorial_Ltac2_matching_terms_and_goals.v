@@ -15,10 +15,13 @@
   *** Table of content
 
   - 1. Matching Terms and Goals
+    - 1.1 Matching Terms
+    - 1.2 Matching Goals
   - 2. [lazy_match!], [match!], [multi_match!] and Backtracking
     - 2.1 [lazy_match!]
     - 2.2 [match!]
     - 2.3 [multi_match!]
+  - 3. Non-Linear Matching
 
   *** Prerequisites
 
@@ -32,7 +35,8 @@
 
 *)
 
-
+(** Let us firs import Ltac2, and write a small function printing the goal under focus
+*)
 From Ltac2 Require Import Ltac2 Printf.
 
 Ltac2 print_goals0 () :=
@@ -44,15 +48,15 @@ Ltac2 print_goals0 () :=
 
 Ltac2 Notation print_goals := print_goals0 ().
 
-(* 1. Matching terms, and Goals *)
+(** 1. Matching Terms, and Goals *)
 
-(* 1.1 Matching terms *)
+(** 1.1 Matching terms *)
 
-(* 1.2 Matching Goals *)
+(** 1.2 Matching Goals *)
 
-(* 1.3 Non-Linear Matching *)
 
-(* -> non-linear variable => syntax / conv *)
+
+
 
 
 
@@ -242,3 +246,71 @@ Abort.
     backtracking attempts when linked with another tactic that can backtrack.
     It should hence only be used when needed.
 *)
+
+
+
+(** 3. Non-Linear Matching
+
+    A pattern is non-linear when a variable [?t] appears more than one time.
+    In this case, the natural question is how are this variables match.
+    On the non-linear case, variable are matched up to conversions when they
+    appear in different clause, and up to syntax when it appears in the same clause.
+
+    To understand this better, let us look at an example.
+    We could write a version of [eassumption] by checking for the pattern [_ : ?t |- ?t].
+    In this case, as [?t] appears in different clauses -- the hypotheses and
+    then conclusion -- it will matched up to conversion.
+    We can check it works by supposing [0 + 1 = 0] and trying to prove [1 = 0],
+    as [0 + 1] is equal to [1] up to conversion but not syntactically.
+*)
+
+Goal 0 + 1 = 0 -> 1 = 0.
+  intros.
+  lazy_match! goal with
+  | [ _ : ?t |- ?t] => printf "succeeded: %t" t
+  | [ |- _ ] => fail
+  end.
+
+(** However, if a variable appears several times in a same clause, then it is
+    checked syntactically.
+    For instance, in [ |- ?t = ?t], [?t] is checked syntactically as the it
+    appears twice in the goal which forms one clause.
+    We can check checking this by trying to match [0 + 1 = 1] which fails.
+*)
+
+Goal 1 + 1 = 2.
+  Fail lazy_match! goal with
+  | [ |- ?t = ?t] => printf "equality is %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** A subtlety to understand is that only the hole associated to a variable will
+    be checked up to conversion, other symbols are matched syntactically as usual.
+    For instance, if we check for [?t, ~(?t)], the symbol [~] will matched,
+    if one if found then inside the clause ~(X) that it will be checked
+    up to conversion with [?t].
+
+    Consequently, if we have [P], it will fail to match for [P -> False] as
+    [~] is matched syntactically, but [P -> False] is the unfolding of [~P].
+*)
+
+Goal forall P, P -> (P -> False) -> False.
+  intros.
+  Fail match! goal with
+  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** However, matching for [~((fun _ => P) 0)] will work as [~] will be matched,
+    then [(fun _ => P)0] matched with [P] up to conversion which works.
+*)
+
+Goal forall P, P -> ~((fun _ => P) 0) -> False.
+  intros.
+  match! goal with
+  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
