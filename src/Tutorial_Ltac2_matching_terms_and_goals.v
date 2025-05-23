@@ -5,12 +5,13 @@
 
   *** Summary
 
-  Ltac2 has native support to match the structure of terms, and the goals
+  Ltac2 has native support to match the structure of terms, and of the goal
   making it easy to build decision procedure or solvers.
   There are three primtives to match terms or goals [lazy_match!], [match!],
   and [multi_match!], which only differ by their backtracking abilities.
-  Consequently, we will first explain the syntax and how variable are
-  using [lazy_match!], then the backtracking differences in a second part.
+  Consequently, we first explain the syntax using [lazy_match!], then
+  discuss the backtracking differences in a second part.
+  In a third part, we discuss non-linear matching which can be subtle.
 
   *** Table of content
 
@@ -107,8 +108,16 @@ Ltac2 rec split_and () :=
   | [ |- _ ] => ()
   end.
 
+Goal (True /\ ((False /\ True) /\ False)) /\ True.
+  split_and ().
+Abort.
+
 Goal forall (n : nat), (forall m, m = n) /\ (False \/ False) /\ True.
   split_and ().
+Abort.
+
+Goal True \/ False.
+  Fail (progress (split_and ())).
 Abort.
 
 
@@ -239,6 +248,11 @@ Goal False \/ (False \/ True) \/ 0 = 1.
   left_or_right (); exact I.
 Abort.
 
+Goal False \/ (False \/ False) \/ (0 = 1 -> 0 = 1).
+  left_or_right (); intros X; exact X.
+Abort.
+
+
 (** [multi_match!] is **not meant** to be used by default.
     Yes, it is the more powerful match primitive in terms of backtracking, but it
     can can be hard to understand, predict and debug, in particular for newcomers.
@@ -314,3 +328,29 @@ Goal forall P, P -> ~((fun _ => P) 0) -> False.
   | [ |- _ ] => fail
   end.
 Abort.
+
+(** It often happens that non-linear matching is not precise enough for our
+    purpose, either because we would like to match both term in one clause
+    up to conversion, or because we would like to use a different notation of
+    equality of non-linear occurencess like syntactic equality, equality up to
+    some reduction, or even up to unification.
+
+    In this case, the best approach is to use different variables for each
+    occurences we want to check, then call the equality we wish.
+    For instance, to match for [P] and [~P] up to unification, we would:
+    match for a pair of variables [t1], [t2] then call a unification function
+    to check if one of the hypotheses is indeed a negation of the other.
+*)
+
+Goal forall P, P -> (P -> False) -> False.
+  intros.
+  match! goal with
+  | [ _ : ?t1, _ : ?t2 |- _] =>
+      Unification.unify_with_full_ts t2 '($t1 -> False);
+      printf "success"
+  | [ |- _ ] => fail
+  end.
+
+(** The advantage of this method is that it provides the user with a fine grained
+    control to the user when and how reduction and equality tests are performed.
+*)
