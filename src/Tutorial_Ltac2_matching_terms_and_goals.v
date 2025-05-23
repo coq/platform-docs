@@ -53,13 +53,110 @@ Ltac2 Notation print_goals := print_goals0 ().
 
 (** 1.1 Matching terms *)
 
+
+    (* Note, that as in Ocaml, variables names can not start with a cap as it is
+    reserved for  *)
+
 (** 1.2 Matching Goals *)
 
+(** The syntax to match goals is a bit different from matching terms.
+    Matching the goal is done with pattern of the form:
+
+        [[ [ x1 : t1, ..., xn : tn |- g ] => ... ]]
+
+    where:
+    - [x1] ... [xn] are [ident], i.e. Ltac2 values corresponding to the names
+      of the hypotheses. Opposite to evariables, there should not start with [?].
+    - [t1] ... [tn] are the types of the hypotheses, and [g] the types of the goal
+      we want to prove. All are of type [constr], the type of Rocq terms in Ltac2.
+    - As there are variables, they can not start with a cap as it is reserved
+      for constructors.
+
+    Such a pattern will match a goal to prove of types [G], and such that can be
+    found [n] hypothesis of types [T1], ..., [Tn].
+    Each clause must match a different hypothesis for the pattern to succeed.
+    Consequently, there must be at least [n] different hypotheses / assumptions
+    in the context for such a branch to have a chance to succeed.
+    Moreover, the fallback wildcard pattern [_] we used to match terms is
+    now [ |- _] as this matches any goals.
+
+    As an example, let us write a small [lazy_match! goal with] to check the goal
+    to check it is either [_ /\ _] or [_ \/ _]. As we want to check the goal but
+    not the hypotheses, our pattern is of the form [ |- g]. To match for [_ /\ _]
+    and [_ \/ _], we then get the patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
+*)
+
+Goal True /\ False.
+  lazy_match! goal with
+  | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
+  | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
+  | [ |- _] => fail
+  end.
+
+Goal False \/ True.
+  lazy_match! goal with
+  | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
+  | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
+  | [ |- _] => fail
+  end.
+
+Goal nat.
+  Fail lazy_match! goal with
+  | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
+  | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
+  | [ |- _] => fail
+  end.
+
+(** By default the hypotheses are matched from the last one to the first one.
+    We can start from the first one, by using [reverse goal] rather than [goal].
+
+    For instance, in the example below, [m] is found if we match the goal for
+    [ [h : nat |- _] ] as it is the last hypothesis of type [nat] that was
+    introduced. However, it is [n] that is found if match [reverse goal] as it
+    is the first hypothesis of type [nat] that was introduced.
+*)
+
+Goal nat -> bool -> nat -> True.
+  intros n b m.
+  lazy_match! goal with
+  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
+  | [ |- _ ] => fail
+  end.
+
+Goal nat -> bool -> nat -> True.
+  intros n b m.
+  lazy_match! reverse goal with
+  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
+  | [ |- _ ] => fail
+  end.
 
 
+(** Note, There needs to be exactly one goal under focus, or matching
+    will fail with the error [Not_focussed]. We can easily check it:
+*)
 
+Goal True /\ True.
+  split.
+  Fail all: lazy_match! goal with
+  | [ |- _] => ()
+  end.
+Abort.
 
+(** Consequently if you want to match the goal, be sure to focus the goal first,
+    for instance with [Control.enter : (unit -> unit) -> unit] that applies a
+    tactic for each goal under focus.
 
+    We can also check that we need at least an hypothesis per clause, by matching
+    for [ [_ : _, _ : _ |- _] ] in a goal with only one hypothesis, which will fail.
+*)
+
+Goal nat -> True.
+  intros n.
+  (* each clause matches a different hypotheses *)
+  Fail lazy_match! goal with
+  | [_ : _, _ : _ |- _] => printf "succeeded"
+  | [ |- _ ] => fail
+  end.
 
 
 
