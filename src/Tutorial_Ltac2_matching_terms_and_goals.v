@@ -15,14 +15,16 @@
 
   *** Table of content
 
-  - 1. Matching Terms and Goals
-    - 1.1 Matching Terms
-    - 1.2 Matching Goals
+  - 1. Matching Terms
+    - 1.1 Syntax of Matching
+    - 1.2 Semantic of Matching
+  - 2 Matching Goals
+      - 1.1 Syntax
+      - 1.2 Non-linear matching
   - 2. [lazy_match!], [match!], [multi_match!] and Backtracking
     - 2.1 [lazy_match!]
     - 2.2 [match!]
     - 2.3 [multi_match!]
-  - 3. Non-Linear Matching
 
   *** Prerequisites
 
@@ -33,12 +35,12 @@
 
   Installation:
   - Ltac2 and its core-library are available by default with Rocq
-
 *)
 
-(** Let us firs import Ltac2, and write a small function printing the goal under focus
-*)
+
+(** Let us firs import Ltac2, and write a small function printing the goal under focus *)
 From Ltac2 Require Import Ltac2 Printf.
+Import Bool.BoolNotations.
 
 Ltac2 print_goals0 () :=
   Control.enter (fun () =>
@@ -49,17 +51,203 @@ Ltac2 print_goals0 () :=
 
 Ltac2 Notation print_goals := print_goals0 ().
 
-(** 1. Matching Terms, and Goals *)
-
-(** 1.1 Matching terms *)
 
 
-    (* Note, that as in Ocaml, variables names can not start with a cap as it is
-    reserved for  *)
 
-(** 1.2 Matching Goals *)
+(** ** 1 Matching terms
 
-(** The syntax to match goals is a bit different from matching terms.
+    *** 1.1 Syntax
+
+    Ltac2 has primitves to match a term to check its shape, for instance,
+    if it is a function or a function type.
+    This enables to perform different action depending on the shape of the term.
+
+    To match a term, the syntax is [lazy_match! t with] with one clause of
+    the form [ ... => ...] per pattern to match.
+
+
+    As an example, let's write a small function proving the goal provided
+    it is given an argument of type [True -> ... True -> False].
+
+    We write a recursive function that matches the type of [t] obtained with
+    [Constr.type : constr -> constr] against [False] and [True -> _].
+    In the first case, we prove the goal with [destruct $t], in the second
+    case we recursively attempt to solve the goal with [triv '($t I)] by
+    applying [t] to the only inhabitant of [True], [I : True].
+*)
+
+Ltac2 rec triv (t : constr) :=
+  lazy_match! Constr.type t with
+  | False => destruct $t
+  | True -> _ => triv '($t I)
+  end.
+
+Goal False -> True.
+  intros H. triv 'H.
+Abort.
+
+Goal (True -> True -> True -> False) -> True.
+  intros H. triv 'H.
+Abort.
+
+Goal True -> True.
+  intros H. Fail triv 'H.
+Abort.
+
+(** As in Rocq, the default pattern is a wildcard [_], that will match anything.
+    It is practical to do something specific if the term matched is of any other
+    shape than the one matched.
+    For instance, we can use it to return a more specific error than
+    [Match_failure] by defining [err_triv] to return if it fails.
+*)
+
+Ltac2 err_triv t := Control.zero (Tactic_failure (Some (
+    fprintf "%t Not of the form True -> ... -> True -> False" t
+  ))).
+
+Ltac2 rec triv_err (t : constr) :=
+  let ty := Constr.type t in
+  printf "the type under consideration is %t" ty;
+  lazy_match! ty with
+  | False => destruct $t
+  | True -> _ => triv_err '($t I)
+  | _ => err_triv ty
+  end.
+
+Goal True -> True.
+  intros H. Fail triv_err 'H.
+Abort.
+
+(** In some cases, we do not want to merely match the shape of a term [t],
+    but also to recover a part of this subterm to perform more actions on it.
+    This can be done using evariables which must be written [?x].
+    In such cases, [x] is of type [constr], the type of Rocq terms in Ltac2.
+    This is normal as [x] corresponds to a subterm of [t].
+
+    Note that as in Ocaml, variable names can not start with a cap as this
+    is reserved for constructors of inductive types.
+
+    As an example consider writing a boolean test to check if a type is a
+    proposition written out of [True], [False], [~] ,[/\] ,[\/].
+    To check a term is a proposition, we need to match it to check its the head
+    symbol, and if it is one of the allowed one check its subterms also are propositions.
+    Consequently, we need to remember subterms, and to match [/\] we need to
+    use the pattern [?a /\ ?b]. This gives the following recursive function:
+*)
+
+Ltac2 rec is_proposition (t : constr) :=
+  lazy_match! t with
+  | True => true
+  | False => true
+  | ?a /\ ?b => is_proposition a && is_proposition b
+  | ?a \/ ?b => is_proposition a && is_proposition b
+  | _ => false
+  end.
+
+(** To test it, lets us write a small printing function. *)
+Ltac2 check_is_proposition (t : constr) :=
+  if is_proposition t
+  then printf "%t is a proposition" t
+  else printf "%t is not a proposition" t.
+
+Goal (True \/ (True /\ False)) -> nat -> True.
+  intros H1 H2.
+  check_is_proposition (Constr.type 'H1).
+  check_is_proposition (Constr.type 'H2).
+Abort.
+
+
+(** ** 1.2 Semantic of Matching
+
+    Matching of syntax is by default syntactic. It means terms are only checked
+    to be of the appopriate shape up to α-conversion and exapansion of evars.
+
+    For instance, [fun x => x] and [fun y => y] are equal syntactically as they
+    only differ by their names of bound variables (α-conversion), but [1 + 4]
+    and [5] are not equal syntactically as they only are equal up to reduction.
+    As a consequence, a small variation arond a term that would require a
+    reduction step like [(fun _ => False) 0] will not be matched by [False].
+*)
+
+Goal ((fun _ => False) 0) -> False.
+  intros H. Fail triv_err 'H.
+Abort.
+
+(** In Ltac2, is up to the users to simplify the term appropriately before matching them.
+    In most case, we match the syntax to find what is the head symbol [False]
+    or [->], in which case it suffices to compute the head normal form (hnf)
+    with [Std.eval_hnf : constr -> constr].
+    With extra-printing to show the difference before and after [eval_hnf],
+    this gives us this barely different version of [triv_err].
+*)
+
+Ltac2 rec triv_hnf (t : constr) :=
+  let ty := Constr.type t in
+  printf "the type under consideration is %t" ty;
+  let ty_hnf := Std.eval_hnf ty in
+  printf "the hnf type under consideration is %t" ty_hnf;
+  lazy_match! ty_hnf with
+  | False => destruct $t
+  | True -> _ => triv_hnf '($t I)
+  | _ => err_triv ty_hnf
+  end.
+
+Goal (True -> ((fun _ => False) 0)) -> True.
+  intros H. triv_hnf 'H.
+Abort.
+
+Goal (True -> (((fun _ => True) 0) -> True -> False)) -> True.
+  intros H. triv_hnf 'H.
+Abort.
+
+(** The advantage of this approach is that the default is fast and predicatable,
+    and full control is left to the user to compare terms up to the notion of
+    their choosing like up to head-normal form, or up to unification.
+
+    This explains how syntax is matched but not how a pattern is matched when a
+    evariable [?x] appears more than once in a pattern, like [?x = ?x].
+    Such a variable are said to be non-linear, and are matched up to conversion.
+    The reason is that we expect the subterms matched to be the same,
+    which in type theory naturally corresponds to conversion.
+*)
+
+Ltac2 is_refl_eq (t : constr) :=
+  lazy_match! t with
+  | ?x = ?x => printf "it is a reflexive equality"
+  | _ => printf "it is not a reflexive equality"
+  end.
+
+Goal (1 = 1) -> False.
+  intros H. is_refl_eq (Constr.type 'H).
+Abort.
+
+(** Ltac2 naturally detects when a variable is not used after the matching pattern,
+    in which case it triggers a warning.
+    This warning will be triggered for non-linear variables, if they are only used
+    to constrain the shape of the term matched, like in [is_refl_eq], but no further.
+    In this case, the warning can be easily disable by naming unsued evariables
+    starting with [?_] rather than with [?].
+    For instance, by matching for [?_x = ?_x] rather than [?x = ?x] is [is_refl_eq].
+*)
+
+Ltac2 is_refl_eq' (t : constr) :=
+  lazy_match! t with
+  | ?_x = ?_x => printf "it is a reflexive equality"
+  | _ => printf "it is not a reflexive equality"
+  end.
+
+Goal (1 = 1) -> False.
+  intros H. is_refl_eq (Constr.type 'H).
+Abort.
+
+
+
+
+(** 2. Matching Goals
+
+    Ltac2 also offers the possibility to match the goals to check the form the goal
+    to prove, and/or the existence of particular hypotheses like a proof of [False].
+    The syntax to match goals is a bit different from matching terms.
     Matching the goal is done with pattern of the form:
 
         [[ [ x1 : t1, ..., xn : tn |- g ] => ... ]]
@@ -67,49 +255,88 @@ Ltac2 Notation print_goals := print_goals0 ().
     where:
     - [x1] ... [xn] are [ident], i.e. Ltac2 values corresponding to the names
       of the hypotheses. Opposite to evariables, there should not start with [?].
-    - [t1] ... [tn] are the types of the hypotheses, and [g] the types of the goal
+    - [t1] ... [tn] are the types of the hypotheses, and [g] the type of the goal
       we want to prove. All are of type [constr], the type of Rocq terms in Ltac2.
-    - As there are variables, they can not start with a cap as it is reserved
-      for constructors.
+    - As usual variables [x1] and any evariables that could appear in [t1], ..., [tn],
+      and [g], can not start with a cap as it is reserved for constructors.
 
     Such a pattern will match a goal to prove of types [G], and such that can be
-    found [n] hypothesis of types [T1], ..., [Tn].
+    found [n] different hypothesis of types [T1], ..., [Tn].
     Each clause must match a different hypothesis for the pattern to succeed.
     Consequently, there must be at least [n] different hypotheses / assumptions
     in the context for such a branch to have a chance to succeed.
     Moreover, the fallback wildcard pattern [_] we used to match terms is
     now [ |- _] as this matches any goals.
 
-    As an example, let us write a small [lazy_match! goal with] to check the goal
-    to check it is either [_ /\ _] or [_ \/ _]. As we want to check the goal but
-    not the hypotheses, our pattern is of the form [ |- g]. To match for [_ /\ _]
-    and [_ \/ _], we then get the patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
+    As an example, let us write a small function starting with [lazy_match! goal with]
+    to check the goal to prove it is either [_ /\ _] or [_ \/ _].
+
+    As we want to check the goal to prove, nothing on the hypotheses, our pattern
+    is of the form [ |- g]. To match for [_ /\ _] and [_ \/ _], we then get the
+    patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
 *)
 
 Goal True /\ False.
   lazy_match! goal with
   | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
   | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
-  | [ |- _] => fail
+  | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
+                "The goal is not a conjunction nor a disjunction")))
   end.
+Abort.
 
 Goal False \/ True.
   lazy_match! goal with
   | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
   | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
-  | [ |- _] => fail
+  | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
+                "The goal is not a conjunction nor a disjunction")))
   end.
+Abort.
 
 Goal nat.
   Fail lazy_match! goal with
   | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
   | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
-  | [ |- _] => fail
+  | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
+                "The goal is not a conjunction nor a disjunction")))
   end.
+Abort.
+
+(** To match for an hypothesis of type [nat] but not to check anything on the goal,
+    we would use the pattern [h : nat |- _] as below. To match for a pair of
+    hypotheses [nat], we would then use the pattern [h : nat, h2 : nat |- _].
+*)
+
+Goal nat -> bool -> nat -> True.
+  intros n b m.
+  lazy_match! goal with
+  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
+  end.
+Abort.
+
+Goal nat -> bool -> nat -> True.
+  intros n b m.
+  lazy_match! goal with
+  | [h1 : nat, h2 : nat |- _] => printf "succeeded, hypothesis %I %I" h1 h2
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** We can see, we do need at least an hypothesis per pattern, as if we remove
+    [m : nat] this will now fail.
+*)
+Goal nat -> bool -> True.
+  intros n b.
+  Fail lazy_match! goal with
+  | [h1 : nat, h2 : nat |- _] => printf "succeeded, hypothesis %I %I" h1 h2
+  end.
+Abort.
 
 (** By default the hypotheses are matched from the last one to the first one.
-    We can start from the first one, by using [reverse goal] rather than [goal].
-
+    This can be seen in the example above as it prints [m], the last variable
+    of type [nat] that was introduced.
+    We can start from the first one, by matching [reverse goal] rather than [goal].
     For instance, in the example below, [m] is found if we match the goal for
     [ [h : nat |- _] ] as it is the last hypothesis of type [nat] that was
     introduced. However, it is [n] that is found if match [reverse goal] as it
@@ -118,51 +345,128 @@ Goal nat.
 
 Goal nat -> bool -> nat -> True.
   intros n b m.
-  lazy_match! goal with
-  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
-  | [ |- _ ] => fail
-  end.
-
-Goal nat -> bool -> nat -> True.
-  intros n b m.
   lazy_match! reverse goal with
   | [h : nat |- _] => printf "succeeded, hypothesis %I" h
   | [ |- _ ] => fail
   end.
+Abort.
 
-
-(** Note, There needs to be exactly one goal under focus, or matching
-    will fail with the error [Not_focussed]. We can easily check it:
+(** There must be exactly one goal under focus for it to be possible to match
+    the goal, as otherwise the notion of "the goal" would not have much meaning.
+    If more than one goal is focus, it will hence fail with the error [Not_focussed].
 *)
 
-Goal True /\ True.
+Goal False /\ True.
   split.
-  Fail all: lazy_match! goal with
+  Fail
+  (* all focuses two goals [False] and [True] *)
+  all: lazy_match! goal with
   | [ |- _] => ()
   end.
 Abort.
 
-(** Consequently if you want to match the goal, be sure to focus the goal first,
-    for instance with [Control.enter : (unit -> unit) -> unit] that applies a
-    tactic for each goal under focus.
-
-    We can also check that we need at least an hypothesis per clause, by matching
-    for [ [_ : _, _ : _ |- _] ] in a goal with only one hypothesis, which will fail.
+(** Consequently if you want to match the goals, be sure to focus a single goal
+    first, for instance with [Control.enter : (unit -> unit) -> unit] that applies
+    a tactic [tac : unit -> unit] independently to each goal under focus.
 *)
 
-Goal nat -> True.
-  intros n.
-  (* each clause matches a different hypotheses *)
-  Fail lazy_match! goal with
-  | [_ : _, _ : _ |- _] => printf "succeeded"
+
+
+(* 2.2 Semantics *)
+
+(** As for matching terms, matching goals is by default syntactic.
+    However, matching for non-linear variables is a bit more involved.
+    In the non-linear case, evariable are matched up to conversions when they appear
+    in different clause, and up to syntax when they appear in the same clause.
+
+    To understand this better, let us look at an example.
+    We could write a version of [eassumption] by checking for the pattern [_ : ?t |- ?t].
+    In this case, as [?t] appears in different clauses, one of hypotheses and
+    in then conclusion, it will hence be matched up to conversion.
+    We can check it works by supposing [0 + 1 = 0] and trying to prove [1 = 0],
+    as [0 + 1] is equal to [1] up to conversion but not syntactically.
+*)
+
+Goal 0 + 1 = 0 -> 1 = 0.
+  intros.
+  lazy_match! goal with
+  | [ _ : ?t |- ?t] => printf "succeeded: %t" t
   | [ |- _ ] => fail
   end.
 
+(** However, if a variable appears several times in a same clause, then it is
+    checked syntactically. For instance, in [ |- ?t = ?t], [?t] is checked
+    syntactically as the it appears twice in the goal which forms one clause.
+*)
+
+Goal 1 + 1 = 2.
+  Fail lazy_match! goal with
+  | [ |- ?t = ?t] => printf "equality is %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** A subtlety to understand is that only the hole associated to a variable will
+    be checked up to conversion, other symbols are matched syntactically as usual.
+    For instance, if we check for [?t, ~(?t)], the symbol [~] will matched,
+    if one if found then inside the clause ~(X) that it will be checked
+    up to conversion with [?t].
+
+    Consequently, if we have [P], it will fail to match for [P -> False] as
+    [~] is matched syntactically, but [P -> False] is the unfolding of [~P].
+*)
+
+Goal forall P, P -> (P -> False) -> False.
+  intros.
+  Fail match! goal with
+  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** However, matching for [~((fun _ => P) 0)] will work as [~] will be matched,
+    then [(fun _ => P)0] matched with [P] up to conversion which works.
+*)
+
+Goal forall P, P -> ~((fun _ => P) 0) -> False.
+  intros.
+  match! goal with
+  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
+  | [ |- _ ] => fail
+  end.
+Abort.
+
+(** It often happens that non-linear matching is not precise enough for our
+    purpose, either because we would like to match both term in one clause
+    up to conversion, or because we would like to use a different notation of
+    equality of non-linear occurencess like syntactic equality, equality up to
+    some reduction, or even up to unification.
+
+    In this case, the best approach is to use different variables for each
+    occurences we want to check, then call the equality we wish.
+    For instance, to match for [P] and [~P] up to unification, we would:
+    match for a pair of variables [t1], [t2] then call a unification function
+    to check if one of the hypotheses is indeed a negation of the other.
+*)
+
+Goal forall P, P -> (P -> False) -> False.
+  intros.
+  match! goal with
+  | [ _ : ?t1, _ : ?t2 |- _] =>
+      Unification.unify_with_full_ts t2 '($t1 -> False);
+      printf "success"
+  | [ |- _ ] => fail
+  end.
+
+(** The advantage of this method is that it provides the user with a fine grained
+    control to the user when and how reduction and equality tests are performed.
+*)
 
 
-(* 2. [lazy_match!], [match!], [multi_match!] and Backtracking *)
 
-(** 2.1 [lazy_match!]
+(* 3. [lazy_match!], [match!], [multi_match!] and Backtracking *)
+
+(** 3.1 [lazy_match!]
 
     [lazy_match!] is the easiest command to understand and to use.
     [lazy_match!] picks a branch, and sticks to it to even if the code excuted
@@ -218,7 +522,7 @@ Goal True \/ False.
 Abort.
 
 
-(** 2.2 [match!]
+(** 3.2 [match!]
 
       [match! goal with] picks the first branch that succeeds.
       If it picks a branch, and evaluation of its body fails, then it backtracks
@@ -280,7 +584,7 @@ Goal forall P Q, P -> P -> Q.
 Abort.
 
 
-(** 2.3 [multi_match!]
+(** 3.3 [multi_match!]
 
       [multimtch! goal with] is more complex and subtle. It basically behaves
       like [match!] except that it will further backtrack if the choice of a
@@ -358,96 +662,3 @@ Abort.
     It should hence only be used when needed.
 *)
 
-
-
-(** 3. Non-Linear Matching
-
-    A pattern is non-linear when a variable [?t] appears more than one time.
-    In this case, the natural question is how are this variables match.
-    On the non-linear case, variable are matched up to conversions when they
-    appear in different clause, and up to syntax when it appears in the same clause.
-
-    To understand this better, let us look at an example.
-    We could write a version of [eassumption] by checking for the pattern [_ : ?t |- ?t].
-    In this case, as [?t] appears in different clauses -- the hypotheses and
-    then conclusion -- it will matched up to conversion.
-    We can check it works by supposing [0 + 1 = 0] and trying to prove [1 = 0],
-    as [0 + 1] is equal to [1] up to conversion but not syntactically.
-*)
-
-Goal 0 + 1 = 0 -> 1 = 0.
-  intros.
-  lazy_match! goal with
-  | [ _ : ?t |- ?t] => printf "succeeded: %t" t
-  | [ |- _ ] => fail
-  end.
-
-(** However, if a variable appears several times in a same clause, then it is
-    checked syntactically.
-    For instance, in [ |- ?t = ?t], [?t] is checked syntactically as the it
-    appears twice in the goal which forms one clause.
-    We can check checking this by trying to match [0 + 1 = 1] which fails.
-*)
-
-Goal 1 + 1 = 2.
-  Fail lazy_match! goal with
-  | [ |- ?t = ?t] => printf "equality is %t" t
-  | [ |- _ ] => fail
-  end.
-Abort.
-
-(** A subtlety to understand is that only the hole associated to a variable will
-    be checked up to conversion, other symbols are matched syntactically as usual.
-    For instance, if we check for [?t, ~(?t)], the symbol [~] will matched,
-    if one if found then inside the clause ~(X) that it will be checked
-    up to conversion with [?t].
-
-    Consequently, if we have [P], it will fail to match for [P -> False] as
-    [~] is matched syntactically, but [P -> False] is the unfolding of [~P].
-*)
-
-Goal forall P, P -> (P -> False) -> False.
-  intros.
-  Fail match! goal with
-  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
-  | [ |- _ ] => fail
-  end.
-Abort.
-
-(** However, matching for [~((fun _ => P) 0)] will work as [~] will be matched,
-    then [(fun _ => P)0] matched with [P] up to conversion which works.
-*)
-
-Goal forall P, P -> ~((fun _ => P) 0) -> False.
-  intros.
-  match! goal with
-  | [_ : ?t, _ : ~(?t) |- _ ] => printf "succeed: %t" t
-  | [ |- _ ] => fail
-  end.
-Abort.
-
-(** It often happens that non-linear matching is not precise enough for our
-    purpose, either because we would like to match both term in one clause
-    up to conversion, or because we would like to use a different notation of
-    equality of non-linear occurencess like syntactic equality, equality up to
-    some reduction, or even up to unification.
-
-    In this case, the best approach is to use different variables for each
-    occurences we want to check, then call the equality we wish.
-    For instance, to match for [P] and [~P] up to unification, we would:
-    match for a pair of variables [t1], [t2] then call a unification function
-    to check if one of the hypotheses is indeed a negation of the other.
-*)
-
-Goal forall P, P -> (P -> False) -> False.
-  intros.
-  match! goal with
-  | [ _ : ?t1, _ : ?t2 |- _] =>
-      Unification.unify_with_full_ts t2 '($t1 -> False);
-      printf "success"
-  | [ |- _ ] => fail
-  end.
-
-(** The advantage of this method is that it provides the user with a fine grained
-    control to the user when and how reduction and equality tests are performed.
-*)
