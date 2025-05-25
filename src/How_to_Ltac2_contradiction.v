@@ -29,7 +29,7 @@
   - Basic knowledge of Ltac2
 
   Installation:
-  - Ltac2 and its core-library are available by default with Rocq
+  - Ltac2 and its core library are available by default with Rocq
 
 *)
 

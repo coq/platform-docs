@@ -6,25 +6,24 @@
   *** Summary
 
   Ltac2 has native support to match the structure of terms, and of the goal
-  making it easy to build decision procedure or solvers.
-  There are three primtives to match terms or goals [lazy_match!], [match!],
+  making it easy to build decision procedures or solvers.
+  There are three primitives to match terms or goals [lazy_match!], [match!],
   and [multi_match!], which only differ by their backtracking abilities.
-  Consequently, we first explain the syntax using [lazy_match!], then
-  discuss the backtracking differences in a second part.
-  In a third part, we discuss non-linear matching which can be subtle.
+  Consequently, we first explain how matching terms and goals work using
+  [lazy_match!], then discuss the backtracking differences in a third section.
 
   *** Table of content
 
   - 1. Matching Terms
-    - 1.1 Syntax of Matching
-    - 1.2 Semantic of Matching
-  - 2 Matching Goals
-      - 1.1 Syntax
-      - 1.2 Non-linear matching
-  - 2. [lazy_match!], [match!], [multi_match!] and Backtracking
-    - 2.1 [lazy_match!]
-    - 2.2 [match!]
-    - 2.3 [multi_match!]
+    - 1.1 Basics
+    - 1.2 Non-Linear Matching
+  - 2Matching Goals
+    - 1.1 Basics
+    - 1.2 Non-Linear Matching
+  - 3. Backtracking and [lazy_match!], [match!], [multi_match!]
+    - 3.1 [lazy_match!]
+    - 3.2 [match!]
+    - 3.3 [multi_match!]
 
   *** Prerequisites
 
@@ -34,11 +33,11 @@
   - Basic knowledge of Ltac2
 
   Installation:
-  - Ltac2 and its core-library are available by default with Rocq
+  - Ltac2 and its core library are available by default with Rocq
 *)
 
 
-(** Let us firs import Ltac2, and write a small function printing the goal under focus *)
+(** Let us first import Ltac2, and write a small function printing the goal under focus *)
 From Ltac2 Require Import Ltac2 Printf.
 Import Bool.BoolNotations.
 
@@ -53,14 +52,13 @@ Ltac2 Notation print_goals := print_goals0 ().
 
 
 
-
 (** ** 1 Matching terms
 
-    *** 1.1 Syntax
+    *** 1.1 Basics
 
     Ltac2 has primitves to match a term to check its shape, for instance,
     if it is a function or a function type.
-    This enables to perform different action depending on the shape of the term.
+    This enables to perform different actions depending on the shape of the term.
 
     To match a term, the syntax is [lazy_match! t with] with one clause of
     the form [ ... => ...] per pattern to match.
@@ -102,7 +100,7 @@ Abort.
 *)
 
 Ltac2 err_triv t := Control.zero (Tactic_failure (Some (
-    fprintf "%t Not of the form True -> ... -> True -> False" t
+    fprintf "%t is not of the form True -> ... -> True -> False" t
   ))).
 
 Ltac2 rec triv_err (t : constr) :=
@@ -124,13 +122,13 @@ Abort.
     In such cases, [x] is of type [constr], the type of Rocq terms in Ltac2.
     This is normal as [x] corresponds to a subterm of [t].
 
-    Note that as in Ocaml, variable names can not start with a cap as this
+    Note that as in Ocaml, variable names cannot start with a cap as this
     is reserved for constructors of inductive types.
 
     As an example consider writing a boolean test to check if a type is a
     proposition written out of [True], [False], [~] ,[/\] ,[\/].
-    To check a term is a proposition, we need to match it to check its the head
-    symbol, and if it is one of the allowed one check its subterms also are propositions.
+    To check a term is a proposition, we need to match it to check its head symbol,
+    and if it is one of the allowed one check its subterms also are propositions.
     Consequently, we need to remember subterms, and to match [/\] we need to
     use the pattern [?a /\ ?b]. This gives the following recursive function:
 *)
@@ -157,15 +155,15 @@ Goal (True \/ (True /\ False)) -> nat -> True.
 Abort.
 
 
-(** ** 1.2 Semantic of Matching
+(** ** 1.2 Non-Linear Matching
 
     Matching of syntax is by default syntactic. It means terms are only checked
-    to be of the appopriate shape up to α-conversion and exapansion of evars.
+    to be of the appropriate shape up to α-conversion and expansion of evars.
 
     For instance, [fun x => x] and [fun y => y] are equal syntactically as they
     only differ by their names of bound variables (α-conversion), but [1 + 4]
     and [5] are not equal syntactically as they only are equal up to reduction.
-    As a consequence, a small variation arond a term that would require a
+    As a consequence, a small variation around a term that would require a
     reduction step like [(fun _ => False) 0] will not be matched by [False].
 *)
 
@@ -174,7 +172,7 @@ Goal ((fun _ => False) 0) -> False.
 Abort.
 
 (** In Ltac2, is up to the users to simplify the term appropriately before matching them.
-    In most case, we match the syntax to find what is the head symbol [False]
+    In most cases, we match the syntax to find what is the head symbol [False]
     or [->], in which case it suffices to compute the head normal form (hnf)
     with [Std.eval_hnf : constr -> constr].
     With extra-printing to show the difference before and after [eval_hnf],
@@ -200,7 +198,7 @@ Goal (True -> (((fun _ => True) 0) -> True -> False)) -> True.
   intros H. triv_hnf 'H.
 Abort.
 
-(** The advantage of this approach is that the default is fast and predicatable,
+(** The advantage of this approach is that the default is fast and predictable,
     and full control is left to the user to compare terms up to the notion of
     their choosing like up to head-normal form, or up to unification.
 
@@ -225,7 +223,7 @@ Abort.
     in which case it triggers a warning.
     This warning will be triggered for non-linear variables, if they are only used
     to constrain the shape of the term matched, like in [is_refl_eq], but no further.
-    In this case, the warning can be easily disable by naming unsued evariables
+    In this case, the warning can be easily disable by naming unused evariables
     starting with [?_] rather than with [?].
     For instance, by matching for [?_x = ?_x] rather than [?x = ?x] is [is_refl_eq].
 *)
@@ -245,6 +243,8 @@ Abort.
 
 (** 2. Matching Goals
 
+    2.1 Basics
+
     Ltac2 also offers the possibility to match the goals to check the form the goal
     to prove, and/or the existence of particular hypotheses like a proof of [False].
     The syntax to match goals is a bit different from matching terms.
@@ -254,14 +254,14 @@ Abort.
 
     where:
     - [x1] ... [xn] are [ident], i.e. Ltac2 values corresponding to the names
-      of the hypotheses. Opposite to evariables, there should not start with [?].
+      of the hypotheses. Opposite to evariables, they should not start with [?].
     - [t1] ... [tn] are the types of the hypotheses, and [g] the type of the goal
       we want to prove. All are of type [constr], the type of Rocq terms in Ltac2.
     - As usual variables [x1] and any evariables that could appear in [t1], ..., [tn],
-      and [g], can not start with a cap as it is reserved for constructors.
+      and [g], cannot start with a cap as it is reserved for constructors.
 
     Such a pattern will match a goal to prove of types [G], and such that can be
-    found [n] different hypothesis of types [T1], ..., [Tn].
+    found [n] different hypotheses of types [T1], ..., [Tn].
     Each clause must match a different hypothesis for the pattern to succeed.
     Consequently, there must be at least [n] different hypotheses / assumptions
     in the context for such a branch to have a chance to succeed.
@@ -276,31 +276,24 @@ Abort.
     patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
 *)
 
-Goal True /\ False.
+Ltac2 and_or_or () :=
   lazy_match! goal with
   | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
   | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
   | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
                 "The goal is not a conjunction nor a disjunction")))
   end.
+
+Goal True /\ False.
+  and_or_or ().
 Abort.
 
 Goal False \/ True.
-  lazy_match! goal with
-  | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
-  | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
-  | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
-                "The goal is not a conjunction nor a disjunction")))
-  end.
+  and_or_or ().
 Abort.
 
 Goal nat.
-  Fail lazy_match! goal with
-  | [ |- ?a /\ ?b ] => printf "Goal is %t /\ %t" a b
-  | [ |- ?a \/ ?b ] => printf "Goal is %t \/ %t" a b
-  | [ |- _] => Control.zero (Tactic_failure (Some (fprintf
-                "The goal is not a conjunction nor a disjunction")))
-  end.
+  Fail and_or_or ().
 Abort.
 
 (** To match for an hypothesis of type [nat] but not to check anything on the goal,
@@ -359,20 +352,20 @@ Abort.
 Goal False /\ True.
   split.
   Fail
-  (* all focuses two goals [False] and [True] *)
+  (* all focuses on two goals [False] and [True] *)
   all: lazy_match! goal with
   | [ |- _] => ()
   end.
 Abort.
 
-(** Consequently if you want to match the goals, be sure to focus a single goal
-    first, for instance with [Control.enter : (unit -> unit) -> unit] that applies
-    a tactic [tac : unit -> unit] independently to each goal under focus.
+(** Consequently if you want to match the goals, be sure to focus a single goal first,
+    for instance with [Control.enter : (unit -> unit) -> unit] that applies a
+    tactic [tac : unit -> unit] independently to each goal under focus.
 *)
 
 
 
-(* 2.2 Semantics *)
+(* 2.2 Non-Linear Matching *)
 
 (** As for matching terms, matching goals is by default syntactic.
     However, matching for non-linear variables is a bit more involved.
@@ -464,7 +457,7 @@ Goal forall P, P -> (P -> False) -> False.
 
 
 
-(* 3. [lazy_match!], [match!], [multi_match!] and Backtracking *)
+(* 3. Backtracking and [lazy_match!], [match!], [multi_match!] *)
 
 (** 3.1 [lazy_match!]
 
@@ -547,11 +540,11 @@ Abort.
 
 (** match!] is useful as soon as matching the syntax is not enough, and we
     need additional tests to see if we have picked the good branch or not.
-    Indeed, if such a test fail raising an exception (or we make it so), then
+    Indeed, if such a test fails raising an exception (or we make it so), then
     [match!] will backtrack, and look for the next branch matching the pattern.
 
     A common application of [match!] is to match the goal for hypotheses,
-    that we then need to do extra-check one to decide what to do or ensure
+    that we then need to do extra-check to decide what to do or ensure
     we have picked the good.
     If we have not, failing or triggering failure, then enables to backtrack and
     to try the next possible hypotheses.
@@ -559,7 +552,7 @@ Abort.
     A basic example is to recode a simple [eassumption] tactic, that tries
     to solve the goal with [exact P] for all hypotheses [P].
     If we match the goal with the pattern [p : _ |- _] to get a [P], it is most
-    likley the first hypothesis [P] picked will not solve the goal, and hence
+    likely the first hypothesis [P] picked will not solve the goal, and hence
     that [exact P] will fail.
     In this case, we want to backtrack to try the next hypothesis [P].
 
@@ -586,15 +579,14 @@ Abort.
 
 (** 3.3 [multi_match!]
 
-      [multimtch! goal with] is more complex and subtle. It basically behaves
+      [multi_match! goal with] is more complex and subtle. It basically behaves
       like [match!] except that it will further backtrack if the choice of a
       branch leads to a subsequent failure when linked with another tactic.
 
-      For instance, in the example below we link the [match!] with [fail],
-      to make the composition fail.
-      In the [match!] case, it will try the first branch, then the second that
-      succeeds, then try [fail], and hence fail.
-      It will hence print [branch 1] and [branch 2], then fail.
+      For instance, in the example below we link the [match!] with [fail], to make
+      the composition fail. In the [match!] case, it will try the first branch,
+      then the second that succeeds, then try [fail], and hence fail.
+      It will hence print [branch 1] and [branch 2], and then fail.
 *)
 
 Goal False.
@@ -653,10 +645,9 @@ Goal False \/ (False \/ False) \/ (0 = 1 -> 0 = 1).
   left_or_right (); intros X; exact X.
 Abort.
 
-
 (** [multi_match!] is **not meant** to be used by default.
     Yes, it is the more powerful match primitive in terms of backtracking, but it
-    can can be hard to understand, predict and debug, in particular for newcomers.
+    can be hard to understand, predict and debug, in particular for newcomers.
     Moreover, it can be expensive as it can perform an exponential number of
     backtracking attempts when linked with another tactic that can backtrack.
     It should hence only be used when needed.
