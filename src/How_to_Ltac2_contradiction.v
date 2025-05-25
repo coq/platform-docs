@@ -63,8 +63,6 @@ From Ltac2 Require Import Ltac2 Constr Printf.
 
 
 
-
-
 (** ** 2. Matching the goal for [P] and [~P]
 
     *** 2.1 Choosing [lazy_match!], [match!] or [multi_match!]
@@ -73,94 +71,25 @@ From Ltac2 Require Import Ltac2 Constr Printf.
     There are three commands to match the goal that have different behaviour
     regarding backtracking. The first step is to understand which one we want to use.
 
-  - [lazy_match! goal with] is the easiest command to understand and to use.
-    [lazy_match!] picks a branch, and sticks to it to even if the code excuted
-    after picking this branch (the body of the branch) leads to a failure.
-    It will not backtrack to pick another branch if a choice leads to a failure.
-    In practice, it is sufficient for all applications where matching the syntax
-    is enough and deterministic.
+    - [lazy_match! goal with] picks a branch, and sticks to it to even if the code
+      excuted after picking this branch (the body of the branch) leads to a failure.
+      In practice, it is sufficient for all applications where matching the syntax
+      is enough and deterministic.
 
-    For instance, in the example below, it picks the first branch as everything
-    match [ |- _], choice that leads to failure. It stick to it and fails.
-*)
-
-Goal False.
-  Fail lazy_match! goal with
-  | [ |- _ ] => printf "branch 1"; fail
-  | [ |- _ ] => printf "branch 2"
-  | [ |- _ ] => printf "branch 3"
-  end.
-Abort.
-
-(** - [match! goal with] picks the first branch that succeeds.
-      If it picks a branch, and evaluation of its body fails, then it backtracks
-      and choose the next branch where the pattern matches the hypotheses and goal,
+    - [match! goal with] that picks the first branch that succeeds, but further backtracks
+      to its choice if the evaluation of its body fail to pick the next matching branch,
       potentially the same one if all the hypotheses have not been exhausted yet.
-
       [match!] is useful as soon as matching the syntax is not enough, and we
       need additional tests to see if we have picked the good hypotheses or not.
-      Indeed, if such a test fail raising an exception (or we make it so),
-      then [match!] will backtrack, and look for the next hypotheses matching the pattern.
 
-      In the example below the first branch is picked and fails, it hence
-      backtracks to its choice.
-      There is only one possibility for the pattern [ |- _] as it matches any goal.
-      As it has already been tried, it hence switch to the second pattern which is [ |- _].
-      This branch now succeeds, the whole [match!] hence succeeds.
-*)
-
-Goal False.
-  match! goal with
-  | [ |- _ ] => printf "branch 1"; fail
-  | [ |- _ ] => printf "branch 2"
-  | [ |- _ ] => printf "branch 3"
-  end.
-Abort.
-
-(** - [multi_match! goal with] is more complex and subtle. It basically behaves
-      like [match!] except that it will further backtrack if the choice of a
-      branch leads to a subsequent failure when linked with another tactic.
-
-      For instance, in the example below we link the [match!] with [fail],
-      hence the composition of will hence fail.
-      In the [match!] case, it will try the first branch, then the second that
-      succeeds, then try [fail] which fails, hence fails. It will hence
-      print [branch 1] and [branch 2] then fails.
-*)
-Goal False.
-  Fail match! goal with
-  | [ |- _ ] => printf "branch 1"; fail
-  | [ |- _ ] => printf "branch 2"
-  | [ |- _ ] => printf "branch 3"
-  end; fail.
-Abort.
-
-(** In contrast, when failing on [fail], [multi_match!] will further bracktrack
-    to its choice of the second branch, and try the next branch.
-    The idea is that picking a different branch could have led to the subsequent
-    tactic to succeed, as can happen when using [constructor].
-    Here, as [fail] always fails, it will still failed but we can see it did
-    backtrack and that the third branch as been tried as it will print [branch 3].
-*)
-
-Goal False.
-  Fail multi_match! goal with
-  | [ |- _ ] => printf "branch 1"; fail
-  | [ |- _ ] => printf "branch 2"
-  | [ |- _ ] => printf "branch 3"
-  end; fail.
-Abort.
-
-(**   [multi_match!] is meant to write tactics performing a choice, and that
+    - [multi_match! goal with] that behaves like [match!] except that it will
+      further backtrack if its choice of a branch leads to a subsequent failure
+      when linked with another tactic.
+      [multi_match!] is meant to write tactics performing a choice, and that
       we want to link with other tactics, like the [constructor] tactic.
-      It is **not meant** to be used by default.
-      Yes, it is the more powerful in terms of backtracking, but it can can be
-      hard to understand and predict in particular for newcomers, and costly.
-
       The [contradiction] tactics is meant to solve goals with a simple enough
       inconsistent context. It is not meant to be linked with other tactics.
       Consequently, we have no use for [multimatch!] to implement [contradiction].
-
 
     Choosing betwen [lazy_match!] and [match!] really depends if we need
     more than a syntax check as we will see in the rest of this how-to guide.
@@ -229,7 +158,7 @@ Abort.
       destruct ($np $p)
     ]]
 
-    Note, there is currently no notation to do [Control.hyp] and [$] at once.
+    Notation, to do [Control.hyp] and [$] at once is only available in Rocq 9.1 or above.
 
     This leads us to the following script:
 *)
@@ -394,7 +323,7 @@ Goal forall P Q, P -> ~Q -> False.
 Abort.
 
 (** This is costly, but also not a very good practice for automation tactics
-    which should not unify evariables in the behind the scene as it can
+    which should not unify evariables the behind the scene as it can
     unify them in an unexpected way getting the users stuck later.
     Users should have control on whether evariables are unified or not, hence
     the different e-variants like [assumption] and [eassumption].
