@@ -386,6 +386,7 @@ Goal 0 + 1 = 0 -> 1 = 0.
   | [ _ : ?t |- ?t] => printf "succeeded: %t" t
   | [ |- _ ] => fail
   end.
+Abort.
 
 (** However, if a variable appears several times in a same clause, then it is
     checked syntactically. For instance, in [ |- ?t = ?t], [?t] is checked
@@ -450,6 +451,7 @@ Goal forall P, P -> (P -> False) -> False.
       printf "success"
   | [ |- _ ] => fail
   end.
+Abort.
 
 (** The advantage of this method is that it provides the user with a fine grained
     control to the user when and how reduction and equality tests are performed.
