@@ -290,21 +290,21 @@ Goal nat.
 Abort.
 
 (** To match for an hypothesis of type [nat] but not to check anything on the goal,
-    we would use the pattern [h : nat |- _] as below. To match for a pair of
-    hypotheses [nat], we would then use the pattern [h : nat, h2 : nat |- _].
+    we would use the pattern [n : nat |- _] as below. To match for a pair of
+    hypotheses [nat], we would then use the pattern [n : nat, m : nat |- _].
 *)
 
 Goal forall (n : nat) (b : bool) (m : nat), True.
   intros n b m.
   lazy_match! goal with
-  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
+  | [n : nat |- _] => printf "succeeded, hypothesis %I" n
   end.
 Abort.
 
 Goal nat -> bool -> nat -> True.
   intros n b m.
   lazy_match! goal with
-  | [h1 : nat, h2 : nat |- _] => printf "succeeded, hypothesis %I %I" h1 h2
+  | [n1 : nat, n2 : nat |- _] => printf "succeeded, hypothesis %I %I" n1 n2
   | [ |- _ ] => fail
   end.
 Abort.
@@ -315,7 +315,7 @@ Abort.
 Goal forall (n : nat) (b : bool), True.
   intros n b.
   Fail lazy_match! goal with
-  | [h1 : nat, h2 : nat |- _] => printf "succeeded, hypothesis %I %I" h1 h2
+  | [n1 : nat, n2 : nat |- _] => printf "succeeded, hypothesis %I %I" n1 n2
   end.
 Abort.
 
@@ -332,7 +332,7 @@ Abort.
 Goal forall (n : nat) (b : bool) (m : nat), True.
   intros n b m.
   lazy_match! reverse goal with
-  | [h : nat |- _] => printf "succeeded, hypothesis %I" h
+  | [n : nat |- _] => printf "succeeded, hypothesis %I" n
   | [ |- _ ] => fail
   end.
 Abort.
