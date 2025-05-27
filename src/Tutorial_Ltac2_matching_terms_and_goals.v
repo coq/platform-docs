@@ -9,6 +9,7 @@
   making it easy to build decision procedures or solvers.
   There are three primitives to match terms or goals [lazy_match!], [match!],
   and [multi_match!], which only differ by their backtracking abilities.
+  (Not to confuse with [match] which is for Ltac2 inductive types.)
   Consequently, we first explain how matching terms and goals work using
   [lazy_match!], then discuss the backtracking differences in a third section.
 
@@ -53,7 +54,7 @@ Ltac2 Notation print_goals := print_goals0 ().
 
     *** 1.1 Basics
 
-    Ltac2 has primitives to match a term to check its shape, for instance,
+    Ltac2 has primitives to match a term to inspect its shape, for instance,
     if it is a function or a function type.
     This enables to perform different actions depending on the shape of the term.
 
@@ -122,7 +123,7 @@ Abort.
 
     As an example consider writing a boolean (in Ltac2, not in Rocq) test to check if a type is a
     proposition written out of [True], [False], [~] ,[/\] ,[\/].
-    To check a term is a proposition, we need to match it to check its head symbol,
+    To check a term is a proposition, we need to match it to inspect its head symbol,
     and if it is one of the allowed one check its subterms also are propositions.
     Consequently, we need to remember subterms, and to match [/\] we need to
     use the pattern [?a /\ ?b]. This gives the following recursive function:
@@ -152,7 +153,7 @@ Abort.
 
 (** ** 1.2 Non-Linear Matching
 
-    Matching of syntax is by default syntactic. It means terms are only checked
+    Matching of syntax is by default syntactic. It means terms are only inspected
     to be of the appropriate shape up to α-conversion and expansion of evars.
 
     For instance, [fun x => x] and [fun y => y] are equal syntactically as they
@@ -237,7 +238,7 @@ Abort.
 
     2.1 Basics
 
-    Ltac2 also offers the possibility to match the goals to check the form the goal
+    Ltac2 also offers the possibility to match the goals to inspect the form the goal
     to prove, and/or the existence of particular hypotheses like a proof of [False].
     The syntax to match goals is a bit different from matching terms.
     In this case, the patterns are of the form:
@@ -261,9 +262,9 @@ Abort.
     now [ |- _] as this matches any goals.
 
     As an example, let us write a small function starting with [lazy_match! goal with]
-    to check the goal to prove it is either [_ /\ _] or [_ \/ _].
+    to inspect if the goal to prove is either [_ /\ _] or [_ \/ _].
 
-    As we want to check the goal to prove, nothing on the hypotheses, our pattern
+    As we want to inspect the goal to prove, nothing on the hypotheses, our pattern
     is of the form [ |- g]. To match for [_ /\ _] and [_ \/ _], we then get the
     patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
 *)
@@ -363,7 +364,7 @@ Abort.
     in different clause, and up to syntax when they appear in the same clause.
 
     To understand this better, let us look at an example.
-    We could write a version of [eassumption] by checking for the pattern [_ : ?t |- ?t].
+    We could write a version of [eassumption] by matching for the pattern [_ : ?t |- ?t].
     In this case, as [?t] appears in different clauses, one of hypotheses and
     in then conclusion, it will hence be matched up to conversion.
     We can check it works by supposing [0 + 1 = 0] and trying to prove [1 = 0],
@@ -379,7 +380,7 @@ Goal 0 + 1 = 0 -> 1 = 0.
 Abort.
 
 (** However, if a variable appears several times in a same clause, then it is
-    checked syntactically. For instance, in [ |- ?t = ?t], [?t] is checked
+    compared syntactically. For instance, in [ |- ?t = ?t], [?t] is compared
     syntactically as the it appears twice in the goal which forms one clause.
 *)
 
@@ -391,9 +392,9 @@ Goal 1 + 1 = 2.
 Abort.
 
 (** A subtlety to understand is that only the hole associated to a variable will
-    be checked up to conversion, other symbols are matched syntactically as usual.
-    For instance, if we check for [?t, ~(?t)], the symbol [~] will matched,
-    if one if found then inside the clause ~(X) that it will be checked
+    be compared up to conversion, other symbols are matched syntactically as usual.
+    For instance, if we match for [?t, ~(?t)], the symbol [~] will matched,
+    if one if found then inside the clause ~(X) that it will be compared
     up to conversion with [?t].
 
     Consequently, if we have [P], it will fail to match for [P -> False] as
@@ -427,7 +428,7 @@ Abort.
     some reduction, or even up to unification.
 
     In this case, the best approach is to use different variables for each
-    occurences we want to check, then call the equality we wish.
+    occurences we want to compared, then call the comparaison we wish.
     For instance, to match for [P] and [~P] up to unification, we would:
     match for a pair of variables [t1], [t2] then call a unification function
     to check if one of the hypotheses is indeed a negation of the other.
@@ -480,8 +481,8 @@ Abort.
     variables and hypotheses with [intros ?] if the goal is of the form [A -> B],
     splits the goal with [split] if it is a conjunction [A /\ B], and recursively
     simplify the new goals.
-    In both case, the syntactic check is sufficient to decide what to do as
-    if it is of the required form, then the branch will succeed.
+    In both case, the syntactic equality test is sufficient to decide what to do
+    as if it is of the required form, then the branch will succeed.
     One should hence use [lazy_match!], which leads to the following simple function:
 *)
 
@@ -529,9 +530,8 @@ Abort.
     Indeed, if such a test fails raising an exception (or we make it so), then
     [match!] will backtrack, and look for the next branch matching the pattern.
 
-    A common application of [match!] is to match the goal for hypotheses,
-    that we then need to do extra-check to decide what to do or ensure
-    we have picked the good.
+    A common application of [match!] is to match the goal for hypotheses, then
+    do extra-test to decide what to do, or ensure we have picked the good ones.
     If we have not, failing or triggering failure, then enables to backtrack and
     to try the next possible hypotheses.
 
@@ -609,7 +609,7 @@ Abort.
     We hence need to use [multi_match!] as if we have picked the wrong side
     to prove, we want to backtrack to pick the otherwiside.
 
-    This leads to the following small script, improved with printing to check
+    This leads to the following small script, improved with printing to display
     the backtracking structure:
 
 *)
