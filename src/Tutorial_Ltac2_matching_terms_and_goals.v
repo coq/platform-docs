@@ -5,7 +5,7 @@
 
   *** Summary
 
-  Ltac2 has native support to match the structure of terms, and of the goal
+  Ltac2 has native support to match the structure of terms, and of the goal,
   making it easy to build decision procedures or solvers.
   There are three primitives to match terms or goals [lazy_match!], [match!],
   and [multi_match!], which only differ by their backtracking abilities.
@@ -33,11 +33,10 @@
   - Basic knowledge of Ltac2
 
   Installation:
-  - Ltac2 and its core library are available by default with Rocq
+  - Ltac2 and its core library are available by default with Rocq.
 *)
 
-
-(** Let us first import Ltac2, and write a small function printing the goal under focus *)
+(** Let us first import Ltac2, and write a small function printing the goal under focus. *)
 From Ltac2 Require Import Ltac2 Printf.
 Import Bool.BoolNotations.
 
@@ -50,19 +49,16 @@ Ltac2 print_goals0 () :=
 
 Ltac2 Notation print_goals := print_goals0 ().
 
-
-
 (** ** 1 Matching terms
 
     *** 1.1 Basics
 
-    Ltac2 has primitves to match a term to check its shape, for instance,
+    Ltac2 has primitives to match a term to check its shape, for instance,
     if it is a function or a function type.
     This enables to perform different actions depending on the shape of the term.
 
     To match a term, the syntax is [lazy_match! t with] with one clause of
     the form [ ... => ...] per pattern to match.
-
 
     As an example, let's write a small function proving the goal provided
     it is given an argument of type [True -> ... True -> False].
@@ -122,10 +118,10 @@ Abort.
     In such cases, [x] is of type [constr], the type of Rocq terms in Ltac2.
     This is normal as [x] corresponds to a subterm of [t].
 
-    Note that as in Ocaml, variable names cannot start with a cap as this
+    Note that as in Ocaml, variable names cannot start with an upper case letter as this
     is reserved for constructors of inductive types.
 
-    As an example consider writing a boolean test to check if a type is a
+    As an example consider writing a boolean (in Ltac2, not in Rocq) test to check if a type is a
     proposition written out of [True], [False], [~] ,[/\] ,[\/].
     To check a term is a proposition, we need to match it to check its head symbol,
     and if it is one of the allowed one check its subterms also are propositions.
@@ -171,7 +167,7 @@ Goal ((fun _ => False) 0) -> False.
   intros H. Fail triv_err 'H.
 Abort.
 
-(** In Ltac2, is up to the users to simplify the term appropriately before matching them.
+(** In Ltac2, it is up to the users to reduce the terms appropriately before matching them.
     In most cases, we match the syntax to find what is the head symbol [False]
     or [->], in which case it suffices to compute the head normal form (hnf)
     with [Std.eval_hnf : constr -> constr].
@@ -204,7 +200,7 @@ Abort.
 
     This explains how syntax is matched but not how a pattern is matched when a
     evariable [?x] appears more than once in a pattern, like [?x = ?x].
-    Such a variable are said to be non-linear, and are matched up to conversion.
+    Such patterns are called non-linear, and are matched up to conversion.
     The reason is that we expect the subterms matched to be the same,
     which in type theory naturally corresponds to conversion.
 *)
@@ -238,9 +234,6 @@ Goal (1 = 1) -> False.
   intros H. is_refl_eq (Constr.type 'H).
 Abort.
 
-
-
-
 (** 2. Matching Goals
 
     2.1 Basics
@@ -248,7 +241,7 @@ Abort.
     Ltac2 also offers the possibility to match the goals to check the form the goal
     to prove, and/or the existence of particular hypotheses like a proof of [False].
     The syntax to match goals is a bit different from matching terms.
-    Matching the goal is done with pattern of the form:
+    In this case, the patterns are of the form:
 
         [[ [ x1 : t1, ..., xn : tn |- g ] => ... ]]
 
@@ -258,7 +251,7 @@ Abort.
     - [t1] ... [tn] are the types of the hypotheses, and [g] the type of the goal
       we want to prove. All are of type [constr], the type of Rocq terms in Ltac2.
     - As usual variables [x1] and any evariables that could appear in [t1], ..., [tn],
-      and [g], cannot start with a cap as it is reserved for constructors.
+      and [g], cannot start with an upper case letter as it is reserved for constructors.
 
     Such a pattern will match a goal to prove of types [G], and such that can be
     found [n] different hypotheses of types [T1], ..., [Tn].
@@ -301,7 +294,7 @@ Abort.
     hypotheses [nat], we would then use the pattern [h : nat, h2 : nat |- _].
 *)
 
-Goal nat -> bool -> nat -> True.
+Goal forall (n : nat) (b : bool) (m : nat), True.
   intros n b m.
   lazy_match! goal with
   | [h : nat |- _] => printf "succeeded, hypothesis %I" h
@@ -316,10 +309,10 @@ Goal nat -> bool -> nat -> True.
   end.
 Abort.
 
-(** We can see, we do need at least an hypothesis per pattern, as if we remove
+(** We can see, we do need at least an hypothesis per pattern. If we remove
     [m : nat] this will now fail.
 *)
-Goal nat -> bool -> True.
+Goal forall (n : nat) (b : bool), True.
   intros n b.
   Fail lazy_match! goal with
   | [h1 : nat, h2 : nat |- _] => printf "succeeded, hypothesis %I %I" h1 h2
@@ -336,7 +329,7 @@ Abort.
     is the first hypothesis of type [nat] that was introduced.
 *)
 
-Goal nat -> bool -> nat -> True.
+Goal forall (n : nat) (b : bool) (m : nat), True.
   intros n b m.
   lazy_match! reverse goal with
   | [h : nat |- _] => printf "succeeded, hypothesis %I" h
@@ -362,8 +355,6 @@ Abort.
     for instance with [Control.enter : (unit -> unit) -> unit] that applies a
     tactic [tac : unit -> unit] independently to each goal under focus.
 *)
-
-
 
 (* 2.2 Non-Linear Matching *)
 
@@ -457,8 +448,6 @@ Abort.
     control to the user when and how reduction and equality tests are performed.
 *)
 
-
-
 (* 3. Backtracking and [lazy_match!], [match!], [multi_match!] *)
 
 (** 3.1 [lazy_match!]
@@ -469,7 +458,7 @@ Abort.
     It will not backtrack to pick another branch if a choice leads to a failure.
 
     For instance, in the example below, it picks the first branch as everything
-    match [ |- _]. It prints "branch 1", then fails. As no backtracking is
+    matches [[ |- _]]. It prints "branch 1", then fails. As no backtracking is
     allowed, it stick to this choice and fails.
 *)
 
@@ -485,16 +474,16 @@ Abort.
     (no backtracking) which prevents unexpected behaviour, and yet sufficient
     for all applications where matching the syntax is a sufficient to decide what to do.
 
-    A common application of [lazy_match!] is to use to match the shape of the
-    goal or the shape of a term or type, in order to decide to do [X] or [Y].
+    A common use of [lazy_match!] is to make a decision based on the shape of the
+    goal or the shape of a term or type.
 
-    A basic example, is to write a tactic [split_and] that introduces the
-    variable with [intros ?] if the goal is of the form [A -> B],
-    split the goal with [split] if it is a product [A /\ B], and recursively
+    As a simple example, let us write a tactic [split_and] that introduces
+    variables and hypotheses with [intros ?] if the goal is of the form [A -> B],
+    splits the goal with [split] if it is a conjunction [A /\ B], and recursively
     simplify the new goals.
-    In both case, the syntax check is sufficient to decide what to do as
-    if its of the required form, then the branch will succeed.
-    One should hence use [lazy_match!], which gives the following simple function:
+    In both case, the syntactic check is sufficient to decide what to do as
+    if it is of the required form, then the branch will succeed.
+    One should hence use [lazy_match!], which leads to the following simple function:
 *)
 
 Ltac2 rec split_and () :=
@@ -516,19 +505,18 @@ Goal True \/ False.
   Fail (progress (split_and ())).
 Abort.
 
-
 (** 3.2 [match!]
 
-      [match! goal with] picks the first branch that succeeds.
-      If it picks a branch, and evaluation of its body fails, then it backtracks
-      and choose the next branch where the pattern matches the hypotheses and goal,
+      [match! goal with] picks the first branch that matches.
+      Then, if evaluation of its body fails, it backtracks
+      and picks the next matching pattern,
       potentially the same one if all the hypotheses have not been exhausted yet.
 
       In the example below the first branch is picked and fails, it hence
       backtracks to its choice.
       There is only one possibility for the pattern [ |- _] as it matches any goal.
-      As it has already been tried, it hence switch to the second pattern which is [ |- _].
-      This branch now succeeds, hence the whole [match!] hence succeeds.
+      As it has already been tried, it hence switches to the second pattern which is [ |- _].
+      This branch now succeeds, hence the whole [match!].
 *)
 
 Goal False.
@@ -538,7 +526,6 @@ Goal False.
   | [ |- _ ] => printf "branch 3"
   end.
 Abort.
-
 
 (** match!] is useful as soon as matching the syntax is not enough, and we
     need additional tests to see if we have picked the good branch or not.
@@ -577,7 +564,6 @@ Qed.
 Goal forall P Q, P -> P -> Q.
   intros P Q p1 p2. Fail my_eassumption ().
 Abort.
-
 
 (** 3.3 [multi_match!]
 
@@ -619,9 +605,9 @@ Abort.
     we want to link with other tactics, like the [constructor] tactic
     that we can then link with [reflexivity] or [assumption] to solve the goal.
 
-    A basic example is to code a tactic that recursive pick [left] or [right]
+    A basic example is to code a tactic that recursively picks [left] or [right]
     if the goal is for the form [A \/ B], which is similar to [repeat constructor].
-    The choice [left] or [right] are both correct as soon as the goal is of the
+    The choices [left] or [right] are both correct as soon as the goal is of the
     form [A \/ B]. We can only know if we have picked the good one, once chained
     with another tactic that tries to solve the goal.
     We hence need to use [multi_match!] as if we have picked the wrong side
@@ -654,4 +640,3 @@ Abort.
     backtracking attempts when linked with another tactic that can backtrack.
     It should hence only be used when needed.
 *)
-
