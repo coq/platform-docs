@@ -490,7 +490,7 @@ Qed.
     In practice, it can happen that there are more equations that we have proven that
     we would like to use for automatic simplification when proving further properties.
     For instance, when reasoning on [app], we may want to further always simplify
-    by [app_nil : l + [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
+    by [app_nil : l ++ [] = l] or [app_assoc : (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3)].
     It is possible to extend [autorewrite] (and hence [simp]) to make it automatic,
     by adding lemma to the database associated to [f].
     This can be done with the following syntax:
