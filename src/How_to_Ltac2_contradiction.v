@@ -38,7 +38,7 @@ From Ltac2 Require Import Ltac2 Constr Printf.
 (** ** 1. Introduction
 
     We write a variant of the [contradiction] tactic up to small differences.
-    The overall specification [contradiction] is that it can take an argument or not:
+    The overall specification of [contradiction] is that it can take an argument or not:
 
     If [contradiction] does not take an argument, then [contradiction]:
     1. First introduces all the variables,
