@@ -59,7 +59,6 @@ Ltac2 Notation print_goals := print_goals0 ().
 
     To match a term, the syntax is [lazy_match! t with] with one clause of
     the form [ ... => ...] per pattern to match.
-
     As an example, let's write a small function proving the goal provided
     it is given an argument of type [True -> ... True -> False].
 
@@ -504,7 +503,6 @@ Abort.
 Goal True \/ False.
   Fail (progress (split_and ())).
 Abort.
-
 (** 3.2 [match!]
 
       [match! goal with] picks the first branch that matches.
@@ -526,7 +524,6 @@ Goal False.
   | [ |- _ ] => printf "branch 3"
   end.
 Abort.
-
 (** match!] is useful as soon as matching the syntax is not enough, and we
     need additional tests to see if we have picked the good branch or not.
     Indeed, if such a test fails raising an exception (or we make it so), then
@@ -564,7 +561,6 @@ Qed.
 Goal forall P Q, P -> P -> Q.
   intros P Q p1 p2. Fail my_eassumption ().
 Abort.
-
 (** 3.3 [multi_match!]
 
       [multi_match! goal with] is more complex and subtle. It basically behaves
