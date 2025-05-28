@@ -114,7 +114,7 @@ Abort.
 
 (** In some cases, we do not want to merely match the shape of a term [t],
     but also to recover a part of this subterm to perform more actions on it.
-    This can be done using evariables which must be written [?x].
+    This can be done using variables which must be written [?x].
     In such cases, [x] is of type [constr], the type of Rocq terms in Ltac2.
     This is normal as [x] corresponds to a subterm of [t].
 
@@ -199,7 +199,7 @@ Abort.
     their choosing like up to head-normal form, or up to unification.
 
     This explains how syntax is matched but not how a pattern is matched when a
-    evariable [?x] appears more than once in a pattern, like [?x = ?x].
+    variable [?x] appears more than once in a pattern, like [?x = ?x].
     Such patterns are called non-linear, and are matched up to conversion.
     The reason is that we expect the subterms matched to be the same,
     which in type theory naturally corresponds to conversion.
@@ -219,7 +219,7 @@ Abort.
     in which case it triggers a warning.
     This warning will be triggered for non-linear variables, if they are only used
     to constrain the shape of the term matched, like in [is_refl_eq], but no further.
-    In this case, the warning can be easily disable by naming unused evariables
+    In this case, the warning can be easily disable by naming unused variables
     starting with [?_] rather than with [?].
     For instance, by matching for [?_x = ?_x] rather than [?x = ?x] is [is_refl_eq].
 *)
@@ -247,14 +247,15 @@ Abort.
 
     where:
     - [x1] ... [xn] are [ident], i.e. Ltac2 values corresponding to the names
-      of the hypotheses. Opposite to evariables, they should not start with [?].
+      of the hypotheses. Opposite to variables, they should not start with [?].
     - [t1] ... [tn] are the types of the hypotheses, and [g] the type of the goal
       we want to prove. All are of type [constr], the type of Rocq terms in Ltac2.
-    - As usual variables [x1] and any evariables that could appear in [t1], ..., [tn],
-      and [g], cannot start with an upper case letter as it is reserved for constructors.
+    - As usual [ident] --- [x1], ..., [xn] --- and any variables that could appear
+      in [t1], ..., [tn], and [g], cannot start with an upper case letter as
+      it is reserved for constructors.
 
-    Such a pattern will match a goal to prove of types [G], and such that can be
-    found [n] different hypotheses of types [T1], ..., [Tn].
+    Such a pattern will match the conclusion of the goal of type [G], and such that
+    can be found [n] different hypotheses of types [T1], ..., [Tn].
     Each clause must match a different hypothesis for the pattern to succeed.
     Consequently, there must be at least [n] different hypotheses / assumptions
     in the context for such a branch to have a chance to succeed.
@@ -262,11 +263,11 @@ Abort.
     now [ |- _] as this matches any goals.
 
     As an example, let us write a small function starting with [lazy_match! goal with]
-    to inspect if the goal to prove is either [_ /\ _] or [_ \/ _].
+    to inspect if the conlusion of the goal is either [_ /\ _] or [_ \/ _].
 
-    As we want to inspect the goal to prove, nothing on the hypotheses, our pattern
-    is of the form [ |- g]. To match for [_ /\ _] and [_ \/ _], we then get the
-    patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
+    As we want to inspect the conclusion of the goal but not the hypotheses,
+    our pattern is of the form [ |- g]. To match for [_ /\ _] and [_ \/ _],
+    we then get the patterns [ [ |- ?a /\ ?b ] ] and  [ |- ?a \/ ?b ].
 *)
 
 Ltac2 and_or_or () :=
@@ -360,7 +361,7 @@ Abort.
 
 (** As for matching terms, matching goals is by default syntactic.
     However, matching for non-linear variables is a bit more involved.
-    In the non-linear case, evariable are matched up to conversions when they appear
+    In the non-linear case, variable are matched up to conversions when they appear
     in different clause, and up to syntax when they appear in the same clause.
 
     To understand this better, let us look at an example.
